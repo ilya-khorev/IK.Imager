@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace IK.Imager.ImageBlobStorage.Azure
+namespace IK.Imager.ImageStorage.AzureFiles
 {
     public class Class1
     {
