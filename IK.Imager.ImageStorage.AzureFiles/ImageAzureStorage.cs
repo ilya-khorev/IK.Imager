@@ -18,12 +18,15 @@ namespace IK.Imager.ImageStorage.AzureFiles
 
         public ImageAzureStorage(ImageAzureStorageConfiguration configuration)
         {
-            var configuration1 = configuration;
+            ArgumentHelper.AssertNotNull(nameof(configuration), configuration);
+
             CloudStorageAccount storageAccount = CloudStorageAccount.DevelopmentStorageAccount;
             _cloudBlobClient = storageAccount.CreateCloudBlobClient();
 
-            _imagesContainer = new Lazy<CloudBlobContainer>(() => CloudBlobContainer(configuration1.ImagesContainerName));
-            _thumbnailsContainer = new Lazy<CloudBlobContainer>(() => CloudBlobContainer(configuration1.ThumbnailsContainerName));
+            _imagesContainer =
+                new Lazy<CloudBlobContainer>(() => CloudBlobContainer(configuration.ImagesContainerName));
+            _thumbnailsContainer =
+                new Lazy<CloudBlobContainer>(() => CloudBlobContainer(configuration.ThumbnailsContainerName));
         }
 
         private CloudBlobContainer CloudBlobContainer(string containerName)
@@ -38,21 +41,30 @@ namespace IK.Imager.ImageStorage.AzureFiles
             return container;
         }
 
-        public async Task<string> UploadImage(Stream imageStream, ImageType imageType, CancellationToken cancellationToken)
+        public async Task<string> UploadImage(Stream imageStream, ImageType imageType,
+            CancellationToken cancellationToken)
         {
+            ArgumentHelper.AssertNotNull(nameof(imageStream), imageStream);
+
             var id = Guid.NewGuid().ToString();
             await UploadImage(id, imageStream, imageType, cancellationToken);
             return id;
         }
 
-        public async Task UploadImage(string id, Stream imageStream, ImageType imageType, CancellationToken cancellationToken)
+        public async Task UploadImage(string id, Stream imageStream, ImageType imageType,
+            CancellationToken cancellationToken)
         {
+            ArgumentHelper.AssertNotNullOrEmpty(nameof(id), id);
+            ArgumentHelper.AssertNotNull(nameof(imageStream), imageStream);
+
             var blockBlob = GetBlockBlob(id, imageType);
             await blockBlob.UploadFromStreamAsync(imageStream, cancellationToken).ConfigureAwait(false);
         }
 
-        public async Task<Stream> DownloadImage(string id,  ImageType imageType, CancellationToken cancellationToken)
+        public async Task<Stream> DownloadImage(string id, ImageType imageType, CancellationToken cancellationToken)
         {
+            ArgumentHelper.AssertNotNullOrEmpty(nameof(id), id);
+
             var blockBlob = GetBlockBlob(id, imageType);
             if (blockBlob == null)
                 return null;
@@ -62,14 +74,18 @@ namespace IK.Imager.ImageStorage.AzureFiles
             return memoryStream;
         }
 
-        public async Task<bool> TryDeleteImage(string id,  ImageType imageType, CancellationToken cancellationToken)
+        public async Task<bool> TryDeleteImage(string id, ImageType imageType, CancellationToken cancellationToken)
         {
+            ArgumentHelper.AssertNotNullOrEmpty(nameof(id), id);
+
             var blockBlob = GetBlockBlob(id, imageType);
             return await blockBlob.DeleteIfExistsAsync(cancellationToken).ConfigureAwait(false);
         }
 
         public Uri GetImageUri(string id, ImageType imageType)
         {
+            ArgumentHelper.AssertNotNullOrEmpty(nameof(id), id);
+
             var blockBlob = GetBlockBlob(id, imageType);
             return blockBlob.Uri;
         }
@@ -78,7 +94,7 @@ namespace IK.Imager.ImageStorage.AzureFiles
         {
             if (imageType == ImageType.Original)
                 return _imagesContainer.Value.GetBlockBlobReference(id);
-            
+
             return _thumbnailsContainer.Value.GetBlockBlobReference(id);
         }
     }
