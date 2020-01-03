@@ -19,8 +19,11 @@ namespace IK.Imager.ImageStorage.AzureFiles
         public ImageAzureStorage(ImageAzureStorageConfiguration configuration)
         {
             ArgumentHelper.AssertNotNull(nameof(configuration), configuration);
+            
+            var storageAccount = string.IsNullOrWhiteSpace(configuration.ConnectionString)
+                ? CloudStorageAccount.DevelopmentStorageAccount
+                : CloudStorageAccount.Parse(configuration.ConnectionString);
 
-            CloudStorageAccount storageAccount = CloudStorageAccount.DevelopmentStorageAccount;
             _cloudBlobClient = storageAccount.CreateCloudBlobClient();
 
             _imagesContainer =
