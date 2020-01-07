@@ -20,9 +20,10 @@ namespace IK.Imager.Abstractions.Storage
         /// </summary>
         /// <param name="imageStream">Image stream</param>
         /// <param name="imageType">Original or thumbnail</param>
+        /// <param name="contentType">Image content type (e.g. jpeg)</param>
         /// <param name="cancellationToken">Cancellation token to stop operation</param>
         /// <returns>Image identifier</returns>
-        Task<string> UploadImage(Stream imageStream, ImageType imageType, CancellationToken cancellationToken);
+        Task<string> UploadImage(Stream imageStream, ImageType imageType, string contentType, CancellationToken cancellationToken);
 
         /// <summary>
         /// Upload and save a new image
@@ -30,9 +31,10 @@ namespace IK.Imager.Abstractions.Storage
         /// <param name="id">Unique identifier of an image</param>
         /// <param name="imageStream">Image stream</param>
         /// <param name="imageType">Original or thumbnail</param>
+        /// <param name="contentType">Image content type (e.g. jpeg)</param>
         /// <param name="cancellationToken">Cancellation token to stop operation</param>
         /// <returns></returns>
-        Task UploadImage(string id, Stream imageStream, ImageType imageType, CancellationToken cancellationToken);
+        Task UploadImage(string id, Stream imageStream, ImageType imageType, string contentType, CancellationToken cancellationToken);
 
         /// <summary>
         /// Download an image stream for a given image id
@@ -41,14 +43,14 @@ namespace IK.Imager.Abstractions.Storage
         /// <param name="imageType">Original or thumbnail</param>
         /// <param name="cancellationToken">Cancellation token to stop operation</param>
         /// <returns>Image stream, or null if such image was not found</returns>
-        Task<Stream> DownloadImage(string id, ImageType imageType, CancellationToken cancellationToken);
+        Task<MemoryStream> DownloadImage(string id, ImageType imageType, CancellationToken cancellationToken);
 
         /// <summary>
         /// Attempt to delete an image by a given image id 
         /// </summary>
         /// <param name="id">Image identifier</param>
         /// <param name="imageType">Original or thumbnail</param>
-        /// <param name="cancellationToken">cancellation token to stop operation</param>
+        /// <param name="cancellationToken">Cancellation token to stop operation</param>
         /// <returns>Returns true if an image was found and removed.
         /// Returns false if an image was not found.</returns>
         Task<bool> TryDeleteImage(string id, ImageType imageType, CancellationToken cancellationToken);
@@ -60,5 +62,14 @@ namespace IK.Imager.Abstractions.Storage
         /// <param name="imageType">Original or thumbnail</param>
         /// <returns></returns>
         Uri GetImageUri(string id, ImageType imageType);
+
+        /// <summary>
+        /// Checks if a given image exists
+        /// </summary>
+        /// <param name="id">Image identifier</param>
+        /// <param name="imageType">Original or thumbnail</param>
+        /// <param name="cancellationToken">Cancellation token to stop operation</param>
+        /// <returns>Returns true if an image was found. Otherwise, returns false.</returns>
+        Task<bool> ImageExists(string id, ImageType imageType, CancellationToken cancellationToken);
     }
 }

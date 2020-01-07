@@ -15,7 +15,7 @@ namespace IK.Imager.ImageStorage.AzureFiles
 
         private readonly Lazy<CloudBlobContainer> _imagesContainer;
         private readonly Lazy<CloudBlobContainer> _thumbnailsContainer;
-
+        
         public ImageAzureStorage(ImageAzureStorageConfiguration configuration)
         {
             ArgumentHelper.AssertNotNull(nameof(configuration), configuration);
@@ -44,27 +44,29 @@ namespace IK.Imager.ImageStorage.AzureFiles
             return container;
         }
 
-        public async Task<string> UploadImage(Stream imageStream, ImageType imageType,
-            CancellationToken cancellationToken)
+        public async Task<string> UploadImage(Stream imageStream, ImageType imageType, 
+            string imageContentType, CancellationToken cancellationToken)
         {
             ArgumentHelper.AssertNotNull(nameof(imageStream), imageStream);
 
             var id = Guid.NewGuid().ToString();
-            await UploadImage(id, imageStream, imageType, cancellationToken);
+            await UploadImage(id, imageStream, imageType, imageContentType, cancellationToken);
             return id;
         }
 
+        //todo return size in bytes, content type, md5 hash
         public async Task UploadImage(string id, Stream imageStream, ImageType imageType,
-            CancellationToken cancellationToken)
+            string imageContentType, CancellationToken cancellationToken)
         {
             ArgumentHelper.AssertNotNullOrEmpty(nameof(id), id);
             ArgumentHelper.AssertNotNull(nameof(imageStream), imageStream);
 
             var blockBlob = GetBlockBlob(id, imageType);
+            blockBlob.Properties.ContentType = imageContentType;
             await blockBlob.UploadFromStreamAsync(imageStream, cancellationToken).ConfigureAwait(false);
         }
 
-        public async Task<Stream> DownloadImage(string id, ImageType imageType, CancellationToken cancellationToken)
+        public async Task<MemoryStream> DownloadImage(string id, ImageType imageType, CancellationToken cancellationToken)
         {
             ArgumentHelper.AssertNotNullOrEmpty(nameof(id), id);
 
@@ -74,6 +76,7 @@ namespace IK.Imager.ImageStorage.AzureFiles
 
             MemoryStream memoryStream = new MemoryStream();
             await blockBlob.DownloadToStreamAsync(memoryStream, cancellationToken).ConfigureAwait(false);
+            memoryStream.Position = 0;
             return memoryStream;
         }
 
@@ -91,6 +94,14 @@ namespace IK.Imager.ImageStorage.AzureFiles
 
             var blockBlob = GetBlockBlob(id, imageType);
             return blockBlob.Uri;
+        }
+
+        public async Task<bool> ImageExists(string id, ImageType imageType, CancellationToken cancellationToken)
+        {
+            ArgumentHelper.AssertNotNullOrEmpty(nameof(id), id);
+            
+            var blockBlob = GetBlockBlob(id, imageType);
+            return await blockBlob.ExistsAsync(cancellationToken).ConfigureAwait(false);
         }
 
         private CloudBlockBlob GetBlockBlob(string id, ImageType imageType)
