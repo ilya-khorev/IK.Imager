@@ -1,4 +1,4 @@
-﻿namespace IK.Imager.Abstractions.Models
+﻿namespace IK.Imager.Storage.Abstractions.Models
 {
     public enum ImageType
     {

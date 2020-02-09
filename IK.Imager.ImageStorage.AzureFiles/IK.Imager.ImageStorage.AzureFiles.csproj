@@ -9,7 +9,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\IK.Imager.Abstractions\IK.Imager.Abstractions.csproj" />
+      <ProjectReference Include="..\IK.Imager.Storage.Abstractions\IK.Imager.Storage.Abstractions.csproj" />
     </ItemGroup>
 
 </Project>

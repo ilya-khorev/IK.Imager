@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace IK.Imager.Abstractions.Models
+namespace IK.Imager.Storage.Abstractions.Models
 {
     public class ImageMetadata: IImageBasicDetails
     {

@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IK.Imager.Abstractions", "IK.Imager.Abstractions\IK.Imager.Abstractions.csproj", "{F10C818D-3EA4-4DCF-B5CF-A50CC7EB52C2}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IK.Imager.Storage.Abstractions", "IK.Imager.Storage.Abstractions\IK.Imager.Storage.Abstractions.csproj", "{F10C818D-3EA4-4DCF-B5CF-A50CC7EB52C2}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IK.Imager.Core", "IK.Imager.Core\IK.Imager.Core.csproj", "{0874CA46-71AE-45A6-8F70-A0504A93DF86}"
 EndProject

@@ -2,9 +2,9 @@
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using IK.Imager.Abstractions.Models;
+using IK.Imager.Storage.Abstractions.Models;
 
-namespace IK.Imager.Abstractions.Storage
+namespace IK.Imager.Storage.Abstractions.Storage
 {
     /// <summary>
     /// Represents a set of methods for

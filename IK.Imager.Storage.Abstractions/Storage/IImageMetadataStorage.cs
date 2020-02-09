@@ -1,8 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
-using IK.Imager.Abstractions.Models;
+using IK.Imager.Storage.Abstractions.Models;
 
-namespace IK.Imager.Abstractions.Storage
+namespace IK.Imager.Storage.Abstractions.Storage
 {
     public interface IImageMetadataStorage
     {

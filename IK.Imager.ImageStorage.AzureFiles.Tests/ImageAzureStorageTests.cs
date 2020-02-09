@@ -4,7 +4,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
-using IK.Imager.Abstractions.Models;
+using IK.Imager.Storage.Abstractions.Models;
 using Xunit;
 
 namespace IK.Imager.ImageStorage.AzureFiles.Tests

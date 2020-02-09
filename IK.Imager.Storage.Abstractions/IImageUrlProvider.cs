@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace IK.Imager.Abstractions
+namespace IK.Imager.Storage.Abstractions
 {
     public interface IImageUrlProvider
     {

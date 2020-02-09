@@ -2,8 +2,8 @@
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using IK.Imager.Abstractions.Models;
-using IK.Imager.Abstractions.Storage;
+using IK.Imager.Storage.Abstractions.Models;
+using IK.Imager.Storage.Abstractions.Storage;
 using Microsoft.Azure.Storage;
 using Microsoft.Azure.Storage.Blob;
 
