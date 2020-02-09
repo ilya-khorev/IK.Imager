@@ -23,7 +23,7 @@ namespace IK.Imager.Abstractions.Storage
         /// <param name="contentType">Image content type (e.g. jpeg)</param>
         /// <param name="cancellationToken">Cancellation token to stop operation</param>
         /// <returns>Image identifier</returns>
-        Task<string> UploadImage(Stream imageStream, ImageType imageType, string contentType, CancellationToken cancellationToken);
+        Task<UploadImageResult> UploadImage(Stream imageStream, ImageType imageType, string contentType, CancellationToken cancellationToken);
 
         /// <summary>
         /// Upload and save a new image
@@ -34,14 +34,14 @@ namespace IK.Imager.Abstractions.Storage
         /// <param name="contentType">Image content type (e.g. jpeg)</param>
         /// <param name="cancellationToken">Cancellation token to stop operation</param>
         /// <returns></returns>
-        Task UploadImage(string id, Stream imageStream, ImageType imageType, string contentType, CancellationToken cancellationToken);
+        Task<UploadImageResult> UploadImage(string id, Stream imageStream, ImageType imageType, string contentType, CancellationToken cancellationToken);
 
         /// <summary>
         /// Download an image stream for a given image id
         /// </summary>
         /// <param name="id">Image identifier</param>
         /// <param name="imageType">Original or thumbnail</param>
-        /// <param name="cancellationToken">Cancellation token to stop operation</param>
+         /// <param name="cancellationToken">Cancellation token to stop operation</param>
         /// <returns>Image stream, or null if such image was not found</returns>
         Task<MemoryStream> DownloadImage(string id, ImageType imageType, CancellationToken cancellationToken);
 

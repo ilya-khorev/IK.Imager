@@ -44,18 +44,16 @@ namespace IK.Imager.ImageStorage.AzureFiles
             return container;
         }
 
-        public async Task<string> UploadImage(Stream imageStream, ImageType imageType, 
+        public async Task<UploadImageResult> UploadImage(Stream imageStream, ImageType imageType, 
             string imageContentType, CancellationToken cancellationToken)
         {
             ArgumentHelper.AssertNotNull(nameof(imageStream), imageStream);
 
             var id = Guid.NewGuid().ToString();
-            await UploadImage(id, imageStream, imageType, imageContentType, cancellationToken);
-            return id;
+            return await UploadImage(id, imageStream, imageType, imageContentType, cancellationToken);
         }
 
-        //todo return size in bytes, content type, md5 hash
-        public async Task UploadImage(string id, Stream imageStream, ImageType imageType,
+        public async Task<UploadImageResult> UploadImage(string id, Stream imageStream, ImageType imageType,
             string imageContentType, CancellationToken cancellationToken)
         {
             ArgumentHelper.AssertNotNullOrEmpty(nameof(id), id);
@@ -64,6 +62,13 @@ namespace IK.Imager.ImageStorage.AzureFiles
             var blockBlob = GetBlockBlob(id, imageType);
             blockBlob.Properties.ContentType = imageContentType;
             await blockBlob.UploadFromStreamAsync(imageStream, cancellationToken).ConfigureAwait(false);
+
+            return new UploadImageResult
+            {
+                Id = id,
+                MD5Hash = blockBlob.Properties.ContentMD5,
+                DateAdded = blockBlob.Properties.Created ?? DateTimeOffset.Now
+            };
         }
 
         public async Task<MemoryStream> DownloadImage(string id, ImageType imageType, CancellationToken cancellationToken)

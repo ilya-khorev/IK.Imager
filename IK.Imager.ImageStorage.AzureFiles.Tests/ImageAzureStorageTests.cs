@@ -29,10 +29,11 @@ namespace IK.Imager.ImageStorage.AzureFiles.Tests
         {
             var imageType = ImageType.Thumbnail;
             using var fileStream = OpenImageForReading(Image1Path);
-            var imageId = await _imageAzureStorage.UploadImage(fileStream, imageType, JpegType, CancellationToken.None);
-            Assert.NotNull(imageId);
-
-            Assert.True(await _imageAzureStorage.ImageExists(imageId, imageType, CancellationToken.None));
+            var uploadImageResult = await _imageAzureStorage.UploadImage(fileStream, imageType, JpegType, CancellationToken.None);
+            Assert.NotNull(uploadImageResult.Id);
+            Assert.NotNull(uploadImageResult.MD5Hash);
+            
+            Assert.True(await _imageAzureStorage.ImageExists(uploadImageResult.Id, imageType, CancellationToken.None));
         }
 
         [Fact]
@@ -57,10 +58,10 @@ namespace IK.Imager.ImageStorage.AzureFiles.Tests
             await fileStream.CopyToAsync(imageStream);
             imageStream.Position = 0;
 
-            var imageId =
+            var uploadImageResult =
                 await _imageAzureStorage.UploadImage(imageStream, imageType, JpegType, CancellationToken.None);
             using var downloadedImageStream =
-                await _imageAzureStorage.DownloadImage(imageId, imageType, CancellationToken.None);
+                await _imageAzureStorage.DownloadImage(uploadImageResult.Id, imageType, CancellationToken.None);
 
             Assert.True(CompareMemoryStreams(imageStream, downloadedImageStream));
         }
@@ -70,12 +71,12 @@ namespace IK.Imager.ImageStorage.AzureFiles.Tests
         {
             var imageType = ImageType.Original;
             using var fileStream = OpenImageForReading(Image2Path);
-            var imageId = await _imageAzureStorage.UploadImage(fileStream, imageType, JpegType, CancellationToken.None);
+            var uploadImageResult = await _imageAzureStorage.UploadImage(fileStream, imageType, JpegType, CancellationToken.None);
 
-            Assert.True(await _imageAzureStorage.TryDeleteImage(imageId, imageType, CancellationToken.None));
-            Assert.False(await _imageAzureStorage.ImageExists(imageId, imageType, CancellationToken.None));
+            Assert.True(await _imageAzureStorage.TryDeleteImage(uploadImageResult.Id, imageType, CancellationToken.None));
+            Assert.False(await _imageAzureStorage.ImageExists(uploadImageResult.Id, imageType, CancellationToken.None));
 
-            Assert.False(await _imageAzureStorage.TryDeleteImage(imageId, imageType, CancellationToken.None));
+            Assert.False(await _imageAzureStorage.TryDeleteImage(uploadImageResult.Id, imageType, CancellationToken.None));
         }
 
         [Fact]
@@ -83,9 +84,9 @@ namespace IK.Imager.ImageStorage.AzureFiles.Tests
         {
             var imageType = ImageType.Original;
             using var fileStream = OpenImageForReading(Image2Path);
-            var imageId = await _imageAzureStorage.UploadImage(fileStream, imageType, JpegType, CancellationToken.None);
+            var uploadImageResult = await _imageAzureStorage.UploadImage(fileStream, imageType, JpegType, CancellationToken.None);
 
-            var imageUri = _imageAzureStorage.GetImageUri(imageId, imageType);
+            var imageUri = _imageAzureStorage.GetImageUri(uploadImageResult.Id, imageType);
 
             using HttpClient client = new HttpClient();
             using Stream streamByUri = await client.GetStreamAsync(imageUri);
@@ -93,7 +94,7 @@ namespace IK.Imager.ImageStorage.AzureFiles.Tests
             await streamByUri.CopyToAsync(memoryStreamByUri);
 
             using var downloadedImageStream =
-                await _imageAzureStorage.DownloadImage(imageId, imageType, CancellationToken.None);
+                await _imageAzureStorage.DownloadImage(uploadImageResult.Id, imageType, CancellationToken.None);
 
             Assert.True(CompareMemoryStreams(memoryStreamByUri, downloadedImageStream));
         }

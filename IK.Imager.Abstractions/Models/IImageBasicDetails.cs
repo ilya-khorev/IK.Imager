@@ -13,6 +13,11 @@
         int Size { get; set; }
         
         /// <summary>
+        /// MD5 hash of an image
+        /// </summary>
+        string MD5Hash { get; set; }
+        
+        /// <summary>
         /// Image width in pixels
         /// </summary>
         int Width { get; set; }
