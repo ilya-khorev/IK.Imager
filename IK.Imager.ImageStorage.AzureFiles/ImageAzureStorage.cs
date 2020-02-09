@@ -27,12 +27,12 @@ namespace IK.Imager.ImageStorage.AzureFiles
             _cloudBlobClient = storageAccount.CreateCloudBlobClient();
 
             _imagesContainer =
-                new Lazy<CloudBlobContainer>(() => CloudBlobContainer(configuration.ImagesContainerName));
+                new Lazy<CloudBlobContainer>(() => CreateCloudBlobContainer(configuration.ImagesContainerName));
             _thumbnailsContainer =
-                new Lazy<CloudBlobContainer>(() => CloudBlobContainer(configuration.ThumbnailsContainerName));
+                new Lazy<CloudBlobContainer>(() => CreateCloudBlobContainer(configuration.ThumbnailsContainerName));
         }
 
-        private CloudBlobContainer CloudBlobContainer(string containerName)
+        private CloudBlobContainer CreateCloudBlobContainer(string containerName)
         {
             var container = _cloudBlobClient.GetContainerReference(containerName);
             container.CreateIfNotExists();
