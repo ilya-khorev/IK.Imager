@@ -32,5 +32,10 @@ namespace IK.Imager.Storage.Abstractions.Models
         /// Optional property: sometimes an image either doesn't have any thumbnails at all or they are not prepared yet.
         /// </summary>
         public ImageThumbnail[] Thumbnails { get; set; }
+        
+        /// <summary>
+        /// This flag indicates that the image (together with its medata) should be removed later
+        /// </summary>
+        public bool ToRemove { get; set; }
     }
 }
