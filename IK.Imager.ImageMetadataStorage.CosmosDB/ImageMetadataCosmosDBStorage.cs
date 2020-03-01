@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using IK.Imager.Storage.Abstractions.Models;
 using IK.Imager.Storage.Abstractions.Storage;
+using IK.Imager.Utils;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Azure.Cosmos.Linq;
 
@@ -21,16 +22,19 @@ namespace IK.Imager.ImageMetadataStorage.CosmosDB
         
         public async Task SetMetadata(ImageMetadata metadata, CancellationToken cancellationToken)
         {
+            ArgumentHelper.AssertNotNull(nameof(metadata), metadata);
+            
             var container = await GetContainer();
-
-            await container.UpsertItemAsync(metadata, new PartitionKey(metadata.PartitionKey),
-                    cancellationToken: cancellationToken)
+            await container.UpsertItemAsync(metadata, new PartitionKey(metadata.PartitionKey), cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
         }
 
         public async Task<List<ImageMetadata>> GetMetadata(ICollection<string> imageIds, string partitionKey,
             CancellationToken cancellationToken)
         {
+            ArgumentHelper.AssertNotNull(nameof(imageIds), imageIds);
+            ArgumentHelper.AssertNotNullOrEmpty(nameof(partitionKey), partitionKey);
+            
             var container = await GetContainer();
             
             QueryRequestOptions queryRequestOptions = null;
@@ -40,8 +44,10 @@ namespace IK.Imager.ImageMetadataStorage.CosmosDB
                     PartitionKey = new PartitionKey(partitionKey)
                 };
 
-            var queryIterator = container.GetItemLinqQueryable<ImageMetadata>(requestOptions: queryRequestOptions)
-                .Where(x => imageIds.Contains(x.Id) && !x.ToRemove).ToFeedIterator();
+            var queryIterator = container
+                .GetItemLinqQueryable<ImageMetadata>(requestOptions: queryRequestOptions)
+                .Where(x => imageIds.Contains(x.Id) && !x.ToRemove)
+                .ToFeedIterator();
 
             List<ImageMetadata> result = new List<ImageMetadata>();
             while (queryIterator.HasMoreResults)
@@ -61,18 +67,19 @@ namespace IK.Imager.ImageMetadataStorage.CosmosDB
         public async Task<bool> SetMetadataForRemoval(string imageId, string partitionKey,
             CancellationToken cancellationToken)
         {
+            ArgumentHelper.AssertNotNullOrEmpty(nameof(imageId), imageId);
+            ArgumentHelper.AssertNotNullOrEmpty(nameof(partitionKey), partitionKey);
+            
             var container = await GetContainer();
 
-            var response = await container.ReadItemAsync<ImageMetadata>(imageId, new PartitionKey(partitionKey),
-                    cancellationToken: cancellationToken)
+            var response = await container.ReadItemAsync<ImageMetadata>(imageId, new PartitionKey(partitionKey), cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
             if (response.Resource == null)
                 return false;
 
             response.Resource.ToRemove = true;
-            var updateResponse = await container.UpsertItemAsync(imageId, new PartitionKey(partitionKey),
-                    cancellationToken: cancellationToken)
+            var updateResponse = await container.UpsertItemAsync(imageId, new PartitionKey(partitionKey), cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
             return updateResponse.StatusCode == HttpStatusCode.OK;
@@ -80,9 +87,11 @@ namespace IK.Imager.ImageMetadataStorage.CosmosDB
 
         public async Task<bool> RemoveMetadata(string imageId, string partitionKey, CancellationToken cancellationToken)
         {
+            ArgumentHelper.AssertNotNullOrEmpty(nameof(imageId), imageId);
+            ArgumentHelper.AssertNotNullOrEmpty(nameof(partitionKey), partitionKey);
+            
             var container = await GetContainer();
-            var response = await container.DeleteItemAsync<ImageMetadata>(imageId, new PartitionKey(partitionKey),
-                    cancellationToken: cancellationToken)
+            var response = await container.DeleteItemAsync<ImageMetadata>(imageId, new PartitionKey(partitionKey), cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
             return response.StatusCode == HttpStatusCode.NoContent;
@@ -101,8 +110,7 @@ namespace IK.Imager.ImageMetadataStorage.CosmosDB
             CosmosClient client = new CosmosClient(_configuration.Endpoint, _configuration.AuthKey);
             var databaseResponse = await client.CreateDatabaseIfNotExistsAsync(_configuration.DatabaseId);
 
-            ContainerProperties containerProperties =
-                new ContainerProperties(_configuration.ContainerId, _configuration.PartitionKeyPath);
+            ContainerProperties containerProperties = new ContainerProperties(_configuration.ContainerId, _configuration.PartitionKeyPath);
 
             _containerInternal = (await databaseResponse.Database.CreateContainerIfNotExistsAsync(containerProperties,
                 throughput: _configuration.ContainerThroughPutOnCreation)).Container;

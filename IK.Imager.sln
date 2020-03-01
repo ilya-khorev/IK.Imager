@@ -14,6 +14,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IK.Imager.ImageStorage.Azur
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IK.Imager.ImageMetadataStorage.CosmosDB.Tests", "IK.Imager.ImageMetadataStorage.CosmosDB.Tests\IK.Imager.ImageMetadataStorage.CosmosDB.Tests.csproj", "{3082EDCA-57E0-4A3C-B01F-034A61B0DB8E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IK.Imager.Utils", "IK.Imager.Utils\IK.Imager.Utils.csproj", "{C827FDEA-BDBD-4A90-9A88-4D4C743EB21B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -48,5 +50,9 @@ Global
 		{3082EDCA-57E0-4A3C-B01F-034A61B0DB8E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3082EDCA-57E0-4A3C-B01F-034A61B0DB8E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3082EDCA-57E0-4A3C-B01F-034A61B0DB8E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C827FDEA-BDBD-4A90-9A88-4D4C743EB21B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C827FDEA-BDBD-4A90-9A88-4D4C743EB21B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C827FDEA-BDBD-4A90-9A88-4D4C743EB21B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C827FDEA-BDBD-4A90-9A88-4D4C743EB21B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

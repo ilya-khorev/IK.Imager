@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using IK.Imager.Storage.Abstractions.Models;
 using IK.Imager.Storage.Abstractions.Storage;
+using IK.Imager.Utils;
 using Microsoft.Azure.Storage;
 using Microsoft.Azure.Storage.Blob;
 
@@ -44,7 +45,8 @@ namespace IK.Imager.ImageStorage.AzureFiles
             string imageContentType, CancellationToken cancellationToken)
         {
             ArgumentHelper.AssertNotNull(nameof(imageStream), imageStream);
-
+            ArgumentHelper.AssertNotNullOrEmpty(nameof(imageContentType), imageContentType);
+            
             var id = Guid.NewGuid().ToString();
             return await UploadImage(id, imageStream, imageType, imageContentType, cancellationToken);
         }
