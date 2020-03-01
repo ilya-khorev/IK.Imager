@@ -1,6 +1,6 @@
 ﻿namespace IK.Imager.ImageMetadataStorage.CosmosDB
 {
-    public class ImageMetadataStorageConfiguration
+    public class ImageMetadataCosmosDbStorageConfiguration
     {
         public string Endpoint { get; set; }
         public string AuthKey { get; set; }

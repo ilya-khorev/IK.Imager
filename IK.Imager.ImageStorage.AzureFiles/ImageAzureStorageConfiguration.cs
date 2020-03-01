@@ -14,17 +14,6 @@
             ImagesContainerName = imagesContainerName;
             ThumbnailsContainerName = thumbnailsContainerName;
         }
-
-        /// <summary>
-        /// Use for development mode only when connection string is not needed
-        /// </summary>
-        /// <param name="imagesContainerName">Container name where all original image files are stored</param>
-        /// <param name="thumbnailsContainerName">Container name where thumbnails are stored</param>
-        public ImageAzureStorageConfiguration(string imagesContainerName, string thumbnailsContainerName)
-        {
-            ImagesContainerName = imagesContainerName;
-            ThumbnailsContainerName = thumbnailsContainerName;
-        }
         
         /// <summary>
         /// Connection string to Azure account

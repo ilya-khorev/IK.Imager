@@ -10,11 +10,11 @@ using Microsoft.Azure.Cosmos.Linq;
 
 namespace IK.Imager.ImageMetadataStorage.CosmosDB
 {
-    public class ImageMetadataStorage : IImageMetadataStorage
+    public class ImageMetadataCosmosDbStorage : IImageMetadataStorage
     {
-        private readonly ImageMetadataStorageConfiguration _configuration;
+        private readonly ImageMetadataCosmosDbStorageConfiguration _configuration;
 
-        public ImageMetadataStorage(ImageMetadataStorageConfiguration configuration)
+        public ImageMetadataCosmosDbStorage(ImageMetadataCosmosDbStorageConfiguration configuration)
         {
             _configuration = configuration;
         }
