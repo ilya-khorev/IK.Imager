@@ -34,15 +34,6 @@ namespace IK.Imager.Storage.Abstractions.Storage
         Task<List<ImageMetadata>> GetMetadata(ICollection<string> imageIds, CancellationToken cancellationToken);
         
         /// <summary>
-        /// Mark a metadata object for removal
-        /// </summary>
-        /// <param name="imageId"></param>
-        /// <param name="partitionKey">Partition key</param>
-        /// <param name="cancellationToken">Cancellation token to stop operation</param>
-        /// <returns></returns>
-        Task<bool> SetMetadataForRemoval(string imageId, string partitionKey, CancellationToken cancellationToken);
-        
-        /// <summary>
         /// Removes a metadata object
         /// </summary>
         /// <param name="imageId">Image identifier</param>
