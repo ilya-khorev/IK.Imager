@@ -1,4 +1,6 @@
-﻿namespace IK.Imager.Storage.Abstractions.Models
+﻿using System;
+
+namespace IK.Imager.Storage.Abstractions.Models
 {
     public class ImageThumbnail: IImageBasicDetails
     {
@@ -7,5 +9,6 @@
         public string MD5Hash { get; set; }
         public int Width { get; set; }
         public int Height { get; set; }
+        public DateTime DateAddedUtc { get; set; }
     }
 }

@@ -1,16 +1,20 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using Newtonsoft.Json;
 
 namespace IK.Imager.Storage.Abstractions.Models
 {
     public class ImageMetadata: IImageBasicDetails
     {
         public string PartitionKey { get; set; }
+        [JsonProperty("id")]
         public string Id { get; set; }
         public int Size { get; set; }
         public string MD5Hash { get; set; }
         public int Width { get; set; }
         public int Height { get; set; }
-     
+        public DateTime DateAddedUtc { get; set; }
+
         /// <summary>
         /// Image name. Optional attribute
         /// </summary>

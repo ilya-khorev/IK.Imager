@@ -1,4 +1,6 @@
-﻿namespace IK.Imager.Storage.Abstractions.Models
+﻿using System;
+
+namespace IK.Imager.Storage.Abstractions.Models
 {
     public interface IImageBasicDetails
     {
@@ -26,5 +28,10 @@
         /// Image height in pixels
         /// </summary>
         int Height { get; set; }
+        
+        /// <summary>
+        /// Date when an image was added to storage
+        /// </summary>
+        DateTime DateAddedUtc { get; set; }
     }
 }
