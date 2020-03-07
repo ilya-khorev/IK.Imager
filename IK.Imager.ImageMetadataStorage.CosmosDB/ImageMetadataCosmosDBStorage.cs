@@ -31,9 +31,9 @@ namespace IK.Imager.ImageMetadataStorage.CosmosDB
             if (metadata.Size <= 0)
                 throw new ArgumentOutOfRangeException(nameof(metadata.Size));
             if (metadata.Width <= 0)
-                throw new ArgumentOutOfRangeException(nameof(metadata.Size));
+                throw new ArgumentOutOfRangeException(nameof(metadata.Width));
             if (metadata.Height <= 0)
-                throw new ArgumentOutOfRangeException(nameof(metadata.Size));
+                throw new ArgumentOutOfRangeException(nameof(metadata.Height));
 
             var container = await GetContainer();
 
@@ -41,12 +41,17 @@ namespace IK.Imager.ImageMetadataStorage.CosmosDB
                 .ConfigureAwait(false);
         }
 
+        /*
+         * Using of partitions make search requests more efficient
+         * https://docs.microsoft.com/en-us/azure/cosmos-db/partitioning-overview
+         */
+        
         public async Task<List<ImageMetadata>> GetMetadata(ICollection<string> imageIds, string partitionKey,
             CancellationToken cancellationToken)
         {
             ArgumentHelper.AssertNotNull(nameof(imageIds), imageIds);
             if (imageIds.Count < 1)
-                throw new ArgumentException("Please provide at least on image id");
+                throw new ArgumentException("Please provide at least one image id");
 
             var container = await GetContainer();
 
@@ -100,6 +105,8 @@ namespace IK.Imager.ImageMetadataStorage.CosmosDB
             return response.StatusCode == HttpStatusCode.NoContent;
         }
 
+        //todo add operation to search by tags
+
         /// <summary>
         /// Use GetContainer method instead
         /// </summary>
@@ -115,6 +122,9 @@ namespace IK.Imager.ImageMetadataStorage.CosmosDB
 
             ContainerProperties containerProperties = new ContainerProperties(_configuration.ContainerId, "/" + nameof(ImageMetadata.PartitionKey));
 
+            //todo add indexing settings
+            //https://docs.microsoft.com/en-us/azure/cosmos-db/index-overview
+            
             _containerInternal = (await databaseResponse.Database.CreateContainerIfNotExistsAsync(containerProperties,
                 throughput: _configuration.ContainerThroughPutOnCreation)).Container;
 
