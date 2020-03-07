@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using IK.Imager.Storage.Abstractions.Models;
@@ -33,15 +34,53 @@ namespace IK.Imager.ImageMetadataStorage.CosmosDB.Tests
         }
         
         [Fact]  
-        public async Task GetImageMetadataItemNoPartitionTest()
+        public async Task GetImagesMetadataNoPartitionTest()
+        {
+            List<ImageMetadata> imagesMetadata = new List<ImageMetadata>();
+            List<string> ids = new List<string>();
+            for (int i = 0; i < _random.Next(6, 10); i++)
+            {
+                ImageMetadata imageMetadata = GenerateItem("partition" + i);
+                await _imageMetadataCosmosDbStorage.SetMetadata(imageMetadata, CancellationToken.None);
+                ids.Add(imageMetadata.Id);
+                imagesMetadata.Add(imageMetadata);
+            }
+            
+            var receivedItems = await _imageMetadataCosmosDbStorage.GetMetadata(ids, CancellationToken.None);
+            Assert.True(receivedItems.SequenceEqual(imagesMetadata));
+        }
+        
+        [Fact]  
+        public async Task GetImagesMetadataWithPartitionTest()
+        {
+            List<ImageMetadata> imagesMetadata = new List<ImageMetadata>();
+            List<string> ids = new List<string>();
+            List<string> partitions = new List<string>(3) { "partition1", "partition2", "partition3" };
+            for (int i = 0; i < _random.Next(10, 15); i++)
+            {
+                ImageMetadata imageMetadata = GenerateItem(partitions[_random.Next(0, 2)]);
+                await _imageMetadataCosmosDbStorage.SetMetadata(imageMetadata, CancellationToken.None);
+                ids.Add(imageMetadata.Id);
+                imagesMetadata.Add(imageMetadata);
+            }
+ 
+            var firstPartitionItems = imagesMetadata.Where(x => x.PartitionKey == partitions[0]);
+            var receivedItemsFirstPartition = await _imageMetadataCosmosDbStorage.GetMetadata(ids, partitions[0], CancellationToken.None);
+            Assert.True(receivedItemsFirstPartition.SequenceEqual(firstPartitionItems));
+        }
+
+        [Fact]
+        public async Task RemoveImageMetadataTest()
         {
             ImageMetadata imageMetadata = GenerateItem();
             await _imageMetadataCosmosDbStorage.SetMetadata(imageMetadata, CancellationToken.None);
 
-            var receivedItem = await _imageMetadataCosmosDbStorage.GetMetadata(new List<string> {imageMetadata.Id}, CancellationToken.None);
-            Assert.Single(receivedItem);
-            Assert.Equal(imageMetadata, receivedItem[0]);
-        }
+            bool deleted = await _imageMetadataCosmosDbStorage.RemoveMetadata(imageMetadata.Id, imageMetadata.PartitionKey, CancellationToken.None);
+            Assert.True(deleted);
+            
+            deleted = await _imageMetadataCosmosDbStorage.RemoveMetadata(imageMetadata.Id, imageMetadata.PartitionKey, CancellationToken.None);
+            Assert.False(deleted);
+        } 
 
         private ImageMetadata GenerateItem(string partitionKey = "partition1")
         {

@@ -36,7 +36,7 @@ namespace IK.Imager.ImageMetadataStorage.CosmosDB
                 throw new ArgumentOutOfRangeException(nameof(metadata.Size));
 
             var container = await GetContainer();
-            
+
             await container.UpsertItemAsync(metadata, new PartitionKey(metadata.PartitionKey), cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
         }
@@ -76,16 +76,26 @@ namespace IK.Imager.ImageMetadataStorage.CosmosDB
         {
             return GetMetadata(imageIds, null, cancellationToken);
         }
-        
+
         public async Task<bool> RemoveMetadata(string imageId, string partitionKey, CancellationToken cancellationToken)
         {
             ArgumentHelper.AssertNotNullOrEmpty(nameof(imageId), imageId);
             ArgumentHelper.AssertNotNullOrEmpty(nameof(partitionKey), partitionKey);
 
             var container = await GetContainer();
-            var response = await container.DeleteItemAsync<ImageMetadata>(imageId, new PartitionKey(partitionKey),
-                    cancellationToken: cancellationToken)
-                .ConfigureAwait(false);
+            ItemResponse<ImageMetadata> response;
+            try
+            {
+                response = await container.DeleteItemAsync<ImageMetadata>(imageId, new PartitionKey(partitionKey), cancellationToken: cancellationToken)
+                    .ConfigureAwait(false);
+            }
+            catch (CosmosException ex)
+            {
+                if (ex.StatusCode == HttpStatusCode.NotFound)
+                    return false;
+
+                throw;
+            }
 
             return response.StatusCode == HttpStatusCode.NoContent;
         }
@@ -103,8 +113,7 @@ namespace IK.Imager.ImageMetadataStorage.CosmosDB
             CosmosClient client = new CosmosClient(_configuration.ConnectionString);
             var databaseResponse = await client.CreateDatabaseIfNotExistsAsync(_configuration.DatabaseId);
 
-            ContainerProperties containerProperties =
-                new ContainerProperties(_configuration.ContainerId, "/" + nameof(ImageMetadata.PartitionKey));
+            ContainerProperties containerProperties = new ContainerProperties(_configuration.ContainerId, "/" + nameof(ImageMetadata.PartitionKey));
 
             _containerInternal = (await databaseResponse.Database.CreateContainerIfNotExistsAsync(containerProperties,
                 throughput: _configuration.ContainerThroughPutOnCreation)).Container;
