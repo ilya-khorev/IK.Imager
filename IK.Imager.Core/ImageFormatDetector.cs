@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
+using IK.Imager.Core.Abstractions;
 using IK.Imager.Utils;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Bmp;
@@ -10,15 +11,8 @@ using SixLabors.ImageSharp.Formats.Png;
 
 namespace IK.Imager.Core
 {
-    public class ImageFormatDetector    
+    public class ImageFormatDetector: IImageFormatDetector    
     {
-        /// <summary>
-        /// Detects the image format by reading its header
-        /// Returns null if it is not an image
-        /// </summary>
-        /// <param name="imageStream"></param>
-        /// <returns></returns>
-        /// <exception cref="NotSupportedException">Image format is different from jpg, png, bmp, or gif</exception>
         public ImageFormat DetectFormat(Stream imageStream)
         {
             ArgumentHelper.AssertNotNull(nameof(imageStream), imageStream);

@@ -1,4 +1,4 @@
-﻿namespace IK.Imager.Core
+﻿namespace IK.Imager.Core.Abstractions
 {
     public class ImageFormat
     {

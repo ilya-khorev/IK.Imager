@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using IK.Imager.Core.Abstractions;
 using IK.Imager.Utils;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats;
@@ -12,7 +13,7 @@ using SixLabors.Primitives;
 
 namespace IK.Imager.Core
 {
-    public class ImageResizing
+    public class ImageResizing: IImageResizing
     {
         public MemoryStream Resize(Stream imageStream, ImageType imageType, int targetWidth)
         {

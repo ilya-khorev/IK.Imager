@@ -10,6 +10,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\IK.Imager.Core.Abstractions\IK.Imager.Core.Abstractions.csproj" />
       <ProjectReference Include="..\IK.Imager.Utils\IK.Imager.Utils.csproj" />
     </ItemGroup>
 
