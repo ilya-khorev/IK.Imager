@@ -13,6 +13,8 @@ namespace IK.Imager.Core
 {
     public class ImageFormatDetector: IImageFormatDetector    
     {
+        //todo check size, resolution?
+        
         public ImageFormat DetectFormat(Stream imageStream)
         {
             ArgumentHelper.AssertNotNull(nameof(imageStream), imageStream);
