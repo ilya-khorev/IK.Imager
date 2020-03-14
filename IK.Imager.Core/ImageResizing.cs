@@ -15,9 +15,11 @@ namespace IK.Imager.Core
 {
     public class ImageResizing: IImageResizing
     {
-        public MemoryStream Resize(Stream imageStream, ImageType imageType, int targetWidth)
+        public ImageResizingResult Resize(Stream imageStream, ImageType imageType, int targetWidth)
         {
             ArgumentHelper.AssertNotNull(nameof(imageStream), imageStream);
+
+            imageStream.Position = 0;
             
             IImageFormat imageFormat = PngFormat.Instance;
             switch (imageType)
@@ -40,8 +42,6 @@ namespace IK.Imager.Core
             }
             
             using var image = Image.Load(imageStream);
-                
-            //image.
             
             decimal divisor = (decimal)image.Width / targetWidth;
             var targetHeight = Convert.ToInt32(Math.Round(image.Height / divisor));
@@ -55,7 +55,16 @@ namespace IK.Imager.Core
             
             MemoryStream resultStream = new MemoryStream();
             image.Save(resultStream, imageFormat);
-            return resultStream;
+            return new ImageResizingResult
+            {
+                Image = resultStream,
+                Size = new ImageSize
+                {
+                    Bytes = resultStream.Length,
+                    Width = image.Width,
+                    Height = image.Height
+                }
+            };
         }
     }
 }

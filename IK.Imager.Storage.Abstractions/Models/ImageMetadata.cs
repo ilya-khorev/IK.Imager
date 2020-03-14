@@ -24,7 +24,7 @@ namespace IK.Imager.Storage.Abstractions.Models
         /// <summary>
         /// Image format, e.g. png, jpg, ...
         /// </summary>
-        public string Format { get; set; } //todo enum?
+        public string Format { get; set; } 
         
         /// <summary>
         /// Additional information associated with an image in arbitrary form of key-value dictionary

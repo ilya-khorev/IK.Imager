@@ -12,6 +12,6 @@ namespace IK.Imager.Core.Abstractions
         /// <param name="imageType">Image type</param>
         /// <param name="targetWidth">Image target width in pixels</param>
         /// <returns></returns>
-        MemoryStream Resize(Stream imageStream, ImageType imageType, int targetWidth);
+        ImageResizingResult Resize(Stream imageStream, ImageType imageType, int targetWidth);
     }
 }
