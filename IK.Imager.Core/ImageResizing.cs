@@ -41,6 +41,8 @@ namespace IK.Imager.Core
             
             using var image = Image.Load(imageStream);
                 
+            //image.
+            
             decimal divisor = (decimal)image.Width / targetWidth;
             var targetHeight = Convert.ToInt32(Math.Round(image.Height / divisor));
 

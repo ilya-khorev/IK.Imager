@@ -11,13 +11,13 @@ using SixLabors.ImageSharp.Formats.Png;
 
 namespace IK.Imager.Core
 {
-    public class ImageFormatDetector: IImageFormatDetector    
+    public class ImageMetadataReader: IImageMetadataReader    
     {
-        //todo check size, resolution?
-        
         public ImageFormat DetectFormat(Stream imageStream)
         {
             ArgumentHelper.AssertNotNull(nameof(imageStream), imageStream);
+
+            imageStream.Position = 0;
             
             var imageFormat = Image.DetectFormat(imageStream);
             if (imageFormat == null)
@@ -37,6 +37,24 @@ namespace IK.Imager.Core
                 throw new NotSupportedException($"Image format {imageFormat.Name} is not supported");
 
             return new ImageFormat(imageFormat.DefaultMimeType, imageFormat.FileExtensions.First(), imageType);
+        }
+
+        public ImageSize ReadSize(Stream imageStream)
+        {
+            ArgumentHelper.AssertNotNull(nameof(imageStream), imageStream);
+
+            imageStream.Position = 0;
+            
+            var identify = Image.Identify(imageStream);
+            if (identify == null)
+                return null;
+            
+            return new ImageSize
+            {
+                Bytes = imageStream.Length,
+                Width = identify.Width,
+                Height = identify.Height
+            };
         }
     }
 }
