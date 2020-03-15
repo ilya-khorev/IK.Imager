@@ -18,6 +18,12 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IK.Imager.Utils", "IK.Image
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IK.Imager.Core.Abstractions", "IK.Imager.Core.Abstractions\IK.Imager.Core.Abstractions.csproj", "{06231D23-BC3A-4A8D-8BB1-05EEC6B016B3}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "EventBus", "EventBus", "{F8B26A7D-F287-461B-8722-E74F1C4288A0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IK.Imager.EventBus.Abstractions", "IK.Imager.EventBus.Abstractions\IK.Imager.EventBus.Abstractions.csproj", "{FFD71374-7A8E-4EFB-9EC1-851539B985B8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IK.Imager.EventBus.AzureServiceBus", "IK.Imager.EventBus.AzureServiceBus\IK.Imager.EventBus.AzureServiceBus.csproj", "{FF1F9008-7073-4141-9B8B-1B1A431772F5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -60,5 +66,17 @@ Global
 		{06231D23-BC3A-4A8D-8BB1-05EEC6B016B3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{06231D23-BC3A-4A8D-8BB1-05EEC6B016B3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{06231D23-BC3A-4A8D-8BB1-05EEC6B016B3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FFD71374-7A8E-4EFB-9EC1-851539B985B8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FFD71374-7A8E-4EFB-9EC1-851539B985B8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FFD71374-7A8E-4EFB-9EC1-851539B985B8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FFD71374-7A8E-4EFB-9EC1-851539B985B8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FF1F9008-7073-4141-9B8B-1B1A431772F5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FF1F9008-7073-4141-9B8B-1B1A431772F5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FF1F9008-7073-4141-9B8B-1B1A431772F5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FF1F9008-7073-4141-9B8B-1B1A431772F5}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{FFD71374-7A8E-4EFB-9EC1-851539B985B8} = {F8B26A7D-F287-461B-8722-E74F1C4288A0}
+		{FF1F9008-7073-4141-9B8B-1B1A431772F5} = {F8B26A7D-F287-461B-8722-E74F1C4288A0}
 	EndGlobalSection
 EndGlobal
