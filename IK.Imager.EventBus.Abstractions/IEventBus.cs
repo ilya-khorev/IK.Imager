@@ -6,9 +6,8 @@ namespace IK.Imager.EventBus.Abstractions
     {
         Task Publish<TIntegrationEvent>(string topicName, TIntegrationEvent iEvent)
             where TIntegrationEvent : IntegrationEvent;
-        
-        void Subscribe<T, TH>(string topicName, string subscriptionName)
-            where T : IntegrationEvent
-            where TH : IIntegrationEventHandler<T>;
+
+        Task Subscribe<T>(string topicName, string subscriptionName, IIntegrationEventHandler<T> handler)
+            where T : IntegrationEvent;
     }
 }

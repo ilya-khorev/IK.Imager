@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Newtonsoft.Json;
 // ReSharper disable NonReadonlyMemberInGetHashCode
+// ReSharper disable RedundantAssignment
 
 namespace IK.Imager.Storage.Abstractions.Models
 {
