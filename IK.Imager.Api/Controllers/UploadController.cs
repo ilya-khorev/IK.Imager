@@ -23,7 +23,9 @@ namespace IK.Imager.Api.Controllers
         }
 
         /// <summary>
-        /// Upload a new image using the given image byte stream
+        /// Upload a new image using the given image byte stream.
+        /// After uploading the image, the system launches the asynchronous process of thumbnails generating.
+        /// Thumbnails for the given image are available after a short delay - initially image is returned to the client without any thumbnails.
         /// </summary>
         /// <param name="file"></param>
         /// <returns>A model with short info about just uploaded image</returns>
@@ -55,7 +57,9 @@ namespace IK.Imager.Api.Controllers
         }
         
         /// <summary>
-        /// Upload a new image using the given image url
+        /// Upload a new image using the given image url.
+        /// After uploading the image, the system launches the asynchronous process of thumbnails generating.
+        /// Thumbnails for the given image are available after a short delay - initially image is returned to the client without any thumbnails.
         /// </summary>
         /// <param name="uploadImageRequest">Image upload request model</param>
         /// <returns>A model with short info about just uploaded image</returns>
