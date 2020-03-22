@@ -3,14 +3,19 @@
 namespace IK.Imager.Api.Contract
 {
     /// <summary>
-    /// Model containing information about just uploaded image
+    /// Model containing information about image
     /// </summary>
-    public class UploadImageResponse
+    public class ImageInfo
     {
         /// <summary>
         /// Unique image identifier
         /// </summary>
         public string Id { get; set; }
+        
+        /// <summary>
+        /// Image https url
+        /// </summary>
+        public string Url { get; set; }
         
         /// <summary>
         /// Image hashcode

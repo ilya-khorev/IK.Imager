@@ -35,7 +35,7 @@ namespace IK.Imager.Api.Controllers
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<ActionResult<UploadImageResponse>> PostWithStream(IFormFile file)
+        public async Task<ActionResult<ImageInfo>> PostWithStream(IFormFile file)
         {
             await Task.Delay(10);
 
@@ -44,7 +44,7 @@ namespace IK.Imager.Api.Controllers
             //todo upload image stream, image by url -> check image -> upload image file -> add image metadata -> image added event
             //image added event: get image metadata, original image file -> produce thumbnails -> update image metadata
 
-            return Ok(new UploadImageResponse
+            return Ok(new ImageInfo
             {
                 Id = Guid.NewGuid().ToString(),
                 Hash = Guid.NewGuid().ToString(),
@@ -73,13 +73,13 @@ namespace IK.Imager.Api.Controllers
         [Route("WithUrl")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<ActionResult<UploadImageResponse>> Post(UploadImageRequest uploadImageRequest)
+        public async Task<ActionResult<ImageInfo>> Post(UploadImageRequest uploadImageRequest)
         {
             await Task.Delay(10);
             
             //todo upload image stream, image by url -> check image -> upload image file -> add image metadata -> image added event
 
-            return Ok(new UploadImageResponse
+            return Ok(new ImageInfo
             {
                 Id = Guid.NewGuid().ToString(),
                 Hash = Guid.NewGuid().ToString(),

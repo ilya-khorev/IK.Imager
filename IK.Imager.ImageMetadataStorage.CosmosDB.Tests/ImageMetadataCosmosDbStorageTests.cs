@@ -88,7 +88,7 @@ namespace IK.Imager.ImageMetadataStorage.CosmosDB.Tests
             {
                 Id = Guid.NewGuid().ToString(),
                 PartitionKey = partitionKey,
-                Format = "jpg",
+                MimeType = "jpg",
                 Height = _random.Next(100, 1000),
                 Width = _random.Next(100, 1000),
                 Size = _random.Next(1000000, 9000000),

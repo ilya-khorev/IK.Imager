@@ -2,5 +2,6 @@
 {
     public abstract class IntegrationEvent
     {
+        public abstract string MessageId { get; }
     }
 }

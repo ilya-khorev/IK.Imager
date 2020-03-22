@@ -33,8 +33,10 @@ namespace IK.Imager.Api
         {
             services.AddControllers(options => { options.Filters.Add(typeof(GlobalExceptionFilter)); });
      
-            //RegisterConfigurations(services);
+            //todo RegisterConfigurations(services);
 
+            //todo sort endpoints in swagger
+            
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1.0", new OpenApiInfo { Title = "IK.Image API", Version = "v1.0" });

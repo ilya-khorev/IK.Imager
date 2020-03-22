@@ -71,7 +71,10 @@ namespace IK.Imager.EventBus.AzureServiceBus
         private async Task CreateTopicIfNotExists(string topicName)
         {
             if (!await _managementClient.TopicExistsAsync(topicName))
-                await _managementClient.CreateTopicAsync(topicName);
+                await _managementClient.CreateTopicAsync(new TopicDescription(topicName)
+                {
+                    RequiresDuplicateDetection = true
+                });
         }
     }
 }

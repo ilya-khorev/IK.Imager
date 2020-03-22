@@ -23,9 +23,10 @@ namespace IK.Imager.Storage.Abstractions.Models
         public string Name { get; set; }
         
         /// <summary>
-        /// Image format, e.g. png, jpg, ...
+        /// Standard that indicates the nature and format of a file.
+        /// E.g. 'image/jpeg', 'image/png', 'image/bmp', 'image/gif'
         /// </summary>
-        public string Format { get; set; } 
+        public string MimeType { get; set; } 
         
         /// <summary>
         /// Additional information associated with an image in arbitrary form of key-value dictionary
@@ -59,7 +60,7 @@ namespace IK.Imager.Storage.Abstractions.Models
                    && Height == other.Height 
                    && DateAddedUtc.Equals(other.DateAddedUtc)
                    && Name == other.Name 
-                   && Format == other.Format
+                   && MimeType == other.MimeType
                    && Deleted == other.Deleted;
 
             bool tagsEqual = true;
@@ -127,7 +128,7 @@ namespace IK.Imager.Storage.Abstractions.Models
                 hashCode = (hashCode * 397) ^ Height;
                 hashCode = (hashCode * 397) ^ DateAddedUtc.GetHashCode();
                 hashCode = (hashCode * 397) ^ (Name != null ? Name.GetHashCode() : 0);
-                hashCode = (hashCode * 397) ^ (Format != null ? Format.GetHashCode() : 0);
+                hashCode = (hashCode * 397) ^ (MimeType != null ? MimeType.GetHashCode() : 0);
                 hashCode = (hashCode * 397) ^ (Tags != null ? Tags.GetHashCode() : 0);
                 hashCode = (hashCode * 397) ^ (Thumbnails != null ? Thumbnails.GetHashCode() : 0);
                 hashCode = (hashCode * 397) ^ Deleted.GetHashCode();

@@ -26,7 +26,7 @@ namespace IK.Imager.ImageMetadataStorage.CosmosDB
             ArgumentHelper.AssertNotNull(nameof(metadata), metadata);
             ArgumentHelper.AssertNotNullOrEmpty(nameof(metadata.Id), metadata.Id);
             ArgumentHelper.AssertNotNullOrEmpty(nameof(metadata.PartitionKey), metadata.PartitionKey);
-            ArgumentHelper.AssertNotNullOrEmpty(nameof(metadata.Format), metadata.Format);
+            ArgumentHelper.AssertNotNullOrEmpty(nameof(metadata.MimeType), metadata.MimeType);
             ArgumentHelper.AssertNotNullOrEmpty(nameof(metadata.MD5Hash), metadata.MD5Hash);
             if (metadata.Size <= 0)
                 throw new ArgumentOutOfRangeException(nameof(metadata.Size));

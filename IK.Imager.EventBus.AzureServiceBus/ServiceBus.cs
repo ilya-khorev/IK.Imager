@@ -29,9 +29,9 @@ namespace IK.Imager.EventBus.AzureServiceBus
 
             var message = new Message
             {
-                MessageId = Guid.NewGuid().ToString(),
+                MessageId = iEvent.MessageId,
                 Body = body,
-                Label = topicName,
+                Label = topicName
             };
 
             var topicClient = await _serviceBusPersistentConnection.GetTopicClient(topicName);

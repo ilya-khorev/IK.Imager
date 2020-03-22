@@ -23,8 +23,8 @@ namespace IK.Imager.Storage.Abstractions.Models
                    && Size == other.Size
                    && MD5Hash == other.MD5Hash
                    && Width == other.Width
-                   && Height == other.Height;
-            // && DateAddedUtc.Equals(other.DateAddedUtc);
+                   && Height == other.Height
+                   && DateAddedUtc.Equals(other.DateAddedUtc);
         }
 
         public override bool Equals(object obj)
