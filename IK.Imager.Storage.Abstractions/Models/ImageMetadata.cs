@@ -11,7 +11,7 @@ namespace IK.Imager.Storage.Abstractions.Models
         public string PartitionKey { get; set; }
         [JsonProperty("id")]
         public string Id { get; set; }
-        public int Size { get; set; }
+        public long SizeBytes { get; set; }
         public string MD5Hash { get; set; }
         public int Width { get; set; }
         public int Height { get; set; }
@@ -54,7 +54,7 @@ namespace IK.Imager.Storage.Abstractions.Models
             
             bool primitivePropertiesEqual = PartitionKey == other.PartitionKey 
                    && Id == other.Id
-                   && Size == other.Size 
+                   && SizeBytes == other.SizeBytes 
                    && MD5Hash == other.MD5Hash 
                    && Width == other.Width 
                    && Height == other.Height 
@@ -122,7 +122,7 @@ namespace IK.Imager.Storage.Abstractions.Models
             {
                 var hashCode = PartitionKey != null ? PartitionKey.GetHashCode() : 0;
                 hashCode = (hashCode * 397) ^ (Id != null ? Id.GetHashCode() : 0);
-                hashCode = (hashCode * 397) ^ Size;
+                hashCode = (int) ((hashCode * 397) ^ SizeBytes);
                 hashCode = (hashCode * 397) ^ (MD5Hash != null ? MD5Hash.GetHashCode() : 0);
                 hashCode = (hashCode * 397) ^ Width;
                 hashCode = (hashCode * 397) ^ Height;

@@ -12,7 +12,7 @@ namespace IK.Imager.Storage.Abstractions.Models
         /// <summary>
         /// Image size in bytes
         /// </summary>
-        int Size { get; set; }
+        long SizeBytes { get; set; }
         
         /// <summary>
         /// MD5 hash of an image

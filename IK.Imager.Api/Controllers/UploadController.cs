@@ -1,9 +1,17 @@
 ﻿using System;
+using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using IK.Imager.Api.Contract;
+using IK.Imager.Core.Abstractions;
+using IK.Imager.Core.Abstractions.IntegrationEvents;
+using IK.Imager.EventBus.Abstractions;
+using IK.Imager.Storage.Abstractions.Models;
+using IK.Imager.Storage.Abstractions.Storage;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using ImageType = IK.Imager.Storage.Abstractions.Models.ImageType;
 
 namespace IK.Imager.Api.Controllers
 {
@@ -15,11 +23,19 @@ namespace IK.Imager.Api.Controllers
     public class UploadController : ControllerBase
     {
         private readonly ILogger<UploadController> _logger;
+        private readonly IImageMetadataReader _imageMetadataReader;
+        private readonly IImageStorage _imageStorage;
+        private readonly IImageMetadataStorage _imageMetadataStorage;
+        private readonly IEventBus _eventBus;
 
         /// <inheritdoc />
-        public UploadController(ILogger<UploadController> logger)
+        public UploadController(ILogger<UploadController> logger, IImageMetadataReader imageMetadataReader, IImageStorage imageStorage, IImageMetadataStorage imageMetadataStorage, IEventBus eventBus)
         {
             _logger = logger;
+            _imageMetadataReader = imageMetadataReader;
+            _imageStorage = imageStorage;
+            _imageMetadataStorage = imageMetadataStorage;
+            _eventBus = eventBus;
         }
 
         /// <summary>
@@ -35,25 +51,10 @@ namespace IK.Imager.Api.Controllers
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        //todo probably consider uploading using stream https://docs.microsoft.com/en-us/aspnet/core/mvc/models/file-uploads?view=aspnetcore-3.1#upload-large-files-with-streaming
         public async Task<ActionResult<ImageInfo>> PostWithStream(IFormFile file)
         {
-            await Task.Delay(10);
-
-            //todo stream https://docs.microsoft.com/en-us/aspnet/core/mvc/models/file-uploads?view=aspnetcore-3.1#upload-large-files-with-streaming
-            
-            //todo upload image stream, image by url -> check image -> upload image file -> add image metadata -> image added event
-            //image added event: get image metadata, original image file -> produce thumbnails -> update image metadata
-
-            return Ok(new ImageInfo
-            {
-                Id = Guid.NewGuid().ToString(),
-                Hash = Guid.NewGuid().ToString(),
-                DateAdded = DateTimeOffset.Now,
-                Bytes = 1234567,
-                Height = 1000,
-                Width = 1000,
-                MimeType = "image/png"
-            });
+            return await UploadImage(file.OpenReadStream());
         }
         
         /// <summary>
@@ -75,19 +76,42 @@ namespace IK.Imager.Api.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<ActionResult<ImageInfo>> Post(UploadImageRequest uploadImageRequest)
         {
-            await Task.Delay(10);
-            
-            //todo upload image stream, image by url -> check image -> upload image file -> add image metadata -> image added event
+            MemoryStream stream = new MemoryStream(); //todo
 
+            return await UploadImage(stream);
+        }
+
+        private async Task<ActionResult<ImageInfo>> UploadImage(Stream imageStream)
+        {
+            var imageFormat = _imageMetadataReader.DetectFormat(imageStream);
+            var imageSize = _imageMetadataReader.ReadSize(imageStream);
+            //todo check if size and format are in a range of provided in config
+
+            var uploadImageResult = await _imageStorage.UploadImage(imageStream, ImageType.Original, imageFormat.MimeType, CancellationToken.None);
+            await _imageMetadataStorage.SetMetadata(new ImageMetadata
+            {
+                Id = uploadImageResult.Id,
+                DateAddedUtc = uploadImageResult.DateAdded.DateTime,
+                Height = imageSize.Height,
+                Width = imageSize.Width,
+                MD5Hash = uploadImageResult.MD5Hash,
+                SizeBytes = imageSize.Bytes,
+                MimeType = imageFormat.MimeType,
+                PartitionKey = "" //todo pass partitionKey
+            }, CancellationToken.None);
+            
+            //todo add additional config values and fill event model
+            await _eventBus.Publish("NewImages", new OriginalImageAddedIntegrationEvent());
+            
             return Ok(new ImageInfo
             {
-                Id = Guid.NewGuid().ToString(),
-                Hash = Guid.NewGuid().ToString(),
-                DateAdded = DateTimeOffset.Now,
-                Bytes = 1234567,
-                Height = 1000,
-                Width = 1000,
-                MimeType = "image/png"
+                Id = uploadImageResult.Id,
+                Hash = uploadImageResult.MD5Hash,
+                DateAdded = uploadImageResult.DateAdded,
+                Bytes = imageSize.Bytes,
+                Height = imageSize.Height,
+                Width = imageSize.Width,
+                MimeType = imageFormat.MimeType
             });
         }
     }

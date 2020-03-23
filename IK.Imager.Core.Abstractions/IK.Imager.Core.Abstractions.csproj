@@ -4,4 +4,8 @@
         <TargetFramework>netstandard2.0</TargetFramework>
     </PropertyGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\IK.Imager.EventBus.Abstractions\IK.Imager.EventBus.Abstractions.csproj" />
+    </ItemGroup>
+
 </Project>

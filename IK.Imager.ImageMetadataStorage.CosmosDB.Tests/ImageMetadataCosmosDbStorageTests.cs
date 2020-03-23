@@ -91,7 +91,7 @@ namespace IK.Imager.ImageMetadataStorage.CosmosDB.Tests
                 MimeType = "jpg",
                 Height = _random.Next(100, 1000),
                 Width = _random.Next(100, 1000),
-                Size = _random.Next(1000000, 9000000),
+                SizeBytes = _random.Next(1000000, 9000000),
                 Tags = new Dictionary<string, string>
                 {
                     {"tag1", Guid.NewGuid().ToString()}, 
@@ -112,7 +112,7 @@ namespace IK.Imager.ImageMetadataStorage.CosmosDB.Tests
                     Height = _random.Next(100, 1000),
                     Width = _random.Next(100, 1000),
                     MD5Hash = Guid.NewGuid().ToString(),
-                    Size = _random.Next(1000000, 9000000)
+                    SizeBytes = _random.Next(1000000, 9000000)
                 });
             }
 

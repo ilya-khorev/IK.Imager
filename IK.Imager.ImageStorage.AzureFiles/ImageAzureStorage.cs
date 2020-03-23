@@ -62,6 +62,8 @@ namespace IK.Imager.ImageStorage.AzureFiles
 
             var blockBlob = GetBlockBlob(id, imageType);
             blockBlob.Properties.ContentType = imageContentType;
+
+            imageStream.Position = 0;
             await blockBlob.UploadFromStreamAsync(imageStream, cancellationToken).ConfigureAwait(false);
 
             return new UploadImageResult

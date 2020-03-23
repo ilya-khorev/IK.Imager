@@ -9,6 +9,16 @@
       <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.13.1" />
       <PackageReference Include="Swashbuckle.AspNetCore" Version="5.2.0" />
     </ItemGroup>
+    
+    <ItemGroup>
+      <ProjectReference Include="..\IK.Imager.Core.Abstractions\IK.Imager.Core.Abstractions.csproj" />
+      <ProjectReference Include="..\IK.Imager.Core\IK.Imager.Core.csproj" />
+      <ProjectReference Include="..\IK.Imager.EventBus.Abstractions\IK.Imager.EventBus.Abstractions.csproj" />
+      <ProjectReference Include="..\IK.Imager.EventBus.AzureServiceBus\IK.Imager.EventBus.AzureServiceBus.csproj" />
+      <ProjectReference Include="..\IK.Imager.ImageMetadataStorage.CosmosDB\IK.Imager.ImageMetadataStorage.CosmosDB.csproj" />
+      <ProjectReference Include="..\IK.Imager.ImageStorage.AzureFiles\IK.Imager.ImageStorage.AzureFiles.csproj" />
+      <ProjectReference Include="..\IK.Imager.Storage.Abstractions\IK.Imager.Storage.Abstractions.csproj" />
+    </ItemGroup>
 
 
 </Project>
