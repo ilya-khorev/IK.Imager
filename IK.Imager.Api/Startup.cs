@@ -4,7 +4,17 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
+using IK.Imager.Api.Configuration;
 using IK.Imager.Api.Filters;
+using IK.Imager.Core;
+using IK.Imager.Core.Abstractions;
+using IK.Imager.EventBus.Abstractions;
+using IK.Imager.EventBus.AzureServiceBus;
+using IK.Imager.ImageMetadataStorage.CosmosDB;
+using IK.Imager.ImageStorage.AzureFiles;
+using IK.Imager.Storage.Abstractions.Storage;
+using Microsoft.ApplicationInsights.AspNetCore.Extensions;
+using Microsoft.ApplicationInsights.Extensibility.PerfCounterCollector.QuickPulse;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
@@ -13,6 +23,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
 
 #pragma warning disable 1591
@@ -32,21 +43,54 @@ namespace IK.Imager.Api
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllers(options => { options.Filters.Add(typeof(GlobalExceptionFilter)); });
-     
-            //todo RegisterConfigurations(services);
-
-            //todo sort endpoints in swagger
             
+            //todo sort endpoints in swagger
+
             services.AddSwaggerGen(c =>
             {
-                c.SwaggerDoc("v1.0", new OpenApiInfo { Title = "IK.Image API", Version = "v1.0" });
+                c.SwaggerDoc("v1.0", new OpenApiInfo {Title = "IK.Image API", Version = "v1.0"});
                 c.IncludeXmlComments(XmlCommentsFilePath);
             });
 
-            services.AddHealthChecks();
-            services.AddApplicationInsightsTelemetry();
+            
+            RegisterConfigurations(services);
+
+            services.AddSingleton<IEventBus, ServiceBus>();
+            services.AddSingleton<IImageMetadataStorage, ImageMetadataCosmosDbStorage>();
+            services.AddSingleton<IImageStorage, ImageAzureStorage>();
+            services.AddSingleton<IImageMetadataReader, ImageMetadataReader>();
+            
+            services.AddHealthChecks(); //todo
+            SetupAppInsights(services);
         }
-        
+
+        private void RegisterConfigurations(IServiceCollection services)
+        {
+            services.Configure<ImageLimitationSettings>(Configuration.GetSection(nameof(ImageLimitationSettings)));
+            services.AddSingleton(resolver => resolver.GetRequiredService<IOptions<ImageLimitationSettings>>().Value);
+
+            services.Configure<ServiceBusSettings>(Configuration.GetSection(nameof(ServiceBusSettings)));
+            services.AddSingleton(resolver => resolver.GetRequiredService<IOptions<ServiceBusSettings>>().Value);
+        }
+
+        private void SetupAppInsights(IServiceCollection services)
+        {
+            ApplicationInsightsServiceOptions aiOptions = new ApplicationInsightsServiceOptions();
+            var appInsightsDependencyConfigValue =
+                Configuration.GetValue<bool>("ApplicationInsights:EnableDependencyTrackingTelemetryModule");
+            aiOptions.EnableDependencyTrackingTelemetryModule = appInsightsDependencyConfigValue;
+
+            //by default instrumentation key is taken from config
+            //Alternatively, specify the instrumentation key in either of the following environment variables.
+            //APPINSIGHTS_INSTRUMENTATIONKEY or ApplicationInsights:InstrumentationKey
+            services.AddApplicationInsightsTelemetry(aiOptions);
+
+            var appInsightsAuthApiKey = Configuration.GetValue<string>("ApplicationInsights:AuthenticationApiKey");
+            if (!string.IsNullOrWhiteSpace(appInsightsAuthApiKey))
+                services.ConfigureTelemetryModule<QuickPulseTelemetryModule>((module, o) =>
+                    module.AuthenticationApiKey = appInsightsAuthApiKey);
+        }
+
         private string XmlCommentsFilePath
         {
             get
@@ -58,7 +102,7 @@ namespace IK.Imager.Api
         }
 
         //todo add versioning
-        
+
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
@@ -70,7 +114,7 @@ namespace IK.Imager.Api
             app.UseHttpsRedirection();
 
             app.UseRouting();
-            
+
             app.UseSwagger(c => { c.SerializeAsV2 = true; });
 
             app.UseSwaggerUI(c =>
@@ -83,7 +127,7 @@ namespace IK.Imager.Api
                     }
                 );
             });
-            
+
             app.UseAuthorization();
 
             app.UseEndpoints(endpoints => { endpoints.MapControllers(); });

@@ -2,6 +2,7 @@
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using IK.Imager.Api.Configuration;
 using IK.Imager.Api.Contract;
 using IK.Imager.Core.Abstractions;
 using IK.Imager.Core.Abstractions.IntegrationEvents;
@@ -11,6 +12,7 @@ using IK.Imager.Storage.Abstractions.Storage;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using ImageType = IK.Imager.Storage.Abstractions.Models.ImageType;
 
 namespace IK.Imager.Api.Controllers
@@ -27,15 +29,17 @@ namespace IK.Imager.Api.Controllers
         private readonly IImageStorage _imageStorage;
         private readonly IImageMetadataStorage _imageMetadataStorage;
         private readonly IEventBus _eventBus;
+        private readonly IOptions<ImageLimitationSettings> _imageLimitationSettings;
 
         /// <inheritdoc />
-        public UploadController(ILogger<UploadController> logger, IImageMetadataReader imageMetadataReader, IImageStorage imageStorage, IImageMetadataStorage imageMetadataStorage, IEventBus eventBus)
+        public UploadController(ILogger<UploadController> logger, IImageMetadataReader imageMetadataReader, IImageStorage imageStorage, IImageMetadataStorage imageMetadataStorage, IEventBus eventBus, IOptions<ImageLimitationSettings> imageLimitationSettings)
         {
             _logger = logger;
             _imageMetadataReader = imageMetadataReader;
             _imageStorage = imageStorage;
             _imageMetadataStorage = imageMetadataStorage;
             _eventBus = eventBus;
+            _imageLimitationSettings = imageLimitationSettings;
         }
 
         /// <summary>

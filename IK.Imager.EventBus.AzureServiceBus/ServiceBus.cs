@@ -15,10 +15,10 @@ namespace IK.Imager.EventBus.AzureServiceBus
         private readonly ServiceBusPersistentConnection _serviceBusPersistentConnection;
         private readonly ConcurrentDictionary<string, int> _subscriptions = new ConcurrentDictionary<string, int>();
         
-        public ServiceBus(string connectionString, ILogger<ServiceBus> logger)
+        public ServiceBus(ServiceBusSettings serviceBusSettings, ILogger<ServiceBus> logger)
         {
             _logger = logger;
-            _serviceBusPersistentConnection = new ServiceBusPersistentConnection(connectionString);
+            _serviceBusPersistentConnection = new ServiceBusPersistentConnection(serviceBusSettings.ConnectionString);
         }
         
         public async Task Publish<TIntegrationEvent>(string topicName, TIntegrationEvent iEvent)
