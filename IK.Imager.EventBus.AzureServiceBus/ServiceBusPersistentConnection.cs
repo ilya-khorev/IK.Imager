@@ -6,14 +6,15 @@ using Microsoft.Azure.ServiceBus.Management;
 
 namespace IK.Imager.EventBus.AzureServiceBus
 {
-     /// <summary>
+    /// <summary>
     /// Manages service bus topics and subscription
     /// Create and provides single topic client for each topic 
     /// </summary>
     public class ServiceBusPersistentConnection
     {
-        private readonly ConcurrentDictionary<string, ITopicClient> _topicClients = new ConcurrentDictionary<string, ITopicClient>();
-        
+        private readonly ConcurrentDictionary<string, ITopicClient> _topicClients =
+            new ConcurrentDictionary<string, ITopicClient>();
+
         private readonly ManagementClient _managementClient;
 
         public ServiceBusPersistentConnection(string connectionString)
@@ -64,17 +65,37 @@ namespace IK.Imager.EventBus.AzureServiceBus
         {
             await CreateTopicIfNotExists(topicName);
 
-            if (!await _managementClient.SubscriptionExistsAsync(topicName, subscriptionName))
+            if (await _managementClient.SubscriptionExistsAsync(topicName, subscriptionName))
+                return;
+            
+            try
+            {
                 await _managementClient.CreateSubscriptionAsync(new SubscriptionDescription(topicName, subscriptionName));
+            }
+            catch (MessagingEntityAlreadyExistsException)
+            {
+                //this might happen in concurrent environments, when several instances of the same service are launched simultaneously   
+                //so we just ignore it
+            }
         }
 
         private async Task CreateTopicIfNotExists(string topicName)
         {
-            if (!await _managementClient.TopicExistsAsync(topicName))
+            if (await _managementClient.TopicExistsAsync(topicName))
+                return;
+
+            try
+            {
                 await _managementClient.CreateTopicAsync(new TopicDescription(topicName)
                 {
                     RequiresDuplicateDetection = true
                 });
+            }
+            catch (MessagingEntityAlreadyExistsException)
+            {
+                //this might happen in concurrent environments, when several instances of the same service are launched simultaneously   
+                //so we just ignore it
+            }
         }
     }
 }
