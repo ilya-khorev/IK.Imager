@@ -1,5 +1,7 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using IK.Imager.Api.Configuration;
@@ -25,21 +27,30 @@ namespace IK.Imager.Api.Controllers
     public class UploadController : ControllerBase
     {
         private readonly ILogger<UploadController> _logger;
-        private readonly IImageMetadataReader _imageMetadataReader;
-        private readonly IImageStorage _imageStorage;
-        private readonly IImageMetadataStorage _imageMetadataStorage;
+        private readonly IImageMetadataReader _metadataReader;
+        private readonly IImageBlobStorage _blobStorage;
+        private readonly IImageMetadataStorage _metadataStorage;
         private readonly IEventBus _eventBus;
-        private readonly IOptions<ImageLimitationSettings> _imageLimitationSettings;
+        private readonly IOptions<ImageLimitationSettings> _limitationSettings;
+        private readonly HttpClient _httpClient;
 
+        private const string UnsupportedFormat = "Unsupported image format. Please use one of the following formats: {0}";
+        private const string IncorrectSize = "Image size must be between {0} and {1} bytes";
+        private const string IncorrectDimensions = "Image width must be between {0} and {1} px. Image height must be between {2} and {3} px.";
+        private const string IncorrectUrlFormat = "Image url is not well formed. It must be absolute url path.";
+        private const string CouldNotDownloadImage = "Couldn't download image by url {0}";
+        
         /// <inheritdoc />
-        public UploadController(ILogger<UploadController> logger, IImageMetadataReader imageMetadataReader, IImageStorage imageStorage, IImageMetadataStorage imageMetadataStorage, IEventBus eventBus, IOptions<ImageLimitationSettings> imageLimitationSettings)
+        public UploadController(ILogger<UploadController> logger, IImageMetadataReader metadataReader, IImageBlobStorage blobStorage, IImageMetadataStorage metadataStorage, 
+            IEventBus eventBus, IOptions<ImageLimitationSettings> limitationSettings, HttpClient httpClient)
         {
             _logger = logger;
-            _imageMetadataReader = imageMetadataReader;
-            _imageStorage = imageStorage;
-            _imageMetadataStorage = imageMetadataStorage;
+            _metadataReader = metadataReader;
+            _blobStorage = blobStorage;
+            _metadataStorage = metadataStorage;
             _eventBus = eventBus;
-            _imageLimitationSettings = imageLimitationSettings;
+            _limitationSettings = limitationSettings;
+            _httpClient = httpClient;
         }
 
         /// <summary>
@@ -55,7 +66,7 @@ namespace IK.Imager.Api.Controllers
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        //todo probably consider uploading using stream https://docs.microsoft.com/en-us/aspnet/core/mvc/models/file-uploads?view=aspnetcore-3.1#upload-large-files-with-streaming
+        //todo probably worth uploading using stream https://docs.microsoft.com/en-us/aspnet/core/mvc/models/file-uploads?view=aspnetcore-3.1#upload-large-files-with-streaming
         public async Task<ActionResult<ImageInfo>> PostWithStream(IFormFile file)
         {
             return await UploadImage(file.OpenReadStream());
@@ -70,7 +81,7 @@ namespace IK.Imager.Api.Controllers
         /// <returns>A model with short info about just uploaded image</returns>
         /// <response code="200">Returns the newly added image info</response>
         /// <response code="400">If the given image url is empty.
-        /// Or if the given image url is not well formatted.
+        /// Or if the given image url is not well formed.
         /// Or if the image is not found by the given image url.
         /// Or if the image size is greater or smaller then the system threshold values.
         /// Or if the image type is different from what the system supports.</response> 
@@ -80,19 +91,50 @@ namespace IK.Imager.Api.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<ActionResult<ImageInfo>> Post(UploadImageRequest uploadImageRequest)
         {
-            MemoryStream stream = new MemoryStream(); //todo
+            if (!Uri.IsWellFormedUriString(uploadImageRequest.ImageUrl, UriKind.Absolute))
+                return BadRequest(IncorrectUrlFormat);
 
+            Stream stream;
+            try
+            {
+                stream = await _httpClient.GetStreamAsync(uploadImageRequest.ImageUrl);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, CouldNotDownloadImage, uploadImageRequest.ImageUrl);
+                return BadRequest(string.Format(CouldNotDownloadImage, uploadImageRequest.ImageUrl));
+            }
+            
             return await UploadImage(stream);
         }
-
+        
         private async Task<ActionResult<ImageInfo>> UploadImage(Stream imageStream)
         {
-            var imageFormat = _imageMetadataReader.DetectFormat(imageStream);
-            var imageSize = _imageMetadataReader.ReadSize(imageStream);
-            //todo check if size and format are in a range of provided in config
+            var imageFormat = _metadataReader.DetectFormat(imageStream); 
+            var limits = _limitationSettings.Value;
+            
+            if (imageFormat == null || !limits.Types.Contains(imageFormat.ImageType.ToString(), StringComparer.InvariantCultureIgnoreCase))
+                return BadRequestAndLog(string.Format(UnsupportedFormat, string.Join(",", limits.Types)));
 
-            var uploadImageResult = await _imageStorage.UploadImage(imageStream, ImageType.Original, imageFormat.MimeType, CancellationToken.None);
-            await _imageMetadataStorage.SetMetadata(new ImageMetadata
+            //todo if it's bmp, worth converting to png
+            
+            var imageSize = _metadataReader.ReadSize(imageStream);
+            var sizeLimits = limits.SizeBytes;
+            if (imageSize.Bytes > sizeLimits.Max || imageSize.Bytes < sizeLimits.Min)
+                return BadRequestAndLog(string.Format(IncorrectSize, sizeLimits.Min, sizeLimits.Max));
+
+            var widthLimits = limits.Width;
+            var heightLimits = limits.Height;
+            if (imageSize.Width > widthLimits.Max || imageSize.Width < widthLimits.Min || imageSize.Height > heightLimits.Max || imageSize.Height < heightLimits.Min)
+                return BadRequestAndLog(string.Format(IncorrectDimensions, widthLimits.Min, widthLimits.Max, heightLimits.Min, heightLimits.Max));
+
+            //Firstly, saving the image stream to the blob storage
+            var uploadImageResult = await _blobStorage.UploadImage(imageStream, ImageType.Original, imageFormat.MimeType, CancellationToken.None);
+            
+            //Next, saving the metadata object of this image
+            //When the program unexpectedly fails at this stage, there will be just a blob file not connected to any metadata object
+            //and therefore the image will be unavailable to the clients. In most cases it is just fine.
+            await _metadataStorage.SetMetadata(new ImageMetadata
             {
                 Id = uploadImageResult.Id,
                 DateAddedUtc = uploadImageResult.DateAdded.DateTime,
@@ -104,8 +146,14 @@ namespace IK.Imager.Api.Controllers
                 PartitionKey = "" //todo pass partitionKey
             }, CancellationToken.None);
             
-            //todo add additional config values and fill event model
-            await _eventBus.Publish("NewImages", new OriginalImageAddedIntegrationEvent());
+            //Once the image file and metadata object are saved, there is time to send a new message to the event bus topic
+            //If the program fails at this stage, this message is not sent and therefore thumbnails are not generated for the image. 
+            //Such cases are handled when requesting an image metadata object later by resending this event again.
+            await _eventBus.Publish("UploadedImages", new OriginalImageUploadedIntegrationEvent
+            {
+                ImageId = uploadImageResult.Id,
+                PartitionKey = "" //todo
+            });
             
             return Ok(new ImageInfo
             {
@@ -117,6 +165,12 @@ namespace IK.Imager.Api.Controllers
                 Width = imageSize.Width,
                 MimeType = imageFormat.MimeType
             });
+        }
+
+        private BadRequestObjectResult BadRequestAndLog(string message)
+        {
+            _logger.LogWarning(message);
+            return BadRequest(message);
         }
     }
 }

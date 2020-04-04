@@ -10,14 +10,14 @@ using Microsoft.Azure.Storage.Blob;
 
 namespace IK.Imager.ImageStorage.AzureFiles
 {
-    public class ImageAzureStorage : IImageStorage
+    public class ImageBlobAzureStorage : IImageBlobStorage
     {
         private readonly CloudBlobClient _cloudBlobClient;
 
         private readonly Lazy<CloudBlobContainer> _imagesContainer;
         private readonly Lazy<CloudBlobContainer> _thumbnailsContainer;
 
-        public ImageAzureStorage(ImageAzureStorageConfiguration configuration)
+        public ImageBlobAzureStorage(ImageAzureStorageConfiguration configuration)
         {
             ArgumentHelper.AssertNotNull(nameof(configuration), configuration);
 

@@ -8,7 +8,7 @@ namespace IK.Imager.Api.Contract
     public class UploadImageRequest
     {
         /// <summary>
-        /// Image url
+        /// Absolute image url
         /// </summary>
         [Required]
         public string ImageUrl { get; set; }

@@ -51,13 +51,12 @@ namespace IK.Imager.Api
                 c.SwaggerDoc("v1.0", new OpenApiInfo {Title = "IK.Image API", Version = "v1.0"});
                 c.IncludeXmlComments(XmlCommentsFilePath);
             });
-
             
             RegisterConfigurations(services);
 
             services.AddSingleton<IEventBus, ServiceBus>();
             services.AddSingleton<IImageMetadataStorage, ImageMetadataCosmosDbStorage>();
-            services.AddSingleton<IImageStorage, ImageAzureStorage>();
+            services.AddSingleton<IImageBlobStorage, ImageBlobAzureStorage>();
             services.AddSingleton<IImageMetadataReader, ImageMetadataReader>();
             
             services.AddHealthChecks(); //todo
@@ -66,10 +65,10 @@ namespace IK.Imager.Api
 
         private void RegisterConfigurations(IServiceCollection services)
         {
-            services.Configure<ImageLimitationSettings>(Configuration.GetSection(nameof(ImageLimitationSettings)));
+            services.Configure<ImageLimitationSettings>(Configuration.GetSection("ImageLimitations"));
             services.AddSingleton(resolver => resolver.GetRequiredService<IOptions<ImageLimitationSettings>>().Value);
 
-            services.Configure<ServiceBusSettings>(Configuration.GetSection(nameof(ServiceBusSettings)));
+            services.Configure<ServiceBusSettings>(Configuration.GetSection("ServiceBus"));
             services.AddSingleton(resolver => resolver.GetRequiredService<IOptions<ServiceBusSettings>>().Value);
         }
 
@@ -127,9 +126,7 @@ namespace IK.Imager.Api
                     }
                 );
             });
-
-            app.UseAuthorization();
-
+            
             app.UseEndpoints(endpoints => { endpoints.MapControllers(); });
         }
     }

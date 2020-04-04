@@ -12,7 +12,7 @@ namespace IK.Imager.Storage.Abstractions.Storage
     /// 2) downloading the previously saved images
     /// 3) removing the previously saved images
     /// </summary>
-    public interface IImageStorage
+    public interface IImageBlobStorage
     {
         /// <summary>
         /// Upload and save a new image.
