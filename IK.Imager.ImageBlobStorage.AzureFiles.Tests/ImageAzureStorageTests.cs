@@ -21,7 +21,13 @@ namespace IK.Imager.ImageStorage.AzureFiles.Tests
 
         public ImageAzureStorageTests()
         {
-            ImageAzureStorageConfiguration configuration = new ImageAzureStorageConfiguration("UseDevelopmentStorage=true", "images", "thumbnails");
+            ImageAzureStorageConfiguration configuration =
+                new ImageAzureStorageConfiguration
+                {
+                    ConnectionString = "UseDevelopmentStorage=true",
+                    ImagesContainerName = "images",
+                    ThumbnailsContainerName = "thumbnails"
+                };
             _imageBlobAzureStorage = new ImageBlobAzureStorage(configuration);
         }
 

@@ -70,6 +70,12 @@ namespace IK.Imager.Api
 
             services.Configure<ServiceBusSettings>(Configuration.GetSection("ServiceBus"));
             services.AddSingleton(resolver => resolver.GetRequiredService<IOptions<ServiceBusSettings>>().Value);
+            
+            services.Configure<ImageAzureStorageConfiguration>(Configuration.GetSection("ImageBlobsAzureStorage"));
+            services.AddSingleton(resolver => resolver.GetRequiredService<IOptions<ImageAzureStorageConfiguration>>().Value);
+            
+            services.Configure<ImageMetadataCosmosDbStorageConfiguration>(Configuration.GetSection("ImageMetadataCosmosDbStorage"));
+            services.AddSingleton(resolver => resolver.GetRequiredService<IOptions<ImageMetadataCosmosDbStorageConfiguration>>().Value);
         }
 
         private void SetupAppInsights(IServiceCollection services)
