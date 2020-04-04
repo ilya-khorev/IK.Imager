@@ -11,7 +11,7 @@ using IK.Imager.Core.Abstractions;
 using IK.Imager.EventBus.Abstractions;
 using IK.Imager.EventBus.AzureServiceBus;
 using IK.Imager.ImageMetadataStorage.CosmosDB;
-using IK.Imager.ImageStorage.AzureFiles;
+using IK.Imager.ImageBlobStorage.AzureFiles;
 using IK.Imager.Storage.Abstractions.Storage;
 using Microsoft.ApplicationInsights.AspNetCore.Extensions;
 using Microsoft.ApplicationInsights.Extensibility.PerfCounterCollector.QuickPulse;

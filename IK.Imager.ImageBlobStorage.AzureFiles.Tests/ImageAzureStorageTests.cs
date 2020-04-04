@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using IK.Imager.ImageBlobStorage.AzureFiles;
 using IK.Imager.Storage.Abstractions.Models;
 using Xunit;
 

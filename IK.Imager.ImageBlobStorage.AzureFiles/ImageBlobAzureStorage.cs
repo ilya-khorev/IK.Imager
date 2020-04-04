@@ -8,7 +8,7 @@ using IK.Imager.Utils;
 using Microsoft.Azure.Storage;
 using Microsoft.Azure.Storage.Blob;
 
-namespace IK.Imager.ImageStorage.AzureFiles
+namespace IK.Imager.ImageBlobStorage.AzureFiles
 {
     public class ImageBlobAzureStorage : IImageBlobStorage
     {

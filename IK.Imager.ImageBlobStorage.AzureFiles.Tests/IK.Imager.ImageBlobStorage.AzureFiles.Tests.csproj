@@ -6,6 +6,8 @@
         <IsPackable>false</IsPackable>
 
         <LangVersion>8</LangVersion>
+
+        <RootNamespace>IK.Imager.ImageStorage.AzureFiles.Tests</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
@@ -28,7 +30,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\IK.Imager.ImageStorage.AzureFiles\IK.Imager.ImageStorage.AzureFiles.csproj" />
+      <ProjectReference Include="..\IK.Imager.ImageBlobStorage.AzureFiles\IK.Imager.ImageBlobStorage.AzureFiles.csproj" />
     </ItemGroup>
 
 </Project>
