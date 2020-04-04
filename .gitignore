@@ -1,4 +1,6 @@
 bin/
 obj/
-/packages/
-/.idea/
+**/packages/*
+**/.idea/*
+[Ll]og/
+*.DotSettings.user
