@@ -49,10 +49,8 @@ namespace IK.Imager.Api.Filters
                     Messages = new[] {"Error occured. Please try again later."}
                 };
 
-                if (_env.IsDevelopment())
-                {
-                    json.DeveloperMessage = context.Exception;
-                }
+                if (_env.IsDevelopment()) 
+                    json.DeveloperMessage = context.Exception.ToString();
 
                 context.Result = new BadRequestObjectResult(JsonConvert.SerializeObject(json));
                 context.HttpContext.Response.StatusCode = (int) HttpStatusCode.InternalServerError;
@@ -72,6 +70,6 @@ namespace IK.Imager.Api.Filters
         /// <summary>
         /// Debug information (inner exception)
         /// </summary>
-        public object DeveloperMessage { get; set; }
+        public string DeveloperMessage { get; set; }
     }
 }

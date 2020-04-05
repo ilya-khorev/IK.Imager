@@ -25,8 +25,8 @@ namespace IK.Imager.ImageBlobStorage.AzureFiles
 
             _cloudBlobClient = storageAccount.CreateCloudBlobClient();
 
-            _imagesContainer = new Lazy<CloudBlobContainer>(() => CreateCloudBlobContainer(configuration.ImagesContainerName));
-            _thumbnailsContainer = new Lazy<CloudBlobContainer>(() => CreateCloudBlobContainer(configuration.ThumbnailsContainerName));
+            _imagesContainer = new Lazy<CloudBlobContainer>(() => CreateCloudBlobContainer(configuration.ImagesContainerName.ToLowerInvariant()));
+            _thumbnailsContainer = new Lazy<CloudBlobContainer>(() => CreateCloudBlobContainer(configuration.ThumbnailsContainerName.ToLowerInvariant()));
         }
 
         //todo support cdn urls 

@@ -1,11 +1,11 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
-using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using IK.Imager.Api.Configuration;
 using IK.Imager.Api.Contract;
+using IK.Imager.Api.Services;
 using IK.Imager.Core.Abstractions;
 using IK.Imager.Core.Abstractions.IntegrationEvents;
 using IK.Imager.EventBus.Abstractions;
@@ -32,7 +32,7 @@ namespace IK.Imager.Api.Controllers
         private readonly IImageMetadataStorage _metadataStorage;
         private readonly IEventBus _eventBus;
         private readonly IOptions<ImageLimitationSettings> _limitationSettings;
-        private readonly HttpClient _httpClient;
+        private readonly ImageDownloadClient _imageDownloadClient;
 
         private const string UnsupportedFormat = "Unsupported image format. Please use one of the following formats: {0}";
         private const string IncorrectSize = "Image size must be between {0} and {1} bytes";
@@ -42,7 +42,7 @@ namespace IK.Imager.Api.Controllers
         
         /// <inheritdoc />
         public UploadController(ILogger<UploadController> logger, IImageMetadataReader metadataReader, IImageBlobStorage blobStorage, IImageMetadataStorage metadataStorage, 
-            IEventBus eventBus, IOptions<ImageLimitationSettings> limitationSettings, HttpClient httpClient)
+            IEventBus eventBus, IOptions<ImageLimitationSettings> limitationSettings, ImageDownloadClient imageDownloadClient)
         {
             _logger = logger;
             _metadataReader = metadataReader;
@@ -50,7 +50,7 @@ namespace IK.Imager.Api.Controllers
             _metadataStorage = metadataStorage;
             _eventBus = eventBus;
             _limitationSettings = limitationSettings;
-            _httpClient = httpClient;
+            _imageDownloadClient = imageDownloadClient;
         }
 
         /// <summary>
@@ -69,7 +69,8 @@ namespace IK.Imager.Api.Controllers
         //todo probably worth uploading using stream https://docs.microsoft.com/en-us/aspnet/core/mvc/models/file-uploads?view=aspnetcore-3.1#upload-large-files-with-streaming
         public async Task<ActionResult<ImageInfo>> PostWithStream(IFormFile file)
         {
-            return await UploadImage(file.OpenReadStream());
+            string partitionKey = "123"; //todo
+            return await UploadImage(file.OpenReadStream(), partitionKey);
         }
         
         /// <summary>
@@ -94,21 +95,14 @@ namespace IK.Imager.Api.Controllers
             if (!Uri.IsWellFormedUriString(uploadImageRequest.ImageUrl, UriKind.Absolute))
                 return BadRequest(IncorrectUrlFormat);
 
-            Stream stream;
-            try
-            {
-                stream = await _httpClient.GetStreamAsync(uploadImageRequest.ImageUrl);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, CouldNotDownloadImage, uploadImageRequest.ImageUrl);
-                return BadRequest(string.Format(CouldNotDownloadImage, uploadImageRequest.ImageUrl));
-            }
-            
-            return await UploadImage(stream);
+            var imageStream = await _imageDownloadClient.GetMemoryStream(uploadImageRequest.ImageUrl);
+            if (imageStream == null)
+                return BadRequestAndLog(string.Format(CouldNotDownloadImage, uploadImageRequest.ImageUrl));
+
+            return await UploadImage(imageStream, uploadImageRequest.PartitionKey);
         }
         
-        private async Task<ActionResult<ImageInfo>> UploadImage(Stream imageStream)
+        private async Task<ActionResult<ImageInfo>> UploadImage(Stream imageStream, string partitionKey)
         {
             var imageFormat = _metadataReader.DetectFormat(imageStream); 
             var limits = _limitationSettings.Value;
@@ -130,6 +124,9 @@ namespace IK.Imager.Api.Controllers
 
             //Firstly, saving the image stream to the blob storage
             var uploadImageResult = await _blobStorage.UploadImage(imageStream, ImageType.Original, imageFormat.MimeType, CancellationToken.None);
+
+            //image stream is no longer needed
+            await imageStream.DisposeAsync();
             
             //Next, saving the metadata object of this image
             //When the program unexpectedly fails at this stage, there will be just a blob file not connected to any metadata object
@@ -143,7 +140,7 @@ namespace IK.Imager.Api.Controllers
                 MD5Hash = uploadImageResult.MD5Hash,
                 SizeBytes = imageSize.Bytes,
                 MimeType = imageFormat.MimeType,
-                PartitionKey = "" //todo pass partitionKey
+                PartitionKey = partitionKey 
             }, CancellationToken.None);
             
             //Once the image file and metadata object are saved, there is time to send a new message to the event bus topic
@@ -152,7 +149,7 @@ namespace IK.Imager.Api.Controllers
             await _eventBus.Publish("UploadedImages", new OriginalImageUploadedIntegrationEvent
             {
                 ImageId = uploadImageResult.Id,
-                PartitionKey = "" //todo
+                PartitionKey = partitionKey 
             });
             
             return Ok(new ImageInfo

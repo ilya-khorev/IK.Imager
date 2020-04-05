@@ -1,11 +1,9 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Reflection;
-using System.Threading.Tasks;
 using IK.Imager.Api.Configuration;
 using IK.Imager.Api.Filters;
+using IK.Imager.Api.Services;
 using IK.Imager.Core;
 using IK.Imager.Core.Abstractions;
 using IK.Imager.EventBus.Abstractions;
@@ -17,14 +15,13 @@ using Microsoft.ApplicationInsights.AspNetCore.Extensions;
 using Microsoft.ApplicationInsights.Extensibility.PerfCounterCollector.QuickPulse;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.HttpsPolicy;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
+using Polly;
+using Polly.Extensions.Http;
 
 #pragma warning disable 1591
 
@@ -58,6 +55,10 @@ namespace IK.Imager.Api
             services.AddSingleton<IImageMetadataStorage, ImageMetadataCosmosDbStorage>();
             services.AddSingleton<IImageBlobStorage, ImageBlobAzureStorage>();
             services.AddSingleton<IImageMetadataReader, ImageMetadataReader>();
+            
+            services.AddHttpClient<ImageDownloadClient>()
+                .AddTransientHttpErrorPolicy(p => 
+                    p.WaitAndRetryAsync(3, _ => TimeSpan.FromMilliseconds(600)));
             
             services.AddHealthChecks(); //todo
             SetupAppInsights(services);
@@ -105,23 +106,17 @@ namespace IK.Imager.Api
                 return xmlPath;
             }
         }
-
-        //todo add versioning
-
+        
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
-            if (env.IsDevelopment())
-            {
+            if (env.IsDevelopment()) 
                 app.UseDeveloperExceptionPage();
-            }
 
             app.UseHttpsRedirection();
-
             app.UseRouting();
 
             app.UseSwagger(c => { c.SerializeAsV2 = true; });
-
             app.UseSwaggerUI(c =>
             {
                 app.UseSwaggerUI(
