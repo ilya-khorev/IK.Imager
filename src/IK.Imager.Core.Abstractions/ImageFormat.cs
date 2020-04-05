@@ -21,5 +21,10 @@
         public string MimeType { get; }
         
         public ImageType ImageType { get; }
+
+        public override string ToString()
+        {
+            return $"FileExtension:{FileExtension}, MimeType:{MimeType}, ImageType:{MimeType}";
+        }
     }
 }

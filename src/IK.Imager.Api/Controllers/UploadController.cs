@@ -34,11 +34,11 @@ namespace IK.Imager.Api.Controllers
         private readonly IOptions<ImageLimitationSettings> _limitationSettings;
         private readonly ImageDownloadClient _imageDownloadClient;
 
-        private const string UnsupportedFormat = "Unsupported image format. Please use one of the following formats: {0}";
-        private const string IncorrectSize = "Image size must be between {0} and {1} bytes";
+        private const string UnsupportedFormat = "Unsupported image format. Please use one of the following formats: {0}.";
+        private const string IncorrectSize = "Image size must be between {0} and {1} bytes.";
         private const string IncorrectDimensions = "Image width must be between {0} and {1} px. Image height must be between {2} and {3} px.";
         private const string IncorrectUrlFormat = "Image url is not well formed. It must be absolute url path.";
-        private const string CouldNotDownloadImage = "Couldn't download image by url {0}";
+        private const string CouldNotDownloadImage = "Couldn't download image by url {0}.";
         
         /// <inheritdoc />
         public UploadController(ILogger<UploadController> logger, IImageMetadataReader metadataReader, IImageBlobStorage blobStorage, IImageMetadataStorage metadataStorage, 
@@ -73,6 +73,12 @@ namespace IK.Imager.Api.Controllers
             return await UploadImage(file.OpenReadStream(), partitionKey);
         }
         
+        private const string DownloadedByUrl = "Downloaded by url {0}.";
+        private const string CheckingImage = "Starting to check the image.";
+        private const string UploadedToBlobStorage = "Uploaded the image to the blob storage, id={0}.";
+        private const string UploadedToMetadataStorage = "Saved metadata for the current image.";
+        private const string UploadedImage = "Image {0} has been uploaded.";
+            
         /// <summary>
         /// Upload a new image using the given image url.
         /// After uploading the image, the system launches the asynchronous process of thumbnails generating.
@@ -99,12 +105,18 @@ namespace IK.Imager.Api.Controllers
             if (imageStream == null)
                 return BadRequestAndLog(string.Format(CouldNotDownloadImage, uploadImageRequest.ImageUrl));
 
+            _logger.LogDebug(DownloadedByUrl, uploadImageRequest.ImageUrl);
+            
             return await UploadImage(imageStream, uploadImageRequest.PartitionKey);
         }
         
         private async Task<ActionResult<ImageInfo>> UploadImage(Stream imageStream, string partitionKey)
         {
+            _logger.LogDebug(CheckingImage);
             var imageFormat = _metadataReader.DetectFormat(imageStream); 
+            if (imageFormat != null)
+                _logger.LogDebug(imageFormat.ToString());
+            
             var limits = _limitationSettings.Value;
             
             if (imageFormat == null || !limits.Types.Contains(imageFormat.ImageType.ToString(), StringComparer.InvariantCultureIgnoreCase))
@@ -113,19 +125,17 @@ namespace IK.Imager.Api.Controllers
             //todo if it's bmp, worth converting to png
             
             var imageSize = _metadataReader.ReadSize(imageStream);
-            var sizeLimits = limits.SizeBytes;
-            if (imageSize.Bytes > sizeLimits.Max || imageSize.Bytes < sizeLimits.Min)
-                return BadRequestAndLog(string.Format(IncorrectSize, sizeLimits.Min, sizeLimits.Max));
+            _logger.LogDebug(imageSize.ToString());
 
-            var widthLimits = limits.Width;
-            var heightLimits = limits.Height;
-            if (imageSize.Width > widthLimits.Max || imageSize.Width < widthLimits.Min || imageSize.Height > heightLimits.Max || imageSize.Height < heightLimits.Min)
-                return BadRequestAndLog(string.Format(IncorrectDimensions, widthLimits.Min, widthLimits.Max, heightLimits.Min, heightLimits.Max));
-
+            string sizeValidationError = ValidateSize(imageSize, limits);
+            if (sizeValidationError != null)
+                return BadRequestAndLog(sizeValidationError);
+            
             //Firstly, saving the image stream to the blob storage
             var uploadImageResult = await _blobStorage.UploadImage(imageStream, ImageType.Original, imageFormat.MimeType, CancellationToken.None);
-
-            //image stream is no longer needed
+            _logger.LogDebug(UploadedToBlobStorage, uploadImageResult.Id);
+            
+            //Image stream is no longer needed at this stage
             await imageStream.DisposeAsync();
             
             //Next, saving the metadata object of this image
@@ -142,6 +152,7 @@ namespace IK.Imager.Api.Controllers
                 MimeType = imageFormat.MimeType,
                 PartitionKey = partitionKey 
             }, CancellationToken.None);
+            _logger.LogDebug(UploadedToMetadataStorage);
             
             //Once the image file and metadata object are saved, there is time to send a new message to the event bus topic
             //If the program fails at this stage, this message is not sent and therefore thumbnails are not generated for the image. 
@@ -151,6 +162,8 @@ namespace IK.Imager.Api.Controllers
                 ImageId = uploadImageResult.Id,
                 PartitionKey = partitionKey 
             });
+
+            _logger.LogInformation(UploadedImage, uploadImageResult.Id);
             
             return Ok(new ImageInfo
             {
@@ -163,6 +176,18 @@ namespace IK.Imager.Api.Controllers
                 Width = imageSize.Width,
                 MimeType = imageFormat.MimeType
             });
+        }
+
+        private string ValidateSize(ImageSize imageSize, ImageLimitationSettings limits)
+        {
+            if (imageSize.Bytes > limits.SizeBytes.Max || imageSize.Bytes < limits.SizeBytes.Min)
+                return string.Format(IncorrectSize, limits.SizeBytes.Min, limits.SizeBytes.Max);
+            
+            if (imageSize.Width > limits.Width.Max || imageSize.Width < limits.Width.Min || 
+                imageSize.Height > limits.Height.Max || imageSize.Height < limits.Height.Min)
+                return string.Format(IncorrectDimensions, limits.Width.Min, limits.Width.Max, limits.Height.Min, limits.Height.Max);
+
+            return null;
         }
 
         private BadRequestObjectResult BadRequestAndLog(string message)

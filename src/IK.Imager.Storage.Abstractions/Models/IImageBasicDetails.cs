@@ -33,5 +33,11 @@ namespace IK.Imager.Storage.Abstractions.Models
         /// Date when an image was added to storage
         /// </summary>
         DateTime DateAddedUtc { get; set; }
+        
+        /// <summary>
+        /// Standard that indicates the nature and format of a file.
+        /// E.g. 'image/jpeg', 'image/png', 'image/bmp', 'image/gif'
+        /// </summary>
+        string MimeType { get; set; } 
     }
 }

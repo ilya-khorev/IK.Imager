@@ -21,7 +21,6 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
 using Polly;
-using Polly.Extensions.Http;
 
 #pragma warning disable 1591
 

@@ -11,7 +11,7 @@ namespace IK.Imager.Storage.Abstractions.Models
         public int Width { get; set; }
         public int Height { get; set; }
         public DateTime DateAddedUtc { get; set; }
-
+        public string MimeType { get; set; } 
         public bool Equals(ImageThumbnail other)
         {
             if (ReferenceEquals(null, other))
@@ -24,6 +24,7 @@ namespace IK.Imager.Storage.Abstractions.Models
                    && MD5Hash == other.MD5Hash
                    && Width == other.Width
                    && Height == other.Height
+                   && MimeType == other.MimeType
                    && DateAddedUtc.Equals(other.DateAddedUtc);
         }
 
@@ -45,6 +46,7 @@ namespace IK.Imager.Storage.Abstractions.Models
                 var hashCode = Id != null ? Id.GetHashCode() : 0;
                 hashCode = (int)((hashCode * 397) ^ SizeBytes);
                 hashCode = (hashCode * 397) ^ (MD5Hash != null ? MD5Hash.GetHashCode() : 0);
+                hashCode = (hashCode * 397) ^ (MimeType != null ? MimeType.GetHashCode() : 0);
                 hashCode = (hashCode * 397) ^ Width;
                 hashCode = (hashCode * 397) ^ Height;
                 hashCode = (hashCode * 397) ^ DateAddedUtc.GetHashCode();
