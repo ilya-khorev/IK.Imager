@@ -157,6 +157,7 @@ namespace IK.Imager.Api.Controllers
             //Once the image file and metadata object are saved, there is time to send a new message to the event bus topic
             //If the program fails at this stage, this message is not sent and therefore thumbnails are not generated for the image. 
             //Such cases are handled when requesting an image metadata object later by resending this event again.
+            //todo move topic to config
             await _eventBus.Publish("UploadedImages", new OriginalImageUploadedIntegrationEvent
             {
                 ImageId = uploadImageResult.Id,

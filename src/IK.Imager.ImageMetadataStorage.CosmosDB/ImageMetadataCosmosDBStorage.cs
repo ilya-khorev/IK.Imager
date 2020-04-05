@@ -64,7 +64,7 @@ namespace IK.Imager.ImageMetadataStorage.CosmosDB
 
             var queryIterator = container
                 .GetItemLinqQueryable<ImageMetadata>(requestOptions: queryRequestOptions)
-                .Where(x => imageIds.Contains(x.Id) && !x.Deleted)
+                .Where(x => imageIds.Contains(x.Id))
                 .ToFeedIterator();
 
             List<ImageMetadata> result = new List<ImageMetadata>();

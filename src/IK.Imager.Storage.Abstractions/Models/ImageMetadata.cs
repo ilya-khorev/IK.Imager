@@ -40,28 +40,22 @@ namespace IK.Imager.Storage.Abstractions.Models
         /// </summary>
         public ImageThumbnail[] Thumbnails { get; set; }
         
-        /// <summary>
-        /// This flag indicates that the image is removed, so that all the related resources should be cleared up asynchronously 
-        /// </summary>
-        public bool Deleted { get; set; }
-
         public bool Equals(ImageMetadata other)
         {
             if (ReferenceEquals(null, other)) 
                 return false;
             if (ReferenceEquals(this, other))
                 return true;
-            
-            bool primitivePropertiesEqual = PartitionKey == other.PartitionKey 
-                   && Id == other.Id
-                   && SizeBytes == other.SizeBytes 
-                   && MD5Hash == other.MD5Hash 
-                   && Width == other.Width 
-                   && Height == other.Height 
-                   && DateAddedUtc.Equals(other.DateAddedUtc)
-                   && Name == other.Name 
-                   && MimeType == other.MimeType
-                   && Deleted == other.Deleted;
+
+            bool primitivePropertiesEqual = PartitionKey == other.PartitionKey
+                                            && Id == other.Id
+                                            && SizeBytes == other.SizeBytes
+                                            && MD5Hash == other.MD5Hash
+                                            && Width == other.Width
+                                            && Height == other.Height
+                                            && DateAddedUtc.Equals(other.DateAddedUtc)
+                                            && Name == other.Name
+                                            && MimeType == other.MimeType;
 
             bool tagsEqual = true;
             if (Tags != null && other.Tags != null && Tags.Count == other.Tags.Count)
@@ -131,7 +125,6 @@ namespace IK.Imager.Storage.Abstractions.Models
                 hashCode = (hashCode * 397) ^ (MimeType != null ? MimeType.GetHashCode() : 0);
                 hashCode = (hashCode * 397) ^ (Tags != null ? Tags.GetHashCode() : 0);
                 hashCode = (hashCode * 397) ^ (Thumbnails != null ? Thumbnails.GetHashCode() : 0);
-                hashCode = (hashCode * 397) ^ Deleted.GetHashCode();
                 return hashCode;
             }
         }

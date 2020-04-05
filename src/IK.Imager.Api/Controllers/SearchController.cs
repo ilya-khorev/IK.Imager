@@ -18,7 +18,7 @@ namespace IK.Imager.Api.Controllers
     [Route("[controller]")]
     public class SearchController : ControllerBase
     {
-        private readonly ILogger<UploadController> _logger;
+        private readonly ILogger<SearchController> _logger;
         private readonly IImageMetadataStorage _metadataStorage;
         private readonly IImageBlobStorage _blobStorage;
         private readonly IEventBus _eventBus;
@@ -27,7 +27,7 @@ namespace IK.Imager.Api.Controllers
         private const string FoundImages = "Found {0} image(s) for requested {1} image id(s)";
         
         /// <inheritdoc />
-        public SearchController(ILogger<UploadController> logger, IImageMetadataStorage metadataStorage, IImageBlobStorage blobStorage, IEventBus eventBus)
+        public SearchController(ILogger<SearchController> logger, IImageMetadataStorage metadataStorage, IImageBlobStorage blobStorage, IEventBus eventBus)
         {
             _logger = logger;
             _metadataStorage = metadataStorage;
