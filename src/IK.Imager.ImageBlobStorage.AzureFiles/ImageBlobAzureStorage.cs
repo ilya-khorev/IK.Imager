@@ -70,7 +70,8 @@ namespace IK.Imager.ImageBlobStorage.AzureFiles
             {
                 Id = id,
                 MD5Hash = blockBlob.Properties.ContentMD5,
-                DateAdded = blockBlob.Properties.Created ?? DateTimeOffset.Now
+                DateAdded = blockBlob.Properties.Created ?? DateTimeOffset.Now,
+                Url = blockBlob.Uri
             };
         }
 

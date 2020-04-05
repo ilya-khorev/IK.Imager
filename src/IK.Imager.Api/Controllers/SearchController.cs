@@ -1,7 +1,11 @@
 ﻿using System.Threading.Tasks;
 using IK.Imager.Api.Contract;
+using IK.Imager.Core.Abstractions;
+using IK.Imager.EventBus.Abstractions;
+using IK.Imager.Storage.Abstractions.Storage;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 
 namespace IK.Imager.Api.Controllers
 {
@@ -12,6 +16,19 @@ namespace IK.Imager.Api.Controllers
     [Route("[controller]")]
     public class SearchController : ControllerBase
     {
+        private readonly ILogger<UploadController> _logger;
+        private readonly IImageMetadataStorage _metadataStorage;
+        private readonly IImageBlobStorage _blobStorage;
+        private readonly IEventBus _eventBus;
+
+        public SearchController(ILogger<UploadController> logger, IImageMetadataStorage metadataStorage, IImageBlobStorage blobStorage, IEventBus eventBus)
+        {
+            _logger = logger;
+            _metadataStorage = metadataStorage;
+            _blobStorage = blobStorage;
+            _eventBus = eventBus;
+        }
+        
         /// <summary>
         /// Search for set of images by image ids
         /// </summary>

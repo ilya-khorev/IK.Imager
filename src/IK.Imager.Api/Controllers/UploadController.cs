@@ -157,6 +157,7 @@ namespace IK.Imager.Api.Controllers
                 Id = uploadImageResult.Id,
                 Hash = uploadImageResult.MD5Hash,
                 DateAdded = uploadImageResult.DateAdded,
+                Url = uploadImageResult.Url.ToString(),
                 Bytes = imageSize.Bytes,
                 Height = imageSize.Height,
                 Width = imageSize.Width,
