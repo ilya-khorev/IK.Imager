@@ -15,7 +15,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\IK.Imager.ImageMetadataStorage.CosmosDB\IK.Imager.ImageMetadataStorage.CosmosDB.csproj" />
+      <ProjectReference Include="..\..\IK.Imager.ImageMetadataStorage.CosmosDB\IK.Imager.ImageMetadataStorage.CosmosDB.csproj" />
     </ItemGroup>
 
 </Project>

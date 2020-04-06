@@ -4,15 +4,15 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IK.Imager.Storage.Abstracti
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IK.Imager.Core", "IK.Imager.Core\IK.Imager.Core.csproj", "{0874CA46-71AE-45A6-8F70-A0504A93DF86}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IK.Imager.Core.Tests", "IK.Imager.Core.Tests\IK.Imager.Core.Tests.csproj", "{2BB24B35-D519-44D0-923E-38E620327A3D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IK.Imager.Core.Tests", "Tests\IK.Imager.Core.Tests\IK.Imager.Core.Tests.csproj", "{2BB24B35-D519-44D0-923E-38E620327A3D}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IK.Imager.ImageBlobStorage.AzureFiles", "IK.Imager.ImageBlobStorage.AzureFiles\IK.Imager.ImageBlobStorage.AzureFiles.csproj", "{C94D12E8-8F9A-48F5-B571-830297F877A9}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IK.Imager.ImageMetadataStorage.CosmosDB", "IK.Imager.ImageMetadataStorage.CosmosDB\IK.Imager.ImageMetadataStorage.CosmosDB.csproj", "{F0B18045-1334-4C66-AF6D-3DBEC56818AC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IK.Imager.ImageBlobStorage.AzureFiles.Tests", "IK.Imager.ImageBlobStorage.AzureFiles.Tests\IK.Imager.ImageBlobStorage.AzureFiles.Tests.csproj", "{62FB047E-D679-4C40-B4B1-F67AAF25368D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IK.Imager.ImageBlobStorage.AzureFiles.Tests", "Tests\IK.Imager.ImageBlobStorage.AzureFiles.Tests\IK.Imager.ImageBlobStorage.AzureFiles.Tests.csproj", "{62FB047E-D679-4C40-B4B1-F67AAF25368D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IK.Imager.ImageMetadataStorage.CosmosDB.Tests", "IK.Imager.ImageMetadataStorage.CosmosDB.Tests\IK.Imager.ImageMetadataStorage.CosmosDB.Tests.csproj", "{3082EDCA-57E0-4A3C-B01F-034A61B0DB8E}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IK.Imager.ImageMetadataStorage.CosmosDB.Tests", "Tests\IK.Imager.ImageMetadataStorage.CosmosDB.Tests\IK.Imager.ImageMetadataStorage.CosmosDB.Tests.csproj", "{3082EDCA-57E0-4A3C-B01F-034A61B0DB8E}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IK.Imager.Utils", "IK.Imager.Utils\IK.Imager.Utils.csproj", "{C827FDEA-BDBD-4A90-9A88-4D4C743EB21B}"
 EndProject
@@ -25,6 +25,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IK.Imager.EventBus.AzureServiceBus", "IK.Imager.EventBus.AzureServiceBus\IK.Imager.EventBus.AzureServiceBus.csproj", "{FF1F9008-7073-4141-9B8B-1B1A431772F5}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IK.Imager.Api", "IK.Imager.Api\IK.Imager.Api.csproj", "{7E9E39E6-FA5C-4902-9627-6B01D4249E46}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{AEE430E6-34A2-4F82-AF80-09C3DA083FB0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -84,5 +86,8 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{FFD71374-7A8E-4EFB-9EC1-851539B985B8} = {F8B26A7D-F287-461B-8722-E74F1C4288A0}
 		{FF1F9008-7073-4141-9B8B-1B1A431772F5} = {F8B26A7D-F287-461B-8722-E74F1C4288A0}
+		{62FB047E-D679-4C40-B4B1-F67AAF25368D} = {AEE430E6-34A2-4F82-AF80-09C3DA083FB0}
+		{2BB24B35-D519-44D0-923E-38E620327A3D} = {AEE430E6-34A2-4F82-AF80-09C3DA083FB0}
+		{3082EDCA-57E0-4A3C-B01F-034A61B0DB8E} = {AEE430E6-34A2-4F82-AF80-09C3DA083FB0}
 	EndGlobalSection
 EndGlobal

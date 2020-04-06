@@ -30,7 +30,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\IK.Imager.ImageBlobStorage.AzureFiles\IK.Imager.ImageBlobStorage.AzureFiles.csproj" />
+      <ProjectReference Include="..\..\IK.Imager.ImageBlobStorage.AzureFiles\IK.Imager.ImageBlobStorage.AzureFiles.csproj" />
     </ItemGroup>
 
 </Project>

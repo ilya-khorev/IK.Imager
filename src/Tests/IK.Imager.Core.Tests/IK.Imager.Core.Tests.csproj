@@ -60,7 +60,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\IK.Imager.Core\IK.Imager.Core.csproj" />
+      <ProjectReference Include="..\..\IK.Imager.Core\IK.Imager.Core.csproj" />
     </ItemGroup>
 
 </Project>
