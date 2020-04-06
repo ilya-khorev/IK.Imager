@@ -61,7 +61,7 @@ namespace IK.Imager.Api
             
             services.AddHttpClient<ImageDownloadClient>()
                 .AddTransientHttpErrorPolicy(p => 
-                    p.WaitAndRetryAsync(3, _ => TimeSpan.FromMilliseconds(600)));
+                    p.WaitAndRetryAsync(3, _ => TimeSpan.FromMilliseconds(500)));
             
             services.AddHealthChecks(); //todo
             SetupAppInsights(services);
@@ -90,6 +90,7 @@ namespace IK.Imager.Api
             ApplicationInsightsServiceOptions aiOptions = new ApplicationInsightsServiceOptions();
             var appInsightsDependencyConfigValue =
                 Configuration.GetValue<bool>("ApplicationInsights:EnableDependencyTrackingTelemetryModule");
+            //dependency tracking is disabled by default as it is quite expensive
             aiOptions.EnableDependencyTrackingTelemetryModule = appInsightsDependencyConfigValue;
 
             //by default instrumentation key is taken from config

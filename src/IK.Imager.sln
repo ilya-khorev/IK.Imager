@@ -28,6 +28,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IK.Imager.Api", "IK.Imager.
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{AEE430E6-34A2-4F82-AF80-09C3DA083FB0}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IK.Imager.BackgroundService", "IK.Imager.BackgroundService\IK.Imager.BackgroundService.csproj", "{89350D6E-D9AC-41F3-B580-0C5F7105FDB5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -82,6 +84,10 @@ Global
 		{7E9E39E6-FA5C-4902-9627-6B01D4249E46}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7E9E39E6-FA5C-4902-9627-6B01D4249E46}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7E9E39E6-FA5C-4902-9627-6B01D4249E46}.Release|Any CPU.Build.0 = Release|Any CPU
+		{89350D6E-D9AC-41F3-B580-0C5F7105FDB5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{89350D6E-D9AC-41F3-B580-0C5F7105FDB5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{89350D6E-D9AC-41F3-B580-0C5F7105FDB5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{89350D6E-D9AC-41F3-B580-0C5F7105FDB5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{FFD71374-7A8E-4EFB-9EC1-851539B985B8} = {F8B26A7D-F287-461B-8722-E74F1C4288A0}
