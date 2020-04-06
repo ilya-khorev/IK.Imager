@@ -6,6 +6,7 @@ using IK.Imager.Api.Filters;
 using IK.Imager.Api.Services;
 using IK.Imager.Core;
 using IK.Imager.Core.Abstractions;
+using IK.Imager.Core.Abstractions.IntegrationEvents;
 using IK.Imager.EventBus.Abstractions;
 using IK.Imager.EventBus.AzureServiceBus;
 using IK.Imager.ImageMetadataStorage.CosmosDB;
@@ -28,6 +29,9 @@ namespace IK.Imager.Api
 {
     public class Startup
     {
+        private const string ApiTitle = "IK.Imager API";
+        private const string CurrentVersion = "v1.0";
+        
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
@@ -44,7 +48,7 @@ namespace IK.Imager.Api
 
             services.AddSwaggerGen(c =>
             {
-                c.SwaggerDoc("v1.0", new OpenApiInfo {Title = "IK.Image API", Version = "v1.0"});
+                c.SwaggerDoc(CurrentVersion, new OpenApiInfo {Title = ApiTitle, Version = CurrentVersion});
                 c.IncludeXmlComments(XmlCommentsFilePath);
             });
             
@@ -71,11 +75,14 @@ namespace IK.Imager.Api
             services.Configure<ServiceBusSettings>(Configuration.GetSection("ServiceBus"));
             services.AddSingleton(resolver => resolver.GetRequiredService<IOptions<ServiceBusSettings>>().Value);
             
-            services.Configure<ImageAzureStorageConfiguration>(Configuration.GetSection("ImageBlobsAzureStorage"));
+            services.Configure<ImageAzureStorageConfiguration>(Configuration.GetSection("AzureStorage"));
             services.AddSingleton(resolver => resolver.GetRequiredService<IOptions<ImageAzureStorageConfiguration>>().Value);
             
-            services.Configure<ImageMetadataCosmosDbStorageConfiguration>(Configuration.GetSection("ImageMetadataCosmosDbStorage"));
+            services.Configure<ImageMetadataCosmosDbStorageConfiguration>(Configuration.GetSection("CosmosDb"));
             services.AddSingleton(resolver => resolver.GetRequiredService<IOptions<ImageMetadataCosmosDbStorageConfiguration>>().Value);
+            
+            services.Configure<TopicsConfiguration>(Configuration.GetSection("Topics"));
+            services.AddSingleton(resolver => resolver.GetRequiredService<IOptions<TopicsConfiguration>>().Value);
         }
 
         private void SetupAppInsights(IServiceCollection services)
@@ -121,7 +128,7 @@ namespace IK.Imager.Api
                 app.UseSwaggerUI(
                     options =>
                     {
-                        c.SwaggerEndpoint("/swagger/v1.0/swagger.json", "IK.Image API");
+                        c.SwaggerEndpoint($"/swagger/{CurrentVersion}/swagger.json", ApiTitle);
                         c.RoutePrefix = string.Empty;
                     }
                 );

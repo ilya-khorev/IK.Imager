@@ -7,6 +7,7 @@ using IK.Imager.Storage.Abstractions.Storage;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace IK.Imager.Api.Controllers
 {
@@ -20,16 +21,18 @@ namespace IK.Imager.Api.Controllers
         private readonly ILogger<DeleteController> _logger;
         private readonly IImageMetadataStorage _metadataStorage;
         private readonly IEventBus _eventBus;
+        private readonly IOptions<TopicsConfiguration> _topicsConfiguration;
 
         private const string MetadataRemoved = "Metadata removed for image {0}";
         private const string ImageNotFound = "Requested image with id {0} was not found";
         
         /// <inheritdoc />
-        public DeleteController(ILogger<DeleteController> logger, IImageMetadataStorage metadataStorage, IEventBus eventBus)
+        public DeleteController(ILogger<DeleteController> logger, IImageMetadataStorage metadataStorage, IEventBus eventBus,  IOptions<TopicsConfiguration> topicsConfiguration)
         {
             _logger = logger;
             _metadataStorage = metadataStorage;
             _eventBus = eventBus;
+            _topicsConfiguration = topicsConfiguration;
         }
         
         /// <summary>
@@ -51,8 +54,7 @@ namespace IK.Imager.Api.Controllers
             if (!deleted)
                 return NotFound(string.Format(ImageNotFound, deleteImageRequest.ImageId));
             
-            //todo move topic to config
-            await _eventBus.Publish("DeletedImages", new ImageDeletedIntegrationEvent
+            await _eventBus.Publish(_topicsConfiguration.Value.DeletedImagesTopicName, new ImageDeletedIntegrationEvent
             {
                 ImageId = deleteImageRequest.ImageId
             });

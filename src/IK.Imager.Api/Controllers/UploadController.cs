@@ -33,6 +33,7 @@ namespace IK.Imager.Api.Controllers
         private readonly IEventBus _eventBus;
         private readonly IOptions<ImageLimitationSettings> _limitationSettings;
         private readonly ImageDownloadClient _imageDownloadClient;
+        private readonly IOptions<TopicsConfiguration> _topicsConfiguration;
 
         private const string UnsupportedFormat = "Unsupported image format. Please use one of the following formats: {0}.";
         private const string IncorrectSize = "Image size must be between {0} and {1} bytes.";
@@ -42,7 +43,7 @@ namespace IK.Imager.Api.Controllers
         
         /// <inheritdoc />
         public UploadController(ILogger<UploadController> logger, IImageMetadataReader metadataReader, IImageBlobStorage blobStorage, IImageMetadataStorage metadataStorage, 
-            IEventBus eventBus, IOptions<ImageLimitationSettings> limitationSettings, ImageDownloadClient imageDownloadClient)
+            IEventBus eventBus, IOptions<ImageLimitationSettings> limitationSettings, ImageDownloadClient imageDownloadClient, IOptions<TopicsConfiguration> topicsConfiguration)
         {
             _logger = logger;
             _metadataReader = metadataReader;
@@ -51,6 +52,7 @@ namespace IK.Imager.Api.Controllers
             _eventBus = eventBus;
             _limitationSettings = limitationSettings;
             _imageDownloadClient = imageDownloadClient;
+            _topicsConfiguration = topicsConfiguration;
         }
 
         /// <summary>
@@ -157,8 +159,7 @@ namespace IK.Imager.Api.Controllers
             //Once the image file and metadata object are saved, there is time to send a new message to the event bus topic
             //If the program fails at this stage, this message is not sent and therefore thumbnails are not generated for the image. 
             //Such cases are handled when requesting an image metadata object later by resending this event again.
-            //todo move topic to config
-            await _eventBus.Publish("UploadedImages", new OriginalImageUploadedIntegrationEvent
+            await _eventBus.Publish(_topicsConfiguration.Value.UploadedImagesTopicName, new OriginalImageUploadedIntegrationEvent
             {
                 ImageId = uploadImageResult.Id,
                 PartitionKey = partitionKey 
