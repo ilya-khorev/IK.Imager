@@ -123,8 +123,6 @@ namespace IK.Imager.Api.Controllers
             
             if (imageFormat == null || !limits.Types.Contains(imageFormat.ImageType.ToString(), StringComparer.InvariantCultureIgnoreCase))
                 return BadRequestAndLog(string.Format(UnsupportedFormat, string.Join(",", limits.Types)));
-
-            //todo if it's bmp, worth converting to png
             
             var imageSize = _metadataReader.ReadSize(imageStream);
             _logger.LogDebug(imageSize.ToString());

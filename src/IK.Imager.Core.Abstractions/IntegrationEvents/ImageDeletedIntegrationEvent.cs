@@ -6,5 +6,6 @@ namespace IK.Imager.Core.Abstractions.IntegrationEvents
     {
         public override string MessageId => ImageId;
         public string ImageId { get; set; }
+        public string[] ThumbnailsIds { get; set; }
     }
 }

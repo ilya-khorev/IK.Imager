@@ -1,4 +1,5 @@
-﻿using System.Threading;
+﻿using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using IK.Imager.Api.Contract;
 using IK.Imager.Core.Abstractions.IntegrationEvents;
@@ -27,7 +28,7 @@ namespace IK.Imager.Api.Controllers
         private const string ImageNotFound = "Requested image with id {0} was not found";
         
         /// <inheritdoc />
-        public DeleteController(ILogger<DeleteController> logger, IImageMetadataStorage metadataStorage, IEventBus eventBus,  IOptions<TopicsConfiguration> topicsConfiguration)
+        public DeleteController(ILogger<DeleteController> logger, IImageMetadataStorage metadataStorage, IEventBus eventBus, IOptions<TopicsConfiguration> topicsConfiguration)
         {
             _logger = logger;
             _metadataStorage = metadataStorage;
@@ -37,7 +38,7 @@ namespace IK.Imager.Api.Controllers
         
         /// <summary>
         /// Register the image removal by the given image id. 
-        /// The system will remove the image file after a short delay.
+        /// The system will remove the original image and thumbnail files after a short delay.
         /// However, the image itself will stop to return in search results immediately after this call.  
         /// </summary>
         /// <returns></returns>
@@ -50,13 +51,16 @@ namespace IK.Imager.Api.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> Delete(DeleteImageRequest deleteImageRequest)
         {
-            bool deleted = await _metadataStorage.RemoveMetadata(deleteImageRequest.ImageId, deleteImageRequest.PartitionKey, CancellationToken.None);
-            if (!deleted)
+            var deletedMetadata = await _metadataStorage.RemoveMetadata(deleteImageRequest.ImageId, deleteImageRequest.PartitionKey, CancellationToken.None);
+            if (deletedMetadata == null)
                 return NotFound(string.Format(ImageNotFound, deleteImageRequest.ImageId));
             
             await _eventBus.Publish(_topicsConfiguration.Value.DeletedImagesTopicName, new ImageDeletedIntegrationEvent
             {
-                ImageId = deleteImageRequest.ImageId
+                ImageId = deleteImageRequest.ImageId,
+                ThumbnailsIds = deletedMetadata.Thumbnails != null 
+                    ? deletedMetadata.Thumbnails.Select(x => x.Id).ToArray() 
+                    : new string[0]
             });
             
             _logger.LogInformation(MetadataRemoved, deleteImageRequest.ImageId);

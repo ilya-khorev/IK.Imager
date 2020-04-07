@@ -74,12 +74,12 @@ namespace IK.Imager.ImageMetadataStorage.CosmosDB.Tests
         {
             ImageMetadata imageMetadata = GenerateItem();
             await _imageMetadataCosmosDbStorage.SetMetadata(imageMetadata, CancellationToken.None);
-
-            bool deleted = await _imageMetadataCosmosDbStorage.RemoveMetadata(imageMetadata.Id, imageMetadata.PartitionKey, CancellationToken.None);
-            Assert.True(deleted);
+ 
+            var removedMetadata = await _imageMetadataCosmosDbStorage.RemoveMetadata(imageMetadata.Id, imageMetadata.PartitionKey, CancellationToken.None);
+            Assert.NotNull(removedMetadata);
             
-            deleted = await _imageMetadataCosmosDbStorage.RemoveMetadata(imageMetadata.Id, imageMetadata.PartitionKey, CancellationToken.None);
-            Assert.False(deleted);
+            removedMetadata = await _imageMetadataCosmosDbStorage.RemoveMetadata(imageMetadata.Id, imageMetadata.PartitionKey, CancellationToken.None);
+            Assert.Null(removedMetadata);
         } 
 
         private ImageMetadata GenerateItem(string partitionKey = "partition1")

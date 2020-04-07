@@ -50,7 +50,8 @@ namespace IK.Imager.Api.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<ActionResult<ImagesSearchResult>> Post(SearchImagesByIdRequest searchImagesByIdRequest)
         {
-            if (searchImagesByIdRequest.ImageIds.Length > 100)
+            const int maxAllowedImages = 100;
+            if (searchImagesByIdRequest.ImageIds.Length > maxAllowedImages)
             {
                 _logger.LogWarning(TooManyImagesRequested);
                 return BadRequest(TooManyImagesRequested);
@@ -72,7 +73,7 @@ namespace IK.Imager.Api.Controllers
                     Hash = imageMetadata.MD5Hash,
                     Height = imageMetadata.Height,
                     Width = imageMetadata.Width,
-                    Tags = imageMetadata.Tags,
+                    Tags = imageMetadata.Tags ?? new Dictionary<string, string>(),
                     Url = _blobStorage.GetImageUri(imageMetadata.Id, ImageType.Original).ToString(),
                     DateAdded = imageMetadata.DateAddedUtc,
                     MimeType = imageMetadata.MimeType,
