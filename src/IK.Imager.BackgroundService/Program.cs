@@ -1,4 +1,5 @@
 ﻿using System.Threading.Tasks;
+using IK.Imager.BackgroundService.Configuration;
 using IK.Imager.BackgroundService.Handlers;
 using IK.Imager.Core;
 using IK.Imager.Core.Abstractions;
@@ -84,6 +85,9 @@ namespace IK.Imager.BackgroundService
             
             services.Configure<TopicsConfiguration>(configuration.GetSection("Topics"));
             services.AddSingleton(resolver => resolver.GetRequiredService<IOptions<TopicsConfiguration>>().Value);
+            
+            services.Configure<ImageThumbnailsSettings>(configuration.GetSection("Thumbnails"));
+            services.AddSingleton(resolver => resolver.GetRequiredService<IOptions<ImageThumbnailsSettings>>().Value);
         }
     }
 }

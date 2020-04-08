@@ -15,7 +15,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using ImageType = IK.Imager.Storage.Abstractions.Models.ImageType;
 
 namespace IK.Imager.Api.Controllers
 {
@@ -132,7 +131,7 @@ namespace IK.Imager.Api.Controllers
                 return BadRequestAndLog(sizeValidationError);
             
             //Firstly, saving the image stream to the blob storage
-            var uploadImageResult = await _blobStorage.UploadImage(imageStream, ImageType.Original, imageFormat.MimeType, CancellationToken.None);
+            var uploadImageResult = await _blobStorage.UploadImage(imageStream, ImageSizeType.Original, imageFormat.MimeType, CancellationToken.None);
             _logger.LogDebug(UploadedToBlobStorage, uploadImageResult.Id);
             
             //Image stream is no longer needed at this stage

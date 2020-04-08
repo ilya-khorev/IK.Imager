@@ -34,7 +34,7 @@ namespace IK.Imager.ImageStorage.AzureFiles.Tests
         [Fact]
         public async Task UploadImageTest()
         {
-            var imageType = ImageType.Thumbnail;
+            var imageType = ImageSizeType.Thumbnail;
             await using var fileStream = OpenImageForReading(Image1Path);
             var uploadImageResult = await _imageBlobAzureStorage.UploadImage(fileStream, imageType, JpegType, CancellationToken.None);
             Assert.NotNull(uploadImageResult.Id);
@@ -46,7 +46,7 @@ namespace IK.Imager.ImageStorage.AzureFiles.Tests
         [Fact]
         public async Task UploadImageWithGivenIdTest()
         {
-            var imageType = ImageType.Original;
+            var imageType = ImageSizeType.Original;
 
             await using var fileStream = OpenImageForReading(Image1Path);
             string imageId = Guid.NewGuid().ToString();
@@ -58,7 +58,7 @@ namespace IK.Imager.ImageStorage.AzureFiles.Tests
         [Fact]
         public async Task DownloadImageTest()
         {
-            var imageType = ImageType.Original;
+            var imageType = ImageSizeType.Original;
 
             await using var fileStream = OpenImageForReading(Image2Path);
             await using MemoryStream imageStream = new MemoryStream();
@@ -74,7 +74,7 @@ namespace IK.Imager.ImageStorage.AzureFiles.Tests
         [Fact]
         public async Task ImageDeleteTest()
         {
-            var imageType = ImageType.Original;
+            var imageType = ImageSizeType.Original;
             await using var fileStream = OpenImageForReading(Image2Path);
             var uploadImageResult = await _imageBlobAzureStorage.UploadImage(fileStream, imageType, JpegType, CancellationToken.None);
 
@@ -87,7 +87,7 @@ namespace IK.Imager.ImageStorage.AzureFiles.Tests
         [Fact]
         public async Task GetImageUriTest()
         {
-            var imageType = ImageType.Original;
+            var imageType = ImageSizeType.Original;
             await using var fileStream = OpenImageForReading(Image2Path);
             var uploadImageResult = await _imageBlobAzureStorage.UploadImage(fileStream, imageType, JpegType, CancellationToken.None);
 

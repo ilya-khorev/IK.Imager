@@ -3,11 +3,11 @@ using System.Threading;
 using System.Threading.Tasks;
 using IK.Imager.Api.Contract;
 using IK.Imager.EventBus.Abstractions;
+using IK.Imager.Storage.Abstractions.Models;
 using IK.Imager.Storage.Abstractions.Storage;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using ImageType = IK.Imager.Storage.Abstractions.Models.ImageType;
 
 namespace IK.Imager.Api.Controllers
 {
@@ -74,7 +74,7 @@ namespace IK.Imager.Api.Controllers
                     Height = imageMetadata.Height,
                     Width = imageMetadata.Width,
                     Tags = imageMetadata.Tags ?? new Dictionary<string, string>(),
-                    Url = _blobStorage.GetImageUri(imageMetadata.Id, ImageType.Original).ToString(),
+                    Url = _blobStorage.GetImageUri(imageMetadata.Id, ImageSizeType.Original).ToString(),
                     DateAdded = imageMetadata.DateAddedUtc,
                     MimeType = imageMetadata.MimeType,
                     Thumbnails = new List<ImageInfo>()
@@ -94,7 +94,7 @@ namespace IK.Imager.Api.Controllers
                             Width = thumbnail.Width,
                             DateAdded = thumbnail.DateAddedUtc,
                             MimeType = thumbnail.MimeType,
-                            Url = _blobStorage.GetImageUri(thumbnail.Id, ImageType.Thumbnail).ToString()
+                            Url = _blobStorage.GetImageUri(thumbnail.Id, ImageSizeType.Thumbnail).ToString()
                         });
                     }
                     

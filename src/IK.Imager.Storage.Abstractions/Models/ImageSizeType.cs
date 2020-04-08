@@ -1,6 +1,6 @@
 ﻿namespace IK.Imager.Storage.Abstractions.Models
 {
-    public enum ImageType
+    public enum ImageSizeType
     {
         Original,
         Thumbnail

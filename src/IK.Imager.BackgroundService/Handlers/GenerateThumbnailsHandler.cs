@@ -1,12 +1,16 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using IK.Imager.BackgroundService.Configuration;
 using IK.Imager.Core.Abstractions;
 using IK.Imager.Core.Abstractions.IntegrationEvents;
 using IK.Imager.EventBus.Abstractions;
+using IK.Imager.Storage.Abstractions.Models;
 using IK.Imager.Storage.Abstractions.Storage;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace IK.Imager.BackgroundService.Handlers
 {
@@ -16,13 +20,20 @@ namespace IK.Imager.BackgroundService.Handlers
         private readonly IImageResizing _imageResizing;
         private readonly IImageBlobStorage _blobStorage;
         private readonly IImageMetadataStorage _metadataStorage;
+        private readonly IOptions<ImageThumbnailsSettings> _imageThumbnailsSettings;
 
-        public GenerateThumbnailsHandler(ILogger<GenerateThumbnailsHandler> logger, IImageResizing imageResizing, IImageBlobStorage blobStorage, IImageMetadataStorage metadataStorage)
+        private const string ImageNotFound = "Image metadata object with id = {0} was not found. Stopping to generate thumbnails.";
+        private const string ImageDownloaded = "Downloaded original image id = {0} from storage.";
+        private const string ImageResized = "Resized image id = {0} with {1}.";
+        private const string ThumbnailsGenerated = "Generated {0} thumbnails for image id = {1}.";
+
+        public GenerateThumbnailsHandler(ILogger<GenerateThumbnailsHandler> logger, IImageResizing imageResizing, IImageBlobStorage blobStorage, IImageMetadataStorage metadataStorage, IOptions<ImageThumbnailsSettings> imageThumbnailsSettings)
         {
             _logger = logger;
             _imageResizing = imageResizing;
             _blobStorage = blobStorage;
             _metadataStorage = metadataStorage;
+            _imageThumbnailsSettings = imageThumbnailsSettings;
         }
         
         public async Task Handle(OriginalImageUploadedIntegrationEvent iEvent)
@@ -30,20 +41,39 @@ namespace IK.Imager.BackgroundService.Handlers
             var imageMetadataList = await _metadataStorage.GetMetadata(new List<string> {iEvent.ImageId}, iEvent.PartitionKey, CancellationToken.None);
             if (imageMetadataList == null || !imageMetadataList.Any())
             {
-                _logger.LogInformation("Image metadata object with id = {0} was not found. Stopping to generate thumbnails.", iEvent.ImageId);
+                _logger.LogInformation(ImageNotFound, iEvent.ImageId);
                 return;
             }
 
             var imageMetadata = imageMetadataList[0];
+            var originalImageStream = await _blobStorage.DownloadImage(imageMetadata.Id, ImageSizeType.Original, CancellationToken.None);
+            _logger.LogDebug(ImageDownloaded, imageMetadata.Id);
+            //IK.Imager.Core.Abstractions.ImageType imageType = imageMetadata.MimeType.Equals("image/bmp", StringComparison.InvariantCultureIgnoreCase) ? Core.Abstractions.ImageType.PNG 
+
+            ImageType imageType = ImageType.PNG;
+            //todo contentType
             
-            //todo generating thumnails
-            //todo if it's bmp, worth converting to png
-            
-            //todo saving image files
-            
-            //todo updating metdata
-            
+            List<ImageThumbnail> thumbnails = new List<ImageThumbnail>();
+            foreach (var targetWidth in _imageThumbnailsSettings.Value.TargetWidth.OrderBy(x => x))
+            {
+                var resizingResult = _imageResizing.Resize(originalImageStream, imageType, targetWidth);
+                _logger.LogDebug(ImageResized, imageMetadata.Id, resizingResult.Size);
+                var uploadImageResult = await _blobStorage.UploadImage(resizingResult.Image, ImageSizeType.Thumbnail, imageMetadata.MimeType, CancellationToken.None);
+                thumbnails.Add(new ImageThumbnail
+                {
+                    Id = uploadImageResult.Id,
+                    MD5Hash = uploadImageResult.MD5Hash,
+                    DateAddedUtc = uploadImageResult.DateAdded.DateTime,
+                    MimeType = imageMetadata.MimeType,
+                    Height = resizingResult.Size.Height,
+                    Width = resizingResult.Size.Width,
+                    SizeBytes = resizingResult.Size.Bytes
+                });
+            }
+
+            imageMetadata.Thumbnails = thumbnails.ToArray();
             await _metadataStorage.SetMetadata(imageMetadata, CancellationToken.None);
+            _logger.LogInformation(ThumbnailsGenerated, imageMetadata.Thumbnails.Length, iEvent.ImageId);
         }
     }
 }

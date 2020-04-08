@@ -44,23 +44,23 @@ namespace IK.Imager.ImageBlobStorage.AzureFiles
             return container;
         }
 
-        public async Task<UploadImageResult> UploadImage(Stream imageStream, ImageType imageType,
+        public async Task<UploadImageResult> UploadImage(Stream imageStream, ImageSizeType imageSizeType,
             string imageContentType, CancellationToken cancellationToken)
         {
             ArgumentHelper.AssertNotNull(nameof(imageStream), imageStream);
             ArgumentHelper.AssertNotNullOrEmpty(nameof(imageContentType), imageContentType);
             
             var id = Guid.NewGuid().ToString();
-            return await UploadImage(id, imageStream, imageType, imageContentType, cancellationToken);
+            return await UploadImage(id, imageStream, imageSizeType, imageContentType, cancellationToken);
         }
 
-        public async Task<UploadImageResult> UploadImage(string id, Stream imageStream, ImageType imageType,
+        public async Task<UploadImageResult> UploadImage(string id, Stream imageStream, ImageSizeType imageSizeType,
             string imageContentType, CancellationToken cancellationToken)
         {
             ArgumentHelper.AssertNotNullOrEmpty(nameof(id), id);
             ArgumentHelper.AssertNotNull(nameof(imageStream), imageStream);
 
-            var blockBlob = GetBlockBlob(id, imageType);
+            var blockBlob = GetBlockBlob(id, imageSizeType);
             blockBlob.Properties.ContentType = imageContentType;
 
             imageStream.Position = 0;
@@ -75,12 +75,12 @@ namespace IK.Imager.ImageBlobStorage.AzureFiles
             };
         }
 
-        public async Task<MemoryStream> DownloadImage(string id, ImageType imageType,
+        public async Task<MemoryStream> DownloadImage(string id, ImageSizeType imageSizeType,
             CancellationToken cancellationToken)
         {
             ArgumentHelper.AssertNotNullOrEmpty(nameof(id), id);
 
-            var blockBlob = GetBlockBlob(id, imageType);
+            var blockBlob = GetBlockBlob(id, imageSizeType);
             if (blockBlob == null)
                 return null;
 
@@ -90,33 +90,33 @@ namespace IK.Imager.ImageBlobStorage.AzureFiles
             return memoryStream;
         }
 
-        public async Task<bool> TryDeleteImage(string id, ImageType imageType, CancellationToken cancellationToken)
+        public async Task<bool> TryDeleteImage(string id, ImageSizeType imageSizeType, CancellationToken cancellationToken)
         {
             ArgumentHelper.AssertNotNullOrEmpty(nameof(id), id);
 
-            var blockBlob = GetBlockBlob(id, imageType);
+            var blockBlob = GetBlockBlob(id, imageSizeType);
             return await blockBlob.DeleteIfExistsAsync(cancellationToken).ConfigureAwait(false);
         }
 
-        public Uri GetImageUri(string id, ImageType imageType)
+        public Uri GetImageUri(string id, ImageSizeType imageSizeType)
         {
             ArgumentHelper.AssertNotNullOrEmpty(nameof(id), id);
 
-            var blockBlob = GetBlockBlob(id, imageType);
+            var blockBlob = GetBlockBlob(id, imageSizeType);
             return blockBlob.Uri;
         }
 
-        public async Task<bool> ImageExists(string id, ImageType imageType, CancellationToken cancellationToken)
+        public async Task<bool> ImageExists(string id, ImageSizeType imageSizeType, CancellationToken cancellationToken)
         {
             ArgumentHelper.AssertNotNullOrEmpty(nameof(id), id);
 
-            var blockBlob = GetBlockBlob(id, imageType);
+            var blockBlob = GetBlockBlob(id, imageSizeType);
             return await blockBlob.ExistsAsync(cancellationToken).ConfigureAwait(false);
         }
 
-        private CloudBlockBlob GetBlockBlob(string id, ImageType imageType)
+        private CloudBlockBlob GetBlockBlob(string id, ImageSizeType imageSizeType)
         {
-            if (imageType == ImageType.Original)
+            if (imageSizeType == ImageSizeType.Original)
                 return _imagesContainer.Value.GetBlockBlobReference(id);
 
             return _thumbnailsContainer.Value.GetBlockBlobReference(id);

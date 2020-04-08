@@ -29,11 +29,11 @@ namespace IK.Imager.BackgroundService.Handlers
         
         public async Task Handle(ImageDeletedIntegrationEvent iEvent)
         {
-            bool originalImageDeleted = await _blobStorage.TryDeleteImage(iEvent.ImageId, ImageType.Original, CancellationToken.None);
+            bool originalImageDeleted = await _blobStorage.TryDeleteImage(iEvent.ImageId, ImageSizeType.Original, CancellationToken.None);
             int deletedThumbnails = 0;
             foreach (var thumbnailId in iEvent.ThumbnailsIds)
             {
-                if (await _blobStorage.TryDeleteImage(thumbnailId, ImageType.Thumbnail, CancellationToken.None))
+                if (await _blobStorage.TryDeleteImage(thumbnailId, ImageSizeType.Thumbnail, CancellationToken.None))
                     deletedThumbnails++;
             }
             

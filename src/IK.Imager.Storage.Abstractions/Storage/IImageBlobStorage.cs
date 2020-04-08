@@ -19,57 +19,57 @@ namespace IK.Imager.Storage.Abstractions.Storage
         /// Image identifier is generated and returned as a result of this method.
         /// </summary>
         /// <param name="imageStream">Image stream</param>
-        /// <param name="imageType">Original or thumbnail</param>
+        /// <param name="imageSizeType">Original or thumbnail</param>
         /// <param name="contentType">Image content type (e.g. jpeg)</param>
         /// <param name="cancellationToken">Cancellation token to stop operation</param>
         /// <returns>Image identifier</returns>
-        Task<UploadImageResult> UploadImage(Stream imageStream, ImageType imageType, string contentType, CancellationToken cancellationToken);
+        Task<UploadImageResult> UploadImage(Stream imageStream, ImageSizeType imageSizeType, string contentType, CancellationToken cancellationToken);
 
         /// <summary>
         /// Upload and save a new image
         /// </summary>
         /// <param name="id">Unique identifier of an image</param>
         /// <param name="imageStream">Image stream</param>
-        /// <param name="imageType">Original or thumbnail</param>
+        /// <param name="imageSizeType">Original or thumbnail</param>
         /// <param name="contentType">Image content type (e.g. jpeg)</param>
         /// <param name="cancellationToken">Cancellation token to stop operation</param>
         /// <returns></returns>
-        Task<UploadImageResult> UploadImage(string id, Stream imageStream, ImageType imageType, string contentType, CancellationToken cancellationToken);
+        Task<UploadImageResult> UploadImage(string id, Stream imageStream, ImageSizeType imageSizeType, string contentType, CancellationToken cancellationToken);
 
         /// <summary>
         /// Download an image stream for a given image id
         /// </summary>
         /// <param name="id">Image identifier</param>
-        /// <param name="imageType">Original or thumbnail</param>
+        /// <param name="imageSizeType">Original or thumbnail</param>
          /// <param name="cancellationToken">Cancellation token to stop operation</param>
         /// <returns>Image stream, or null if such image was not found</returns>
-        Task<MemoryStream> DownloadImage(string id, ImageType imageType, CancellationToken cancellationToken);
+        Task<MemoryStream> DownloadImage(string id, ImageSizeType imageSizeType, CancellationToken cancellationToken);
 
         /// <summary>
         /// Attempt to delete an image by a given image id 
         /// </summary>
         /// <param name="id">Image identifier</param>
-        /// <param name="imageType">Original or thumbnail</param>
+        /// <param name="imageSizeType">Original or thumbnail</param>
         /// <param name="cancellationToken">Cancellation token to stop operation</param>
         /// <returns>Returns true if an image was found and removed.
         /// Returns false if an image was not found.</returns>
-        Task<bool> TryDeleteImage(string id, ImageType imageType, CancellationToken cancellationToken);
+        Task<bool> TryDeleteImage(string id, ImageSizeType imageSizeType, CancellationToken cancellationToken);
 
         /// <summary>
         /// Returns image URI by a given image id
         /// </summary>
         /// <param name="id">Image identifier</param>
-        /// <param name="imageType">Original or thumbnail</param>
+        /// <param name="imageSizeType">Original or thumbnail</param>
         /// <returns></returns>
-        Uri GetImageUri(string id, ImageType imageType);
+        Uri GetImageUri(string id, ImageSizeType imageSizeType);
 
         /// <summary>
         /// Checks if a given image exists
         /// </summary>
         /// <param name="id">Image identifier</param>
-        /// <param name="imageType">Original or thumbnail</param>
+        /// <param name="imageSizeType">Original or thumbnail</param>
         /// <param name="cancellationToken">Cancellation token to stop operation</param>
         /// <returns>Returns true if an image was found. Otherwise, returns false.</returns>
-        Task<bool> ImageExists(string id, ImageType imageType, CancellationToken cancellationToken);
+        Task<bool> ImageExists(string id, ImageSizeType imageSizeType, CancellationToken cancellationToken);
     }
 }
