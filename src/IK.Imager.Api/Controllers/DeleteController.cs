@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using IK.Imager.Api.Contract;
@@ -51,15 +52,18 @@ namespace IK.Imager.Api.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> Delete(DeleteImageRequest deleteImageRequest)
         {
+            var metadata = await _metadataStorage.GetMetadata(new List<string> {deleteImageRequest.ImageId},
+                deleteImageRequest.PartitionKey, CancellationToken.None);
+            
             var deletedMetadata = await _metadataStorage.RemoveMetadata(deleteImageRequest.ImageId, deleteImageRequest.PartitionKey, CancellationToken.None);
-            if (deletedMetadata == null)
+            if (!deletedMetadata)
                 return NotFound(string.Format(ImageNotFound, deleteImageRequest.ImageId));
             
             await _eventBus.Publish(_topicsConfiguration.Value.DeletedImagesTopicName, new ImageDeletedIntegrationEvent
             {
                 ImageId = deleteImageRequest.ImageId,
-                ThumbnailsIds = deletedMetadata.Thumbnails != null 
-                    ? deletedMetadata.Thumbnails.Select(x => x.Id).ToArray() 
+                ThumbnailsIds = metadata[0].Thumbnails != null 
+                    ? metadata[0].Thumbnails.Select(x => x.Id).ToArray() 
                     : new string[0]
             });
             

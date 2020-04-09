@@ -74,12 +74,12 @@ namespace IK.Imager.ImageMetadataStorage.CosmosDB.Tests
         {
             ImageMetadata imageMetadata = GenerateItem();
             await _imageMetadataCosmosDbStorage.SetMetadata(imageMetadata, CancellationToken.None);
- 
-            var removedMetadata = await _imageMetadataCosmosDbStorage.RemoveMetadata(imageMetadata.Id, imageMetadata.PartitionKey, CancellationToken.None);
-            Assert.NotNull(removedMetadata);
+  
+            var removed = await _imageMetadataCosmosDbStorage.RemoveMetadata(imageMetadata.Id, imageMetadata.PartitionKey, CancellationToken.None);
+            Assert.True(removed);
             
-            removedMetadata = await _imageMetadataCosmosDbStorage.RemoveMetadata(imageMetadata.Id, imageMetadata.PartitionKey, CancellationToken.None);
-            Assert.Null(removedMetadata);
+            removed = await _imageMetadataCosmosDbStorage.RemoveMetadata(imageMetadata.Id, imageMetadata.PartitionKey, CancellationToken.None);
+            Assert.False(removed);
         } 
 
         private ImageMetadata GenerateItem(string partitionKey = "partition1")
@@ -94,18 +94,17 @@ namespace IK.Imager.ImageMetadataStorage.CosmosDB.Tests
                 SizeBytes = _random.Next(1000000, 9000000),
                 Tags = new Dictionary<string, string>
                 {
-                    {"tag1", Guid.NewGuid().ToString()}, 
-                    {"tag2", Guid.NewGuid().ToString()}
+                    {"tag1", Guid.NewGuid().ToString()}, {"tag2", Guid.NewGuid().ToString()}
                 },
                 MD5Hash = Guid.NewGuid().ToString(),
                 DateAddedUtc = DateTime.UtcNow,
-                Name = Guid.NewGuid().ToString()
+                Name = Guid.NewGuid().ToString(),
+                Thumbnails = new List<ImageThumbnail>()
             };
 
-            List<ImageThumbnail> thumbnails = new List<ImageThumbnail>();
             for (int i = 0; i < _random.Next(1, 5); i++)
             {
-                thumbnails.Add(new ImageThumbnail
+                item.Thumbnails.Add(new ImageThumbnail
                 {
                     Id = Guid.NewGuid().ToString(),
                     DateAddedUtc = DateTime.UtcNow,
@@ -115,8 +114,6 @@ namespace IK.Imager.ImageMetadataStorage.CosmosDB.Tests
                     SizeBytes = _random.Next(1000000, 9000000)
                 });
             }
-
-            item.Thumbnails = thumbnails.ToArray();
             
             return item;
         }

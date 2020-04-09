@@ -39,7 +39,7 @@ namespace IK.Imager.Storage.Abstractions.Storage
         /// <param name="imageId">Image identifier</param>
         /// <param name="partitionKey">Partition key</param>
         /// <param name="cancellationToken"></param>
-        /// <returns>The deleted metadata object, or null if the image was not found</returns>
-        Task<ImageMetadata> RemoveMetadata(string imageId, string partitionKey, CancellationToken cancellationToken);
+        /// <returns>True if the object was found and removed</returns>
+        Task<bool> RemoveMetadata(string imageId, string partitionKey, CancellationToken cancellationToken);
     }
 }

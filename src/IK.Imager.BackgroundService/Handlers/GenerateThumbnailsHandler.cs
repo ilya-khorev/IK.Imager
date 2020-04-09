@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -11,6 +10,8 @@ using IK.Imager.Storage.Abstractions.Models;
 using IK.Imager.Storage.Abstractions.Storage;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using ImageType = IK.Imager.Core.Abstractions.ImageType;
+using StorageImageType = IK.Imager.Storage.Abstractions.Models.ImageType;
 
 namespace IK.Imager.BackgroundService.Handlers
 {
@@ -48,18 +49,22 @@ namespace IK.Imager.BackgroundService.Handlers
             var imageMetadata = imageMetadataList[0];
             var originalImageStream = await _blobStorage.DownloadImage(imageMetadata.Id, ImageSizeType.Original, CancellationToken.None);
             _logger.LogDebug(ImageDownloaded, imageMetadata.Id);
-            //IK.Imager.Core.Abstractions.ImageType imageType = imageMetadata.MimeType.Equals("image/bmp", StringComparison.InvariantCultureIgnoreCase) ? Core.Abstractions.ImageType.PNG 
-
-            ImageType imageType = ImageType.PNG;
-            //todo contentType
             
-            List<ImageThumbnail> thumbnails = new List<ImageThumbnail>();
+            StorageImageType imageType = imageMetadata.ImageType;
+            string mimeType = imageMetadata.MimeType;
+            if (imageType == StorageImageType.BMP)
+            {
+                imageType = StorageImageType.PNG;
+                mimeType = "image/png";
+            }
+
+            imageMetadata.Thumbnails = new List<ImageThumbnail>();
             foreach (var targetWidth in _imageThumbnailsSettings.Value.TargetWidth.OrderBy(x => x))
             {
-                var resizingResult = _imageResizing.Resize(originalImageStream, imageType, targetWidth);
+                var resizingResult = _imageResizing.Resize(originalImageStream, (ImageType) imageType, targetWidth);
                 _logger.LogDebug(ImageResized, imageMetadata.Id, resizingResult.Size);
-                var uploadImageResult = await _blobStorage.UploadImage(resizingResult.Image, ImageSizeType.Thumbnail, imageMetadata.MimeType, CancellationToken.None);
-                thumbnails.Add(new ImageThumbnail
+                var uploadImageResult = await _blobStorage.UploadImage(resizingResult.Image, ImageSizeType.Thumbnail, mimeType, CancellationToken.None);
+                imageMetadata.Thumbnails.Add(new ImageThumbnail
                 {
                     Id = uploadImageResult.Id,
                     MD5Hash = uploadImageResult.MD5Hash,
@@ -71,9 +76,8 @@ namespace IK.Imager.BackgroundService.Handlers
                 });
             }
 
-            imageMetadata.Thumbnails = thumbnails.ToArray();
             await _metadataStorage.SetMetadata(imageMetadata, CancellationToken.None);
-            _logger.LogInformation(ThumbnailsGenerated, imageMetadata.Thumbnails.Length, iEvent.ImageId);
+            _logger.LogInformation(ThumbnailsGenerated, imageMetadata.Thumbnails.Count, iEvent.ImageId);
         }
     }
 }

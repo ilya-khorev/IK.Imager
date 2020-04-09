@@ -29,6 +29,11 @@ namespace IK.Imager.Storage.Abstractions.Models
         public string MimeType { get; set; } 
         
         /// <summary>
+        /// Image type
+        /// </summary>
+        public ImageType ImageType { get; set; }
+        
+        /// <summary>
         /// Additional information associated with an image in arbitrary form of key-value dictionary
         /// </summary>
         public IDictionary<string, string> Tags { get; set; }
@@ -38,7 +43,7 @@ namespace IK.Imager.Storage.Abstractions.Models
         /// Sorted by dimensions descending, so that the biggest thumbnail is the last element in the array.
         /// Optional property: sometimes an image either doesn't have any thumbnails at all or they are not prepared yet.
         /// </summary>
-        public ImageThumbnail[] Thumbnails { get; set; }
+        public List<ImageThumbnail> Thumbnails { get; set; }
         
         public bool Equals(ImageMetadata other)
         {
@@ -55,7 +60,8 @@ namespace IK.Imager.Storage.Abstractions.Models
                                             && Height == other.Height
                                             && DateAddedUtc.Equals(other.DateAddedUtc)
                                             && Name == other.Name
-                                            && MimeType == other.MimeType;
+                                            && MimeType == other.MimeType
+                                            && ImageType == other.ImageType;
 
             bool tagsEqual = true;
             if (Tags != null && other.Tags != null && Tags.Count == other.Tags.Count)
@@ -75,9 +81,9 @@ namespace IK.Imager.Storage.Abstractions.Models
                 tagsEqual = false;
 
             bool thumbnailsEqual = true;
-            if (Thumbnails != null && other.Thumbnails != null && Thumbnails.Length == other.Thumbnails.Length)
+            if (Thumbnails != null && other.Thumbnails != null && Thumbnails.Count == other.Thumbnails.Count)
             {
-                for (var i = 0; i < Thumbnails.Length; i++)
+                for (var i = 0; i < Thumbnails.Count; i++)
                 {
                     var thumbnail = Thumbnails[i];
                     if (!thumbnail.Equals(other.Thumbnails[i]))
@@ -125,6 +131,8 @@ namespace IK.Imager.Storage.Abstractions.Models
                 hashCode = (hashCode * 397) ^ (MimeType != null ? MimeType.GetHashCode() : 0);
                 hashCode = (hashCode * 397) ^ (Tags != null ? Tags.GetHashCode() : 0);
                 hashCode = (hashCode * 397) ^ (Thumbnails != null ? Thumbnails.GetHashCode() : 0);
+                hashCode = (hashCode * 397) ^ (int) ImageType;
+
                 return hashCode;
             }
         }

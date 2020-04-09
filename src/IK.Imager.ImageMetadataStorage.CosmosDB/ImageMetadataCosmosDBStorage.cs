@@ -82,7 +82,7 @@ namespace IK.Imager.ImageMetadataStorage.CosmosDB
             return GetMetadata(imageIds, null, cancellationToken);
         }
 
-        public async Task<ImageMetadata> RemoveMetadata(string imageId, string partitionKey, CancellationToken cancellationToken)
+        public async Task<bool> RemoveMetadata(string imageId, string partitionKey, CancellationToken cancellationToken)
         {
             ArgumentHelper.AssertNotNullOrEmpty(nameof(imageId), imageId);
             ArgumentHelper.AssertNotNullOrEmpty(nameof(partitionKey), partitionKey);
@@ -97,15 +97,12 @@ namespace IK.Imager.ImageMetadataStorage.CosmosDB
             catch (CosmosException ex)
             {
                 if (ex.StatusCode == HttpStatusCode.NotFound)
-                    return null;
+                    return false;
 
                 throw;
             }
     
-            if (response.StatusCode == HttpStatusCode.NoContent)
-                return response;
-
-            return null;
+            return response.StatusCode == HttpStatusCode.NoContent;
         }
 
         //todo add operation to search by tags
