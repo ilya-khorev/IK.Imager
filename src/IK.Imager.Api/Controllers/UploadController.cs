@@ -39,6 +39,11 @@ namespace IK.Imager.Api.Controllers
         private const string IncorrectDimensions = "Image width must be between {0} and {1} px. Image height must be between {2} and {3} px.";
         private const string IncorrectUrlFormat = "Image url is not well formed. It must be absolute url path.";
         private const string CouldNotDownloadImage = "Couldn't download image by url {0}.";
+        private const string DownloadedByUrl = "Downloaded by url {0}.";
+        private const string CheckingImage = "Starting to check the image.";
+        private const string UploadedToBlobStorage = "Uploaded the image to the blob storage, id={0}.";
+        private const string UploadedToMetadataStorage = "Saved metadata for the current image.";
+        private const string UploadedImage = "Image {0} has been uploaded.";
         
         /// <inheritdoc />
         public UploadController(ILogger<UploadController> logger, IImageMetadataReader metadataReader, IImageBlobStorage blobStorage, IImageMetadataStorage metadataStorage, 
@@ -59,7 +64,7 @@ namespace IK.Imager.Api.Controllers
         /// After uploading the image, the system launches the asynchronous process of thumbnails generating.
         /// Thumbnails for the given image are available after a short delay - initially image is returned to the client without any thumbnails.
         /// </summary>
-        /// <param name="file"></param>
+        /// <param name="imageFileRequest"></param>
         /// <returns>A model with short info about just uploaded image</returns>
         /// <response code="200">Returns the newly added image info</response>
         /// <response code="400">If the image size is greater or smaller then the system threshold values.
@@ -67,19 +72,13 @@ namespace IK.Imager.Api.Controllers
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [Consumes("multipart/form-data")]
         //todo probably worth uploading using stream https://docs.microsoft.com/en-us/aspnet/core/mvc/models/file-uploads?view=aspnetcore-3.1#upload-large-files-with-streaming
-        public async Task<ActionResult<ImageInfo>> PostWithStream(IFormFile file)
+        public async Task<ActionResult<ImageInfo>> PostWithStream(UploadImageFileRequest imageFileRequest)
         {
-            string partitionKey = "123"; //todo
-            return await UploadImage(file.OpenReadStream(), partitionKey);
+            return await UploadImage(imageFileRequest.File.OpenReadStream(), imageFileRequest.PartitionKey);
         }
         
-        private const string DownloadedByUrl = "Downloaded by url {0}.";
-        private const string CheckingImage = "Starting to check the image.";
-        private const string UploadedToBlobStorage = "Uploaded the image to the blob storage, id={0}.";
-        private const string UploadedToMetadataStorage = "Saved metadata for the current image.";
-        private const string UploadedImage = "Image {0} has been uploaded.";
-            
         /// <summary>
         /// Upload a new image using the given image url.
         /// After uploading the image, the system launches the asynchronous process of thumbnails generating.
