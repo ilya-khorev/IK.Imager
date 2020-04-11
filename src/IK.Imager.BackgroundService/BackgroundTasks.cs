@@ -31,9 +31,11 @@ namespace IK.Imager.BackgroundService
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             _telemetryClient.TrackEvent("Starting background tasks...");
+
+            const int maxConcurrentCalls = 5; //todo move to config
                 
-            await _eventBus.Subscribe(_topicsConfiguration.Value.UploadedImagesTopicName, _topicsConfiguration.Value.SubscriptionName, _imageUploadedEventHandler);
-            await _eventBus.Subscribe(_topicsConfiguration.Value.DeletedImagesTopicName, _topicsConfiguration.Value.SubscriptionName, _imageDeletedEventHandler);
+            await _eventBus.Subscribe(_topicsConfiguration.Value.UploadedImagesTopicName, _topicsConfiguration.Value.SubscriptionName, _imageUploadedEventHandler, maxConcurrentCalls);
+            await _eventBus.Subscribe(_topicsConfiguration.Value.DeletedImagesTopicName, _topicsConfiguration.Value.SubscriptionName, _imageDeletedEventHandler, maxConcurrentCalls);
 
             _logger.LogInformation("Subscribed on events from topics.");
         }

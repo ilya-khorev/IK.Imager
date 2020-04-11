@@ -38,7 +38,7 @@ namespace IK.Imager.EventBus.AzureServiceBus
             await topicClient.SendAsync(message);
         }
 
-        public async Task Subscribe<T>(string topicName, string subscriptionName, IIntegrationEventHandler<T> handler) 
+        public async Task Subscribe<T>(string topicName, string subscriptionName, IIntegrationEventHandler<T> handler, int maxConcurrentCalls = 1) 
             where T : IntegrationEvent
         {
             if (subscriptionName == null)
@@ -55,7 +55,7 @@ namespace IK.Imager.EventBus.AzureServiceBus
             {
                 // Maximum number of Concurrent calls to the callback `ProcessMessagesAsync`, set to 1 for simplicity.
                 // Set it according to how many messages the application wants to process in parallel.
-                MaxConcurrentCalls = 1,
+                MaxConcurrentCalls = maxConcurrentCalls,
 
                 // Indicates whether MessagePump should automatically complete the messages after returning from User Callback.
                 // False below indicates the Complete will be handled by the User Callback as in `ProcessMessagesAsync` below.

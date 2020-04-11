@@ -1,0 +1,33 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>netcoreapp3.1</TargetFramework>
+
+        <IsPackable>false</IsPackable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Divergic.Logging.Xunit" Version="3.3.0" />
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.2.0" />
+        <PackageReference Include="xunit" Version="2.4.0" />
+        <PackageReference Include="xunit.runner.visualstudio" Version="2.4.0" />
+        <PackageReference Include="coverlet.collector" Version="1.0.1" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\IK.Imager.BackgroundService\IK.Imager.BackgroundService.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Update="Images\1043-800x600.jpg">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+      <None Update="Images\1068-800x1600.bmp">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+      <None Update="Images\giphy_200x200.gif">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+    </ItemGroup>
+
+</Project>

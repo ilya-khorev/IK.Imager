@@ -7,7 +7,7 @@ namespace IK.Imager.EventBus.Abstractions
         Task Publish<TIntegrationEvent>(string topicName, TIntegrationEvent iEvent)
             where TIntegrationEvent : IntegrationEvent;
 
-        Task Subscribe<T>(string topicName, string subscriptionName, IIntegrationEventHandler<T> handler)
+        Task Subscribe<T>(string topicName, string subscriptionName, IIntegrationEventHandler<T> handler, int maxConcurrentCalls = 1)
             where T : IntegrationEvent;
     }
 }
