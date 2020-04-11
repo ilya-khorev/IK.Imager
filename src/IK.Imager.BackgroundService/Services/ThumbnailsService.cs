@@ -52,6 +52,7 @@ namespace IK.Imager.BackgroundService.Services
             }
 
             var imageMetadata = imageMetadataList[0];
+            imageMetadata.Thumbnails = new List<ImageThumbnail>();
             _logger.LogDebug(MetadataReceived, imageMetadata.Id, imageMetadata.Width, imageMetadata.Height);
             if (imageMetadata.Width <= _thumbnailTargetWidth.Last())
             {
@@ -69,8 +70,7 @@ namespace IK.Imager.BackgroundService.Services
                 imageType = StorageImageType.PNG;
                 mimeType = PngMimeType;
             }
-
-            imageMetadata.Thumbnails = new List<ImageThumbnail>();
+            
             var utcNow = DateTime.UtcNow;
             var imageStream = originalImageStream;
             foreach (var targetWidth in _thumbnailTargetWidth)
@@ -87,7 +87,7 @@ namespace IK.Imager.BackgroundService.Services
                     Id = uploadedBlob.Id,
                     MD5Hash = uploadedBlob.MD5Hash,
                     DateAddedUtc = utcNow,
-                    MimeType = imageMetadata.MimeType,
+                    MimeType = mimeType,
                     Height = resizingResult.Size.Height,
                     Width = resizingResult.Size.Width,
                     SizeBytes = resizingResult.Size.Bytes

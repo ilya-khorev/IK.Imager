@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using IK.Imager.ImageBlobStorage.AzureFiles;
 using IK.Imager.Storage.Abstractions.Models;
+using IK.Imager.TestsBase;
 using Xunit;
 
 namespace IK.Imager.ImageStorage.AzureFiles.Tests
@@ -24,9 +25,9 @@ namespace IK.Imager.ImageStorage.AzureFiles.Tests
             ImageAzureStorageConfiguration configuration =
                 new ImageAzureStorageConfiguration
                 {
-                    ConnectionString = "UseDevelopmentStorage=true",
-                    ImagesContainerName = "images",
-                    ThumbnailsContainerName = "thumbnails"
+                    ConnectionString = Constants.AzureConnectionString,
+                    ImagesContainerName = Constants.ImagesContainerName,
+                    ThumbnailsContainerName = Constants.ThumbnailsContainerName
                 };
             _imageBlobAzureStorage = new ImageBlobAzureStorage(configuration);
         }

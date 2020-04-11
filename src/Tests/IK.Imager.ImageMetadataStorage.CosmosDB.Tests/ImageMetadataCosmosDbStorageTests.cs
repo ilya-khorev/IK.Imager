@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using IK.Imager.Storage.Abstractions.Models;
+using IK.Imager.TestsBase;
 using Xunit;
 
 namespace IK.Imager.ImageMetadataStorage.CosmosDB.Tests
@@ -17,10 +18,10 @@ namespace IK.Imager.ImageMetadataStorage.CosmosDB.Tests
         {
             ImageMetadataCosmosDbStorageConfiguration configuration = new ImageMetadataCosmosDbStorageConfiguration
             {
-                ConnectionString = "AccountEndpoint=https://localhost:8081/;AccountKey=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==",
-                ContainerId = "ImageMetadataContainer",
-                ContainerThroughPutOnCreation = 1000,
-                DatabaseId = "ImageMetadataDb"
+                ConnectionString = Constants.CosmosDbConnectionString,
+                ContainerId = Constants.ContainerId,
+                ContainerThroughPutOnCreation = Constants.ContainerThroughPutOnCreation,
+                DatabaseId = Constants.DatabaseId
             };
             
             _imageMetadataCosmosDbStorage = new ImageMetadataCosmosDbStorage(configuration);

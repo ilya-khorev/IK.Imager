@@ -16,6 +16,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\..\IK.Imager.BackgroundService\IK.Imager.BackgroundService.csproj" />
+      <ProjectReference Include="..\IK.Imager.TestsBase\IK.Imager.TestsBase.csproj" />
     </ItemGroup>
 
     <ItemGroup>

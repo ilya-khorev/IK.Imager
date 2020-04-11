@@ -10,10 +10,11 @@ using IK.Imager.ImageBlobStorage.AzureFiles;
 using IK.Imager.ImageMetadataStorage.CosmosDB;
 using IK.Imager.Storage.Abstractions.Models;
 using IK.Imager.Storage.Abstractions.Storage;
-using Microsoft.Extensions.Logging;
+using IK.Imager.TestsBase;
 using Microsoft.Extensions.Options;
 using Xunit;
 using Xunit.Abstractions;
+using ImageType = IK.Imager.Storage.Abstractions.Models.ImageType;
 
 namespace IK.Imager.BackgroundServiceTests
 {
@@ -29,17 +30,17 @@ namespace IK.Imager.BackgroundServiceTests
             
             _blobStorage = new ImageBlobAzureStorage(new ImageAzureStorageConfiguration
             {
-                ConnectionString = "UseDevelopmentStorage=true",
-                ImagesContainerName = "images",
-                ThumbnailsContainerName = "thumbnails"
+                ConnectionString = Constants.AzureConnectionString,
+                ImagesContainerName = Constants.ImagesContainerName,
+                ThumbnailsContainerName = Constants.ThumbnailsContainerName
             });
             
             _metadataStorage = new ImageMetadataCosmosDbStorage(new ImageMetadataCosmosDbStorageConfiguration
             {
-                ConnectionString = "AccountEndpoint=https://localhost:8081/;AccountKey=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==",
-                ContainerId = "ImageMetadataContainer",
-                ContainerThroughPutOnCreation = 1000,
-                DatabaseId = "ImageMetadataDb"
+                ConnectionString = Constants.CosmosDbConnectionString,
+                ContainerId = Constants.ContainerId,
+                ContainerThroughPutOnCreation = Constants.ContainerThroughPutOnCreation,
+                DatabaseId = Constants.DatabaseId
             });
             
             _thumbnailsService = new ThumbnailsService(output.BuildLoggerFor<ThumbnailsService>(), imageResizing, _blobStorage, _metadataStorage, this);
@@ -50,7 +51,7 @@ namespace IK.Imager.BackgroundServiceTests
         {
             string partitionKey = Guid.NewGuid().ToString();
             string contentType = "image/jpeg";
-            var uploadImageResult = await UploadImage("Images\\1043-800x600.jpg", 800, 600, contentType, partitionKey);
+            var uploadImageResult = await UploadImage("Images\\1043-800x600.jpg", 800, 600, contentType, ImageType.JPEG, partitionKey);
 
             var imageWithGeneratedThumbnails = await _thumbnailsService.GenerateThumbnails(uploadImageResult.Id, partitionKey);
             Assert.Equal(Value.TargetWidth.Length, imageWithGeneratedThumbnails.Thumbnails.Count);
@@ -68,18 +69,33 @@ namespace IK.Imager.BackgroundServiceTests
         }
 
         [Fact]
-        public void ShouldGenerateNothingWhenNotFound()
+        public async Task ShouldGenerateNothingWhenNotFound()
         {
+            var imageWithGeneratedThumbnails = await _thumbnailsService.GenerateThumbnails(Guid.NewGuid().ToString(), Guid.NewGuid().ToString());
+            Assert.Null(imageWithGeneratedThumbnails);
         }
 
         [Fact]
-        public void ShouldGenerateNothingWhenImageIsSmall()
+        public async Task ShouldGenerateNothingWhenImageIsSmall()
         {
+            string partitionKey = Guid.NewGuid().ToString();
+            string contentType = "image/gif";
+            var uploadImageResult = await UploadImage("Images\\giphy_200x200.gif", 200, 200, contentType, ImageType.GIF, partitionKey);
+            Assert.Null(uploadImageResult.Thumbnails);
         }
 
         [Fact]
-        public void ShouldGeneratePngThumbnailsForBmpImage()
+        public async Task ShouldGeneratePngThumbnailsForBmpImage()
         {
+            string partitionKey = Guid.NewGuid().ToString();
+            string contentType = "image/bmp";
+            var uploadImageResult = await UploadImage("Images\\1068-800x1600.bmp", 800, 1200, contentType, ImageType.BMP, partitionKey);
+            var imageWithGeneratedThumbnails = await _thumbnailsService.GenerateThumbnails(uploadImageResult.Id, partitionKey);
+
+            foreach (var imageThumbnail in imageWithGeneratedThumbnails.Thumbnails)
+            {
+                Assert.Equal("image/png", imageThumbnail.MimeType);
+            }
         }
 
         public ImageThumbnailsSettings Value { get; } = new ImageThumbnailsSettings
@@ -87,7 +103,7 @@ namespace IK.Imager.BackgroundServiceTests
             TargetWidth = new [] { 200, 300, 500 }
         };
 
-        private async Task<ImageMetadata> UploadImage(string imagePath, int width, int height, string contentType, string partitionKey)
+        private async Task<ImageMetadata> UploadImage(string imagePath, int width, int height, string contentType, ImageType imageType, string partitionKey)
         {
             await using FileStream file = OpenFileForReading(imagePath);
             var uploadImageResult = await _blobStorage.UploadImage(file, ImageSizeType.Original, contentType, CancellationToken.None);
@@ -101,6 +117,7 @@ namespace IK.Imager.BackgroundServiceTests
                 MD5Hash = uploadImageResult.MD5Hash,
                 SizeBytes = file.Length,
                 MimeType = contentType,
+                ImageType = imageType,
                 PartitionKey = partitionKey 
             };
 

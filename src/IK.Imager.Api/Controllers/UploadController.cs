@@ -15,6 +15,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using ImageType = IK.Imager.Storage.Abstractions.Models.ImageType;
 
 namespace IK.Imager.Api.Controllers
 {
@@ -148,6 +149,7 @@ namespace IK.Imager.Api.Controllers
                 MD5Hash = uploadImageResult.MD5Hash,
                 SizeBytes = imageSize.Bytes,
                 MimeType = imageFormat.MimeType,
+                ImageType = (ImageType) imageFormat.ImageType,
                 PartitionKey = partitionKey 
             }, CancellationToken.None);
             _logger.LogDebug(UploadedToMetadataStorage);
