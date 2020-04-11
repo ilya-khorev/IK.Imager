@@ -32,7 +32,7 @@ namespace IK.Imager.BackgroundService
         {
             _telemetryClient.TrackEvent("Starting background tasks...");
 
-            const int maxConcurrentCalls = 5; //todo move to config
+            int maxConcurrentCalls = _topicsConfiguration.Value.MaxConcurrentCalls;
                 
             await _eventBus.Subscribe(_topicsConfiguration.Value.UploadedImagesTopicName, _topicsConfiguration.Value.SubscriptionName, _imageUploadedEventHandler, maxConcurrentCalls);
             await _eventBus.Subscribe(_topicsConfiguration.Value.DeletedImagesTopicName, _topicsConfiguration.Value.SubscriptionName, _imageDeletedEventHandler, maxConcurrentCalls);

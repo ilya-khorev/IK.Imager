@@ -20,4 +20,10 @@
       <ProjectReference Include="..\IK.Imager.Storage.Abstractions\IK.Imager.Storage.Abstractions.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <None Update="appsettings.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+    </ItemGroup>
+
 </Project>

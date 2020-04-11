@@ -1,6 +1,7 @@
 ﻿using System.Threading.Tasks;
 using IK.Imager.BackgroundService.Configuration;
 using IK.Imager.BackgroundService.Handlers;
+using IK.Imager.BackgroundService.Services;
 using IK.Imager.Core;
 using IK.Imager.Core.Abstractions;
 using IK.Imager.Core.Abstractions.IntegrationEvents;
@@ -49,8 +50,12 @@ namespace IK.Imager.BackgroundService
                     services.AddSingleton<IImageMetadataStorage, ImageMetadataCosmosDbStorage>();
                     services.AddSingleton<IImageBlobStorage, ImageBlobAzureStorage>();
                     services.AddSingleton<IImageMetadataReader, ImageMetadataReader>();
+                    services.AddSingleton<IImageResizing, ImageResizing>();
                     services.AddSingleton<IIntegrationEventHandler<OriginalImageUploadedIntegrationEvent>, GenerateThumbnailsHandler>();
                     services.AddSingleton<IIntegrationEventHandler<ImageDeletedIntegrationEvent>, RemoveImageFilesHandler>();
+                    services.AddTransient<ThumbnailsService>();
+                    
+                    services.AddHostedService<BackgroundTasks>();
                 })
                 .UseConsoleLifetime();
         
