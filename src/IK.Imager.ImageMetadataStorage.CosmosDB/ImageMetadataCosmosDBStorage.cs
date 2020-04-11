@@ -121,9 +121,17 @@ namespace IK.Imager.ImageMetadataStorage.CosmosDB
             var databaseResponse = await client.CreateDatabaseIfNotExistsAsync(_configuration.DatabaseId);
 
             ContainerProperties containerProperties = new ContainerProperties(_configuration.ContainerId, "/" + nameof(ImageMetadata.PartitionKey));
-
-            //todo add indexing settings
-            //https://docs.microsoft.com/en-us/azure/cosmos-db/index-overview
+           
+            var indexingPolicy = new IndexingPolicy();
+            indexingPolicy.IncludedPaths.Add(new IncludedPath { Path = "/*" });
+            //It's unlikely that we will ever request by the following properties, so stop indexing them to save some money
+            indexingPolicy.ExcludedPaths.Add(new ExcludedPath { Path = "/" + nameof(ImageMetadata.Thumbnails) + "/*" });
+            indexingPolicy.ExcludedPaths.Add(new ExcludedPath { Path = "/" + nameof(ImageMetadata.SizeBytes) + "/*" });
+            indexingPolicy.ExcludedPaths.Add(new ExcludedPath { Path = "/" + nameof(ImageMetadata.MD5Hash) + "/*" });
+            indexingPolicy.ExcludedPaths.Add(new ExcludedPath { Path = "/" + nameof(ImageMetadata.Width) + "/*"  });
+            indexingPolicy.ExcludedPaths.Add(new ExcludedPath { Path = "/" + nameof(ImageMetadata.Height) + "/*"  });
+            indexingPolicy.ExcludedPaths.Add(new ExcludedPath { Path = "/" + nameof(ImageMetadata.MimeType) + "/*" });
+            containerProperties.IndexingPolicy = indexingPolicy;
             
             _containerInternal = (await databaseResponse.Database.CreateContainerIfNotExistsAsync(containerProperties,
                 throughput: _configuration.ContainerThroughPutOnCreation)).Container;
