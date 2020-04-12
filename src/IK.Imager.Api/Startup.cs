@@ -120,7 +120,6 @@ namespace IK.Imager.Api
             if (env.IsDevelopment()) 
                 app.UseDeveloperExceptionPage();
 
-            app.UseHttpsRedirection();
             app.UseRouting();
 
             app.UseSwagger(c => { c.SerializeAsV2 = true; });
