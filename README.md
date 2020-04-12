@@ -14,8 +14,8 @@ There are 2 ways to upload an image to the system
 2) Providing a binary data as a part of multipart/form-data
 
 ### Image Validation
-Before the image is saved to the storage, it's being checked for the following image formats: Png, Jpeg, Bmp, Gif
-Besides the system verifies the given image's size and dimenesions and compare them with the configuration threshold values.
+Before the image is saved to the storage, it's being checked for the following image formats: Png, Jpeg, Bmp, Gif.  
+Besides, the system verifies the given image's size and dimenesions and compare them with the configuration threshold values.
 
 ### Image Thumbnails
 Once a new image is uploaded into the system, the background process starts to generate thumbnails, which will subsequently become avaiable to the clients via API. Thumnails are generated for particular sizes specified in the configuration.
