@@ -25,7 +25,7 @@ A client is able to request a metadata object for any image uploaded earlier pro
 A metadata object will also contains image url, which leads directly to the image blob storage or CDN (depending on configuration)
 
 ### Image Removal
-Image removal is available thorugh a simple API request. The system will clear up all related metadata and thumnails objects.
+Image removal is available via a simple API request. The system will clear up all related metadata and thumnails objects.
 
 ## Architecture Overview
 ![](docs/Architecture.svg)
