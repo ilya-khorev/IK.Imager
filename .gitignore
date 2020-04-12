@@ -4,3 +4,7 @@ obj/
 **/.idea/*
 [Ll]og/
 *.DotSettings.user
+*.user
+
+# Visual Studio cache/options directory
+**/.vs/
