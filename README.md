@@ -18,7 +18,7 @@ Before the image is saved to the storage, it's being checked for the following i
 Besides, the system verifies the given image's size and dimenesions and compare them with the configuration threshold values.
 
 ### Image Thumbnails
-Once a new image is uploaded into the system, the background process starts to generate thumbnails, which will subsequently become avaiable to the clients via API. Thumnails are generated for particular sizes specified in the configuration.
+Once a new image is uploaded into the system, the background process starts to generate thumbnails, which will subsequently become avaiable to the clients via API. Thumbnails are generated for particular sizes specified in the configuration.
 
 ### Image Search
 A client is able to request a metadata object for any image uploaded earlier providing an image identifier. 
