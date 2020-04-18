@@ -3,9 +3,8 @@
 # If Azure module is not installed, run the command below as administrator:
 # Install-Module -Name Az -AllowClobber
 
-. "$PSScriptRoot\Common.ps1"
-
-CheckLoggedIn
+# Output all available subscriptions
+Get-AzContext -ListAvailable
 
 # Specify your resource group, subscription, and location here
 $resourceGroup = "TestResourceGroup"
@@ -16,7 +15,7 @@ $subscriptionName = ""
 Set-AzContext -Subscription $subscriptionName
 
 # Creating blob storage
-$accountName = "imagesstorageaccount"
+$accountName = "ikimagesstorageaccount"
 New-AzStorageAccount -ResourceGroupName $resourceGroup `
   -Name $accountName `
   -Location $location `
@@ -26,13 +25,13 @@ New-AzStorageAccount -ResourceGroupName $resourceGroup `
 # Creating Cosmos DB
 $accountName = "imagemetadatadb"
 $apiKind = "GlobalDocumentDB"
-New-AzCosmosDBAccount -ResourceGroupName $resourceGroup `
+#New-AzCosmosDBAccount -ResourceGroupName $resourceGroup `
       -Location $location -Name $accountName `
       -ApiKind $apiKind -EnableAutomaticFailover:$true `
 
 # Creating Service Bus
 # Query to see if the namespace currently exists
-$namespace = "myservicebus"
+$namespace = "ikimagesmyservicebus"
 $CurrentNamespace = Get-AzServiceBusNamespace -ResourceGroup $resourceGroup -NamespaceName $namespace
 # Check if the namespace already exists or needs to be created
 if ($CurrentNamespace)
