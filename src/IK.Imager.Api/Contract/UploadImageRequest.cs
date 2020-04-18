@@ -19,7 +19,7 @@ namespace IK.Imager.Api.Contract
         /// It's recommended to use meaningful values, such as userId, businessUnitId, or combination of multiple parameters
         /// </summary>
         [Required]
-        [StringLength(30, MinimumLength = 1)]
+        [StringLength(30, MinimumLength = 3)]
         public string PartitionKey { get; set; }
     }
 }
