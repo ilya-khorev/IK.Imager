@@ -38,7 +38,7 @@ namespace IK.Imager.ImageStorage.AzureFiles.Tests
             var imageType = ImageSizeType.Thumbnail;
             await using var fileStream = OpenImageForReading(Image1Path);
             string imageName = Guid.NewGuid().ToString();
-            var uploadImageResult = await _imageBlobAzureStorage.UploadImage(Guid.NewGuid().ToString(), fileStream, imageType, JpegType, CancellationToken.None);
+            var uploadImageResult = await _imageBlobAzureStorage.UploadImage(imageName, fileStream, imageType, JpegType, CancellationToken.None);
             Assert.NotNull(uploadImageResult.MD5Hash);
             
             Assert.True(await _imageBlobAzureStorage.ImageExists(imageName, imageType, CancellationToken.None));

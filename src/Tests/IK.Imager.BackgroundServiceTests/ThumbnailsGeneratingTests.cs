@@ -107,13 +107,35 @@ namespace IK.Imager.BackgroundServiceTests
 
         private async Task<ImageMetadata> UploadImage(string imagePath, int width, int height, string contentType, ImageType imageType, string partitionKey)
         {
+            string extension = "";
+            switch (imageType)
+            {
+                case ImageType.BMP:
+                    extension = ".bmp";
+                    break;
+                
+                case ImageType.JPEG:
+                    extension = ".jpeg";
+                    break;
+                
+                case ImageType.PNG:
+                    extension = ".png";
+                    break;
+                
+                case ImageType.GIF:
+                    extension = ".gif";
+                    break;
+            }
+            
             await using FileStream file = OpenFileForReading(imagePath);
             string imageId = Guid.NewGuid().ToString();
-            var uploadImageResult = await _blobStorage.UploadImage(imageId, file, ImageSizeType.Original, contentType, CancellationToken.None);
+            string imageName = imageId + extension;
+            var uploadImageResult = await _blobStorage.UploadImage(imageName, file, ImageSizeType.Original, contentType, CancellationToken.None);
 
             var imageMetadata = new ImageMetadata
             {
                 Id = imageId,
+                Name = imageName,
                 DateAddedUtc = uploadImageResult.DateAdded.DateTime,
                 Height = height,
                 Width = width,
