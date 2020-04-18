@@ -87,7 +87,7 @@ namespace IK.Imager.BackgroundService.Services
                 _logger.LogDebug(ImageResized, imageMetadata.Id, resizingResult.Size);
 
                 var thumbnailImageId = _imageIdentifierProvider.GenerateUniqueId();
-                var thumbnailImageName = _imageIdentifierProvider.GetImageName(imageId, fileExtension);
+                var thumbnailImageName = _imageIdentifierProvider.GetImageName(thumbnailImageId, fileExtension);
                 
                 var uploadedBlob = await _blobStorage.UploadImage(thumbnailImageName, resizingResult.Image, ImageSizeType.Thumbnail, mimeType, CancellationToken.None);
                 imageMetadata.Thumbnails.Add(new ImageThumbnail
