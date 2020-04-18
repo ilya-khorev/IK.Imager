@@ -41,7 +41,8 @@ namespace IK.Imager.Api.Controllers
         private const string IncorrectDimensions = "Image width must be between {0} and {1} px. Image height must be between {2} and {3} px.";
         private const string IncorrectUrlFormat = "Image url is not well formed. It must be absolute url path.";
         private const string CouldNotDownloadImage = "Couldn't download image by url {0}.";
-        private const string DownloadedByUrl = "Downloaded by url {0}.";
+        private const string DownloadingByUrl = "Downloading image by url {0}.";
+        private const string DownloadedByUrl = "Downloaded image by url {0}.";
         private const string CheckingImage = "Starting to check the image.";
         private const string UploadedToBlobStorage = "Uploaded the image to the blob storage, id={0}.";
         private const string UploadedToMetadataStorage = "Saved metadata for the current image.";
@@ -103,6 +104,8 @@ namespace IK.Imager.Api.Controllers
         {
             if (!Uri.IsWellFormedUriString(uploadImageRequest.ImageUrl, UriKind.Absolute))
                 return BadRequest(IncorrectUrlFormat);
+
+            _logger.LogDebug(DownloadingByUrl, uploadImageRequest.ImageUrl);
 
             var imageStream = await _imageDownloadClient.GetMemoryStream(uploadImageRequest.ImageUrl);
             if (imageStream == null)
