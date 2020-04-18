@@ -50,10 +50,16 @@ namespace IK.Imager.ImageBlobStorage.AzureFiles
             ArgumentHelper.AssertNotNull(nameof(imageStream), imageStream);
             ArgumentHelper.AssertNotNullOrEmpty(nameof(imageContentType), imageContentType);
             
-            var id = Guid.NewGuid().ToString();
-            return await UploadImage(id, imageStream, imageSizeType, imageContentType, cancellationToken);
+            return await UploadImage(GenerateId(), imageStream, imageSizeType, imageContentType, cancellationToken);
         }
 
+        private string GenerateId()
+        {
+            //since all images are publicly available by url, image path must be random and big enough
+            //for simplicity just concatenating 2 system guids
+            return (Guid.NewGuid() + Guid.NewGuid().ToString()).Replace("-", "");
+        }
+        
         public async Task<UploadImageResult> UploadImage(string id, Stream imageStream, ImageSizeType imageSizeType,
             string imageContentType, CancellationToken cancellationToken)
         {
