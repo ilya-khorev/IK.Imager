@@ -29,11 +29,11 @@ namespace IK.Imager.BackgroundService.Handlers
         
         public async Task Handle(ImageDeletedIntegrationEvent iEvent)
         {
-            bool originalImageDeleted = await _blobStorage.TryDeleteImage(iEvent.ImageId, ImageSizeType.Original, CancellationToken.None);
-            int deletedThumbnails = 0;
-            foreach (var thumbnailId in iEvent.ThumbnailsIds)
+            bool originalImageDeleted = await _blobStorage.TryDeleteImage(iEvent.ImageName, ImageSizeType.Original, CancellationToken.None);
+            int deletedThumbnails = 0; 
+            foreach (var thumbnailName in iEvent.ThumbnailNames)
             {
-                if (await _blobStorage.TryDeleteImage(thumbnailId, ImageSizeType.Thumbnail, CancellationToken.None))
+                if (await _blobStorage.TryDeleteImage(thumbnailName, ImageSizeType.Thumbnail, CancellationToken.None))
                     deletedThumbnails++;
             }
             
@@ -42,7 +42,7 @@ namespace IK.Imager.BackgroundService.Handlers
             if (originalImageDeleted)
                 stringBuilder.AppendFormat(OriginalImageDeleted, iEvent.ImageId);
 
-            stringBuilder.AppendFormat(ThumbnailsDeleted, iEvent.ThumbnailsIds.Length, deletedThumbnails);
+            stringBuilder.AppendFormat(ThumbnailsDeleted, iEvent.ThumbnailNames.Length, deletedThumbnails);
             
             _logger.LogInformation(stringBuilder.ToString());
         }

@@ -54,16 +54,21 @@ namespace IK.Imager.Api.Controllers
         {
             var metadata = await _metadataStorage.GetMetadata(new List<string> {deleteImageRequest.ImageId},
                 deleteImageRequest.PartitionKey, CancellationToken.None);
+            if (metadata == null || !metadata.Any())
+                return NotFound(string.Format(ImageNotFound, deleteImageRequest.ImageId));
             
             var deletedMetadata = await _metadataStorage.RemoveMetadata(deleteImageRequest.ImageId, deleteImageRequest.PartitionKey, CancellationToken.None);
             if (!deletedMetadata)
                 return NotFound(string.Format(ImageNotFound, deleteImageRequest.ImageId));
+
+            var imageMetadata = metadata[0];
             
             await _eventBus.Publish(_topicsConfiguration.Value.DeletedImagesTopicName, new ImageDeletedIntegrationEvent
             {
                 ImageId = deleteImageRequest.ImageId,
-                ThumbnailsIds = metadata[0].Thumbnails != null 
-                    ? metadata[0].Thumbnails.Select(x => x.Id).ToArray() 
+                ImageName = imageMetadata.Name,
+                ThumbnailNames = imageMetadata.Thumbnails != null 
+                    ? imageMetadata.Thumbnails.Select(x => x.Name).ToArray() 
                     : new string[0]
             });
             

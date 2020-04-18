@@ -33,6 +33,7 @@ namespace IK.Imager.Api.Controllers
         private readonly IEventBus _eventBus;
         private readonly IOptions<ImageLimitationSettings> _limitationSettings;
         private readonly ImageDownloadClient _imageDownloadClient;
+        private readonly IImageIdentifierProvider _imageIdentifierProvider;
         private readonly IOptions<TopicsConfiguration> _topicsConfiguration;
 
         private const string UnsupportedFormat = "Unsupported image format. Please use one of the following formats: {0}.";
@@ -48,7 +49,7 @@ namespace IK.Imager.Api.Controllers
         
         /// <inheritdoc />
         public UploadController(ILogger<UploadController> logger, IImageMetadataReader metadataReader, IImageBlobStorage blobStorage, IImageMetadataStorage metadataStorage, 
-            IEventBus eventBus, IOptions<ImageLimitationSettings> limitationSettings, ImageDownloadClient imageDownloadClient, IOptions<TopicsConfiguration> topicsConfiguration)
+            IEventBus eventBus, IOptions<ImageLimitationSettings> limitationSettings, ImageDownloadClient imageDownloadClient, IImageIdentifierProvider imageIdentifierProvider, IOptions<TopicsConfiguration> topicsConfiguration)
         {
             _logger = logger;
             _metadataReader = metadataReader;
@@ -57,6 +58,7 @@ namespace IK.Imager.Api.Controllers
             _eventBus = eventBus;
             _limitationSettings = limitationSettings;
             _imageDownloadClient = imageDownloadClient;
+            _imageIdentifierProvider = imageIdentifierProvider;
             _topicsConfiguration = topicsConfiguration;
         }
 
@@ -129,10 +131,12 @@ namespace IK.Imager.Api.Controllers
             string sizeValidationError = ValidateSize(imageSize, limits);
             if (sizeValidationError != null)
                 return BadRequestAndLog(sizeValidationError);
-            
+             
             //Firstly, saving the image stream to the blob storage
-            var uploadImageResult = await _blobStorage.UploadImage(imageStream, ImageSizeType.Original, imageFormat.MimeType, CancellationToken.None);
-            _logger.LogDebug(UploadedToBlobStorage, uploadImageResult.Id);
+            string imageId = _imageIdentifierProvider.GenerateUniqueId();
+            string imageName = _imageIdentifierProvider.GetImageName(imageId, imageFormat.FileExtension);
+            var uploadImageResult = await _blobStorage.UploadImage(imageName, imageStream, ImageSizeType.Original, imageFormat.MimeType, CancellationToken.None);
+            _logger.LogDebug(UploadedToBlobStorage, imageId);
             
             //Image stream is no longer needed at this stage
             await imageStream.DisposeAsync();
@@ -142,7 +146,8 @@ namespace IK.Imager.Api.Controllers
             //and therefore the image will be unavailable to the clients. In most cases it is just fine.
             await _metadataStorage.SetMetadata(new ImageMetadata
             {
-                Id = uploadImageResult.Id,
+                Id = imageId,
+                Name = imageName,
                 DateAddedUtc = uploadImageResult.DateAdded.DateTime,
                 Height = imageSize.Height,
                 Width = imageSize.Width,
@@ -150,6 +155,7 @@ namespace IK.Imager.Api.Controllers
                 SizeBytes = imageSize.Bytes,
                 MimeType = imageFormat.MimeType,
                 ImageType = (ImageType) imageFormat.ImageType,
+                FileExtension = imageFormat.FileExtension,
                 PartitionKey = partitionKey 
             }, CancellationToken.None);
             _logger.LogDebug(UploadedToMetadataStorage);
@@ -159,15 +165,15 @@ namespace IK.Imager.Api.Controllers
             //Such cases are handled when requesting an image metadata object later by resending this event again.
             await _eventBus.Publish(_topicsConfiguration.Value.UploadedImagesTopicName, new OriginalImageUploadedIntegrationEvent
             {
-                ImageId = uploadImageResult.Id,
+                ImageId = imageId,
                 PartitionKey = partitionKey 
             });
 
-            _logger.LogInformation(UploadedImage, uploadImageResult.Id);
+            _logger.LogInformation(UploadedImage, imageId);
             
             return Ok(new ImageInfo
             {
-                Id = uploadImageResult.Id,
+                Id = imageId,
                 Hash = uploadImageResult.MD5Hash,
                 DateAdded = uploadImageResult.DateAdded,
                 Url = uploadImageResult.Url.ToString(),

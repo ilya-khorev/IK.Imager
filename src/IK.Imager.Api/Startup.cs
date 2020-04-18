@@ -58,7 +58,8 @@ namespace IK.Imager.Api
             services.AddSingleton<IImageMetadataStorage, ImageMetadataCosmosDbStorage>();
             services.AddSingleton<IImageBlobStorage, ImageBlobAzureStorage>();
             services.AddSingleton<IImageMetadataReader, ImageMetadataReader>();
-            
+            services.AddSingleton<IImageIdentifierProvider, ImageIdentifierProvider>();
+
             services.AddHttpClient<ImageDownloadClient>()
                 .AddTransientHttpErrorPolicy(p => 
                     p.WaitAndRetryAsync(3, _ => TimeSpan.FromMilliseconds(500)));

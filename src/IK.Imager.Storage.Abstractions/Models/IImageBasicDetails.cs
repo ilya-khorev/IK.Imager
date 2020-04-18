@@ -10,6 +10,11 @@ namespace IK.Imager.Storage.Abstractions.Models
         string Id { get; set; }
         
         /// <summary>
+        /// Image name
+        /// </summary>
+        string Name { get; set; }
+        
+        /// <summary>
         /// Image size in bytes
         /// </summary>
         long SizeBytes { get; set; }

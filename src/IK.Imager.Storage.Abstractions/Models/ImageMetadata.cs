@@ -18,7 +18,7 @@ namespace IK.Imager.Storage.Abstractions.Models
         public DateTime DateAddedUtc { get; set; }
 
         /// <summary>
-        /// Image name. Optional attribute
+        /// Image name
         /// </summary>
         public string Name { get; set; }
         
@@ -32,6 +32,11 @@ namespace IK.Imager.Storage.Abstractions.Models
         /// Image type
         /// </summary>
         public ImageType ImageType { get; set; }
+        
+        /// <summary>
+        /// File extensions, e.g. '.jpeg', '.png', etc
+        /// </summary>
+        public string FileExtension { get; set; }
         
         /// <summary>
         /// Additional information associated with an image in arbitrary form of key-value dictionary
@@ -61,7 +66,8 @@ namespace IK.Imager.Storage.Abstractions.Models
                                             && DateAddedUtc.Equals(other.DateAddedUtc)
                                             && Name == other.Name
                                             && MimeType == other.MimeType
-                                            && ImageType == other.ImageType;
+                                            && ImageType == other.ImageType
+                                            && FileExtension == other.FileExtension;
 
             bool tagsEqual = true;
             if (Tags != null && other.Tags != null && Tags.Count == other.Tags.Count)
@@ -129,6 +135,7 @@ namespace IK.Imager.Storage.Abstractions.Models
                 hashCode = (hashCode * 397) ^ DateAddedUtc.GetHashCode();
                 hashCode = (hashCode * 397) ^ (Name != null ? Name.GetHashCode() : 0);
                 hashCode = (hashCode * 397) ^ (MimeType != null ? MimeType.GetHashCode() : 0);
+                hashCode = (hashCode * 397) ^ (FileExtension != null ? FileExtension.GetHashCode() : 0);
                 hashCode = (hashCode * 397) ^ (Tags != null ? Tags.GetHashCode() : 0);
                 hashCode = (hashCode * 397) ^ (Thumbnails != null ? Thumbnails.GetHashCode() : 0);
                 hashCode = (hashCode * 397) ^ (int) ImageType;

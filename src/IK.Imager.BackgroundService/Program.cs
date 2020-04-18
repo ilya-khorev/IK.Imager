@@ -53,6 +53,7 @@ namespace IK.Imager.BackgroundService
                     services.AddSingleton<IImageResizing, ImageResizing>();
                     services.AddSingleton<IIntegrationEventHandler<OriginalImageUploadedIntegrationEvent>, GenerateThumbnailsHandler>();
                     services.AddSingleton<IIntegrationEventHandler<ImageDeletedIntegrationEvent>, RemoveImageFilesHandler>();
+                    services.AddSingleton<IImageIdentifierProvider, ImageIdentifierProvider>();
                     services.AddTransient<ThumbnailsService>();
                     
                     services.AddHostedService<BackgroundTasks>();

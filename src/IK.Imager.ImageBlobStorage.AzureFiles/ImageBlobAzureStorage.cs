@@ -43,50 +43,33 @@ namespace IK.Imager.ImageBlobStorage.AzureFiles
             });
             return container;
         }
-
-        public async Task<UploadImageResult> UploadImage(Stream imageStream, ImageSizeType imageSizeType,
-            string imageContentType, CancellationToken cancellationToken)
-        {
-            ArgumentHelper.AssertNotNull(nameof(imageStream), imageStream);
-            ArgumentHelper.AssertNotNullOrEmpty(nameof(imageContentType), imageContentType);
-            
-            return await UploadImage(GenerateId(), imageStream, imageSizeType, imageContentType, cancellationToken);
-        }
-
-        private string GenerateId()
-        {
-            //since all images are publicly available by url, image path must be random and big enough
-            //for simplicity just concatenating 2 system guids
-            return (Guid.NewGuid() + Guid.NewGuid().ToString()).Replace("-", "");
-        }
         
-        public async Task<UploadImageResult> UploadImage(string id, Stream imageStream, ImageSizeType imageSizeType,
+        public async Task<UploadImageResult> UploadImage(string imageName, Stream imageStream, ImageSizeType imageSizeType,
             string imageContentType, CancellationToken cancellationToken)
         {
-            ArgumentHelper.AssertNotNullOrEmpty(nameof(id), id);
+            ArgumentHelper.AssertNotNullOrEmpty(nameof(imageName), imageName);
             ArgumentHelper.AssertNotNull(nameof(imageStream), imageStream);
 
-            var blockBlob = GetBlockBlob(id, imageSizeType);
+            var blockBlob = GetBlockBlob(imageName, imageSizeType);
             blockBlob.Properties.ContentType = imageContentType;
-
+             
             imageStream.Position = 0;
             await blockBlob.UploadFromStreamAsync(imageStream, cancellationToken).ConfigureAwait(false);
 
             return new UploadImageResult
             {
-                Id = id,
                 MD5Hash = blockBlob.Properties.ContentMD5,
                 DateAdded = blockBlob.Properties.Created ?? DateTimeOffset.Now,
                 Url = blockBlob.Uri
             };
         }
 
-        public async Task<MemoryStream> DownloadImage(string id, ImageSizeType imageSizeType,
+        public async Task<MemoryStream> DownloadImage(string imageName, ImageSizeType imageSizeType,
             CancellationToken cancellationToken)
         {
-            ArgumentHelper.AssertNotNullOrEmpty(nameof(id), id);
+            ArgumentHelper.AssertNotNullOrEmpty(nameof(imageName), imageName);
 
-            var blockBlob = GetBlockBlob(id, imageSizeType);
+            var blockBlob = GetBlockBlob(imageName, imageSizeType);
             if (blockBlob == null)
                 return null;
 
@@ -96,36 +79,36 @@ namespace IK.Imager.ImageBlobStorage.AzureFiles
             return memoryStream;
         }
 
-        public async Task<bool> TryDeleteImage(string id, ImageSizeType imageSizeType, CancellationToken cancellationToken)
+        public async Task<bool> TryDeleteImage(string imageName, ImageSizeType imageSizeType, CancellationToken cancellationToken)
         {
-            ArgumentHelper.AssertNotNullOrEmpty(nameof(id), id);
+            ArgumentHelper.AssertNotNullOrEmpty(nameof(imageName), imageName);
 
-            var blockBlob = GetBlockBlob(id, imageSizeType);
+            var blockBlob = GetBlockBlob(imageName, imageSizeType);
             return await blockBlob.DeleteIfExistsAsync(cancellationToken).ConfigureAwait(false);
         }
 
-        public Uri GetImageUri(string id, ImageSizeType imageSizeType)
+        public Uri GetImageUri(string imageName, ImageSizeType imageSizeType)
         {
-            ArgumentHelper.AssertNotNullOrEmpty(nameof(id), id);
+            ArgumentHelper.AssertNotNullOrEmpty(nameof(imageName), imageName);
 
-            var blockBlob = GetBlockBlob(id, imageSizeType);
+            var blockBlob = GetBlockBlob(imageName, imageSizeType);
             return blockBlob.Uri;
         }
 
-        public async Task<bool> ImageExists(string id, ImageSizeType imageSizeType, CancellationToken cancellationToken)
+        public async Task<bool> ImageExists(string imageName, ImageSizeType imageSizeType, CancellationToken cancellationToken)
         {
-            ArgumentHelper.AssertNotNullOrEmpty(nameof(id), id);
+            ArgumentHelper.AssertNotNullOrEmpty(nameof(imageName), imageName);
 
-            var blockBlob = GetBlockBlob(id, imageSizeType);
+            var blockBlob = GetBlockBlob(imageName, imageSizeType);
             return await blockBlob.ExistsAsync(cancellationToken).ConfigureAwait(false);
         }
 
-        private CloudBlockBlob GetBlockBlob(string id, ImageSizeType imageSizeType)
+        private CloudBlockBlob GetBlockBlob(string name, ImageSizeType imageSizeType)
         {
             if (imageSizeType == ImageSizeType.Original)
-                return _imagesContainer.Value.GetBlockBlobReference(id);
+                return _imagesContainer.Value.GetBlockBlobReference(name);
 
-            return _thumbnailsContainer.Value.GetBlockBlobReference(id);
+            return _thumbnailsContainer.Value.GetBlockBlobReference(name);
         }
     }
 }

@@ -2,7 +2,6 @@
 using System.Threading;
 using System.Threading.Tasks;
 using IK.Imager.Api.Contract;
-using IK.Imager.EventBus.Abstractions;
 using IK.Imager.Storage.Abstractions.Models;
 using IK.Imager.Storage.Abstractions.Storage;
 using Microsoft.AspNetCore.Http;
@@ -21,18 +20,16 @@ namespace IK.Imager.Api.Controllers
         private readonly ILogger<SearchController> _logger;
         private readonly IImageMetadataStorage _metadataStorage;
         private readonly IImageBlobStorage _blobStorage;
-        private readonly IEventBus _eventBus;
 
         private const string TooManyImagesRequested = "Maximum allowed images to be requested within one API call is 100.";
         private const string FoundImages = "Found {0} image(s) for requested {1} image id(s)";
         
         /// <inheritdoc />
-        public SearchController(ILogger<SearchController> logger, IImageMetadataStorage metadataStorage, IImageBlobStorage blobStorage, IEventBus eventBus)
+        public SearchController(ILogger<SearchController> logger, IImageMetadataStorage metadataStorage, IImageBlobStorage blobStorage)
         {
             _logger = logger;
             _metadataStorage = metadataStorage;
             _blobStorage = blobStorage;
-            _eventBus = eventBus;
         }
         
         /// <summary>
@@ -74,7 +71,7 @@ namespace IK.Imager.Api.Controllers
                     Height = imageMetadata.Height,
                     Width = imageMetadata.Width,
                     Tags = imageMetadata.Tags ?? new Dictionary<string, string>(),
-                    Url = _blobStorage.GetImageUri(imageMetadata.Id, ImageSizeType.Original).ToString(),
+                    Url = _blobStorage.GetImageUri(imageMetadata.Name, ImageSizeType.Original).ToString(),
                     DateAdded = imageMetadata.DateAddedUtc,
                     MimeType = imageMetadata.MimeType,
                     Thumbnails = new List<ImageInfo>()
@@ -94,7 +91,7 @@ namespace IK.Imager.Api.Controllers
                             Width = thumbnail.Width,
                             DateAdded = thumbnail.DateAddedUtc,
                             MimeType = thumbnail.MimeType,
-                            Url = _blobStorage.GetImageUri(thumbnail.Id, ImageSizeType.Thumbnail).ToString()
+                            Url = _blobStorage.GetImageUri(thumbnail.Name, ImageSizeType.Thumbnail).ToString()
                         });
                     }
                     

@@ -43,7 +43,9 @@ namespace IK.Imager.BackgroundServiceTests
                 DatabaseId = Constants.DatabaseId
             });
             
-            _thumbnailsService = new ThumbnailsService(output.BuildLoggerFor<ThumbnailsService>(), imageResizing, _blobStorage, _metadataStorage, this);
+            IImageIdentifierProvider imageIdentifierProvider = new ImageIdentifierProvider();
+            
+            _thumbnailsService = new ThumbnailsService(output.BuildLoggerFor<ThumbnailsService>(), imageResizing, _blobStorage, _metadataStorage, imageIdentifierProvider, this);
         }
         
         [Fact]
@@ -106,11 +108,12 @@ namespace IK.Imager.BackgroundServiceTests
         private async Task<ImageMetadata> UploadImage(string imagePath, int width, int height, string contentType, ImageType imageType, string partitionKey)
         {
             await using FileStream file = OpenFileForReading(imagePath);
-            var uploadImageResult = await _blobStorage.UploadImage(file, ImageSizeType.Original, contentType, CancellationToken.None);
+            string imageId = Guid.NewGuid().ToString();
+            var uploadImageResult = await _blobStorage.UploadImage(imageId, file, ImageSizeType.Original, contentType, CancellationToken.None);
 
             var imageMetadata = new ImageMetadata
             {
-                Id = uploadImageResult.Id,
+                Id = imageId,
                 DateAddedUtc = uploadImageResult.DateAdded.DateTime,
                 Height = height,
                 Width = width,

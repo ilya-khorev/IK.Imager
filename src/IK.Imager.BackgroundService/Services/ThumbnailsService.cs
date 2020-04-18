@@ -20,6 +20,7 @@ namespace IK.Imager.BackgroundService.Services
         private readonly IImageResizing _imageResizing;
         private readonly IImageBlobStorage _blobStorage;
         private readonly IImageMetadataStorage _metadataStorage;
+        private readonly IImageIdentifierProvider _imageIdentifierProvider;
         private readonly List<int> _thumbnailTargetWidth;
         
         private const string ImageNotFound = "Image metadata object with id = {0} was not found. Stopping to generate thumbnails.";
@@ -30,15 +31,17 @@ namespace IK.Imager.BackgroundService.Services
         private const string ImageSmallerThanTargetWidth = "Image id = {0}, width = {1} is smaller than the smallest thumbnail width.";
 
         private const string PngMimeType = "image/png";
+        private const string PngFileExtension = ".png";
         
         public ThumbnailsService(ILogger<ThumbnailsService> logger, IImageResizing imageResizing,
-            IImageBlobStorage blobStorage, IImageMetadataStorage metadataStorage,
+            IImageBlobStorage blobStorage, IImageMetadataStorage metadataStorage, IImageIdentifierProvider imageIdentifierProvider,
             IOptions<ImageThumbnailsSettings> imageThumbnailsSettings)
         {
             _logger = logger;
             _imageResizing = imageResizing;
             _blobStorage = blobStorage;
             _metadataStorage = metadataStorage;
+            _imageIdentifierProvider = imageIdentifierProvider;
             _thumbnailTargetWidth = imageThumbnailsSettings.Value.TargetWidth.OrderByDescending(x => x).ToList();
         }
 
@@ -60,15 +63,17 @@ namespace IK.Imager.BackgroundService.Services
                 return imageMetadata;
             }
             
-            await using var originalImageStream = await _blobStorage.DownloadImage(imageMetadata.Id, ImageSizeType.Original, CancellationToken.None);
+            await using var originalImageStream = await _blobStorage.DownloadImage(imageMetadata.Name, ImageSizeType.Original, CancellationToken.None);
             _logger.LogDebug(ImageDownloaded, imageMetadata.Id);
 
             StorageImageType imageType = imageMetadata.ImageType;
             string mimeType = imageMetadata.MimeType;
+            string fileExtension = imageMetadata.FileExtension;
             if (imageType == StorageImageType.BMP)
             {
                 imageType = StorageImageType.PNG;
                 mimeType = PngMimeType;
+                fileExtension = PngFileExtension;
             }
             
             var utcNow = DateTime.UtcNow;
@@ -80,11 +85,15 @@ namespace IK.Imager.BackgroundService.Services
 
                 var resizingResult = _imageResizing.Resize(imageStream, (ImageType) imageType, targetWidth);
                 _logger.LogDebug(ImageResized, imageMetadata.Id, resizingResult.Size);
-                 
-                var uploadedBlob = await _blobStorage.UploadImage(resizingResult.Image, ImageSizeType.Thumbnail, mimeType, CancellationToken.None);
+
+                var thumbnailImageId = _imageIdentifierProvider.GenerateUniqueId();
+                var thumbnailImageName = _imageIdentifierProvider.GetImageName(imageId, fileExtension);
+                
+                var uploadedBlob = await _blobStorage.UploadImage(thumbnailImageName, resizingResult.Image, ImageSizeType.Thumbnail, mimeType, CancellationToken.None);
                 imageMetadata.Thumbnails.Add(new ImageThumbnail
                 {
-                    Id = uploadedBlob.Id,
+                    Id = thumbnailImageId,
+                    Name = thumbnailImageName,
                     MD5Hash = uploadedBlob.MD5Hash,
                     DateAddedUtc = utcNow,
                     MimeType = mimeType,
