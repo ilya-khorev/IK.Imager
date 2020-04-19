@@ -26,7 +26,7 @@ Once a new image is uploaded into the system, the background process starts to g
 A client is able to request a metadata object for any image uploaded earlier providing an image identifier. 
 A metadata object will also contains image url, which leads directly to the image blob storage or CDN (depending on configuration)
 
-![](docs/SearchImageRequest.jpg)
+![](docs/GetImageRequest.jpg)
 
 ### Image Removal
 Image removal is available via a simple API request. The system will clear up all related metadata and thumnails objects.
