@@ -11,9 +11,10 @@ The system allows to easily store and manage image binary data and image metadat
 ### Image Upload
 There are 2 ways to upload an image to the system
 1) By a given http/https image URI
-2) Providing a binary data as a part of multipart/form-data
-
 ![](docs/UploadImageWithUrlRequest.jpg)
+
+2) Providing a binary data as a part of multipart/form-data
+![](docs/UploadImageRequest.jpg)
 
 ### Image Validation
 Before the image is saved to the storage, it's being checked for the following image formats: Png, Jpeg, Bmp, Gif.  
