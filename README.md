@@ -13,6 +13,8 @@ There are 2 ways to upload an image to the system
 1) By a given http/https image URI
 2) Providing a binary data as a part of multipart/form-data
 
+![](docs/UploadImageWithUrlRequest.jpg)
+
 ### Image Validation
 Before the image is saved to the storage, it's being checked for the following image formats: Png, Jpeg, Bmp, Gif.  
 Besides, the system verifies the given image's size and dimenesions and compare them with the configuration threshold values.
@@ -23,6 +25,8 @@ Once a new image is uploaded into the system, the background process starts to g
 ### Image Search
 A client is able to request a metadata object for any image uploaded earlier providing an image identifier. 
 A metadata object will also contains image url, which leads directly to the image blob storage or CDN (depending on configuration)
+
+![](docs/SearchImageRequest.jpg)
 
 ### Image Removal
 Image removal is available via a simple API request. The system will clear up all related metadata and thumnails objects.
