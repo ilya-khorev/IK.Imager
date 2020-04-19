@@ -60,7 +60,7 @@ namespace IK.Imager.Api.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [Consumes("multipart/form-data")]
         //todo probably worth uploading using stream https://docs.microsoft.com/en-us/aspnet/core/mvc/models/file-uploads?view=aspnetcore-3.1#upload-large-files-with-streaming
-        public async Task<ActionResult<ImageInfo>> PostWithStream(UploadImageFileRequest imageFileRequest)
+        public async Task<ActionResult<ImageInfo>> PostWithStream([FromForm]UploadImageFileRequest imageFileRequest)
         {
             return await UploadImage(imageFileRequest.File.OpenReadStream(), imageFileRequest.PartitionKey);
         }
