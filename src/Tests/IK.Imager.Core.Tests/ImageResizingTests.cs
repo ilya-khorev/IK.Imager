@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
-using IK.Imager.Core.Abstractions;
+using IK.Imager.Core.Abstractions.Models;
 using Xunit;
 
 namespace IK.Imager.Core.Tests

@@ -1,7 +1,7 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
-using IK.Imager.Core.Abstractions.IntegrationEvents;
 using IK.Imager.EventBus.Abstractions;
+using IK.Imager.IntegrationEvents;
 using Microsoft.ApplicationInsights;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -17,6 +17,9 @@ namespace IK.Imager.BackgroundService
         private readonly IIntegrationEventHandler<OriginalImageUploadedIntegrationEvent> _imageUploadedEventHandler;
         private readonly IIntegrationEventHandler<ImageDeletedIntegrationEvent> _imageDeletedEventHandler;
 
+        private const string StartingTasks = "Starting background tasks...";
+        private const string SubscribedOnEvents = "Subscribed on events from topics.";
+
         public BackgroundTasks(ILogger<BackgroundTasks> logger, IEventBus eventBus, TelemetryClient telemetryClient, IOptions<TopicsConfiguration> topicsConfiguration, 
             IIntegrationEventHandler<OriginalImageUploadedIntegrationEvent> imageUploadedEventHandler, IIntegrationEventHandler<ImageDeletedIntegrationEvent> imageDeletedEventHandler)
         {
@@ -30,14 +33,14 @@ namespace IK.Imager.BackgroundService
         
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            _telemetryClient.TrackEvent("Starting background tasks...");
+            _telemetryClient.TrackEvent(StartingTasks);
 
             int maxConcurrentCalls = _topicsConfiguration.Value.MaxConcurrentCalls;
                 
             await _eventBus.Subscribe(_topicsConfiguration.Value.UploadedImagesTopicName, _topicsConfiguration.Value.SubscriptionName, _imageUploadedEventHandler, maxConcurrentCalls);
             await _eventBus.Subscribe(_topicsConfiguration.Value.DeletedImagesTopicName, _topicsConfiguration.Value.SubscriptionName, _imageDeletedEventHandler, maxConcurrentCalls);
 
-            _logger.LogInformation("Subscribed on events from topics.");
+            _logger.LogInformation(SubscribedOnEvents);
         }
     }
 }

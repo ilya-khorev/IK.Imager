@@ -1,6 +1,6 @@
 using System.IO;
 using System.Threading.Tasks;
-using IK.Imager.Core.Abstractions;
+using IK.Imager.Core.Abstractions.Models;
 using Xunit;
 
 namespace IK.Imager.Core.Tests

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using IK.Imager.Core.Abstractions;
+using IK.Imager.Core.Abstractions.Models;
 using IK.Imager.Utils;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats;

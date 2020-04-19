@@ -1,15 +1,15 @@
 ﻿using System.Threading.Tasks;
-using IK.Imager.BackgroundService.Services;
-using IK.Imager.Core.Abstractions.IntegrationEvents;
+using IK.Imager.Core.Abstractions.Services;
 using IK.Imager.EventBus.Abstractions;
+using IK.Imager.IntegrationEvents;
 
 namespace IK.Imager.BackgroundService.Handlers
 {
     public class GenerateThumbnailsHandler : IIntegrationEventHandler<OriginalImageUploadedIntegrationEvent>
     {
-        private readonly ThumbnailsService _thumbnailsService;
+        private readonly IImageThumbnailService _thumbnailsService;
 
-        public GenerateThumbnailsHandler(ThumbnailsService thumbnailsService)
+        public GenerateThumbnailsHandler(IImageThumbnailService thumbnailsService)
         {
             _thumbnailsService = thumbnailsService;
         }

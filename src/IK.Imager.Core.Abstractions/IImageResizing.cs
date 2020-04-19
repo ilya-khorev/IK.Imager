@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using IK.Imager.Core.Abstractions.Models;
 
 namespace IK.Imager.Core.Abstractions
 {

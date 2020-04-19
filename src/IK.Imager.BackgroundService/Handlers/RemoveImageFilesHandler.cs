@@ -1,11 +1,8 @@
-﻿using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-using IK.Imager.Core.Abstractions.IntegrationEvents;
+﻿using System.Threading.Tasks;
+using IK.Imager.Core.Abstractions.Models;
+using IK.Imager.Core.Abstractions.Services;
 using IK.Imager.EventBus.Abstractions;
-using IK.Imager.Storage.Abstractions.Models;
-using IK.Imager.Storage.Abstractions.Storage;
-using Microsoft.Extensions.Logging;
+using IK.Imager.IntegrationEvents;
 
 namespace IK.Imager.BackgroundService.Handlers
 {
@@ -15,36 +12,21 @@ namespace IK.Imager.BackgroundService.Handlers
     /// </summary>
     public class RemoveImageFilesHandler: IIntegrationEventHandler<ImageDeletedIntegrationEvent>
     {
-        private readonly ILogger<RemoveImageFilesHandler> _logger;
-        private readonly IImageBlobStorage _blobStorage;
+        private readonly IImageDeleteService _imageDeleteService;
 
-        private const string OriginalImageDeleted = "Original image {0} has been deleted. ";
-        private const string ThumbnailsDeleted = "{0} / {1} thumbnails were deleted.";
-        
-        public RemoveImageFilesHandler(ILogger<RemoveImageFilesHandler> logger, IImageBlobStorage blobStorage)
+        public RemoveImageFilesHandler(IImageDeleteService imageDeleteService)
         {
-            _logger = logger;
-            _blobStorage = blobStorage;
+            _imageDeleteService = imageDeleteService;
         }
         
         public async Task Handle(ImageDeletedIntegrationEvent iEvent)
         {
-            bool originalImageDeleted = await _blobStorage.TryDeleteImage(iEvent.ImageName, ImageSizeType.Original, CancellationToken.None);
-            int deletedThumbnails = 0; 
-            foreach (var thumbnailName in iEvent.ThumbnailNames)
+            await _imageDeleteService.DeleteImagesWithMetadata(new ImageShortInfo
             {
-                if (await _blobStorage.TryDeleteImage(thumbnailName, ImageSizeType.Thumbnail, CancellationToken.None))
-                    deletedThumbnails++;
-            }
-            
-            StringBuilder stringBuilder = new StringBuilder();
-
-            if (originalImageDeleted)
-                stringBuilder.AppendFormat(OriginalImageDeleted, iEvent.ImageId);
-
-            stringBuilder.AppendFormat(ThumbnailsDeleted, iEvent.ThumbnailNames.Length, deletedThumbnails);
-            
-            _logger.LogInformation(stringBuilder.ToString());
+                ImageId = iEvent.ImageId,
+                ImageName = iEvent.ImageName,
+                ThumbnailNames = iEvent.ThumbnailNames
+            });
         }
     }
 }

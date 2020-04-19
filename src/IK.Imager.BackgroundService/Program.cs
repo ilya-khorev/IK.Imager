@@ -1,14 +1,15 @@
 ﻿using System.Threading.Tasks;
-using IK.Imager.BackgroundService.Configuration;
 using IK.Imager.BackgroundService.Handlers;
-using IK.Imager.BackgroundService.Services;
 using IK.Imager.Core;
 using IK.Imager.Core.Abstractions;
-using IK.Imager.Core.Abstractions.IntegrationEvents;
+using IK.Imager.Core.Abstractions.Services;
+using IK.Imager.Core.Configuration;
+using IK.Imager.Core.Services;
 using IK.Imager.EventBus.Abstractions;
 using IK.Imager.EventBus.AzureServiceBus;
 using IK.Imager.ImageBlobStorage.AzureFiles;
 using IK.Imager.ImageMetadataStorage.CosmosDB;
+using IK.Imager.IntegrationEvents;
 using IK.Imager.Storage.Abstractions.Storage;
 using Microsoft.ApplicationInsights.Extensibility.PerfCounterCollector.QuickPulse;
 using Microsoft.ApplicationInsights.WorkerService;
@@ -51,11 +52,13 @@ namespace IK.Imager.BackgroundService
                     services.AddSingleton<IImageBlobStorage, ImageBlobAzureStorage>();
                     services.AddSingleton<IImageMetadataReader, ImageMetadataReader>();
                     services.AddSingleton<IImageResizing, ImageResizing>();
+                    services.AddSingleton<IImageIdentifierProvider, ImageIdentifierProvider>();
+                    
+                    services.AddSingleton<IImageDeleteService, ImageDeleteService>();
+                    services.AddSingleton<IImageThumbnailService, ImageThumbnailService>();
+
                     services.AddSingleton<IIntegrationEventHandler<OriginalImageUploadedIntegrationEvent>, GenerateThumbnailsHandler>();
                     services.AddSingleton<IIntegrationEventHandler<ImageDeletedIntegrationEvent>, RemoveImageFilesHandler>();
-                    services.AddSingleton<IImageIdentifierProvider, ImageIdentifierProvider>();
-                    services.AddTransient<ThumbnailsService>();
-                    
                     services.AddHostedService<BackgroundTasks>();
                 })
                 .UseConsoleLifetime();

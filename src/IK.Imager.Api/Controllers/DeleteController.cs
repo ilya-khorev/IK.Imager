@@ -1,14 +1,10 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using IK.Imager.Api.Contract;
-using IK.Imager.Core.Abstractions.IntegrationEvents;
+using IK.Imager.Core.Abstractions.Services;
 using IK.Imager.EventBus.Abstractions;
-using IK.Imager.Storage.Abstractions.Storage;
+using IK.Imager.IntegrationEvents;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace IK.Imager.Api.Controllers
@@ -20,21 +16,18 @@ namespace IK.Imager.Api.Controllers
     [Route("[controller]")]
     public class DeleteController : ControllerBase
     {
-        private readonly ILogger<DeleteController> _logger;
-        private readonly IImageMetadataStorage _metadataStorage;
         private readonly IEventBus _eventBus;
         private readonly IOptions<TopicsConfiguration> _topicsConfiguration;
-
-        private const string MetadataRemoved = "Metadata removed for image {0}";
+        private readonly IImageDeleteService _imageDeleteService;
+ 
         private const string ImageNotFound = "Requested image with id {0} was not found";
         
         /// <inheritdoc />
-        public DeleteController(ILogger<DeleteController> logger, IImageMetadataStorage metadataStorage, IEventBus eventBus, IOptions<TopicsConfiguration> topicsConfiguration)
+        public DeleteController(IEventBus eventBus, IOptions<TopicsConfiguration> topicsConfiguration, IImageDeleteService imageDeleteService)
         {
-            _logger = logger;
-            _metadataStorage = metadataStorage;
             _eventBus = eventBus;
             _topicsConfiguration = topicsConfiguration;
+            _imageDeleteService = imageDeleteService;
         }
         
         /// <summary>
@@ -52,28 +45,20 @@ namespace IK.Imager.Api.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> Delete(DeleteImageRequest deleteImageRequest)
         {
-            var metadata = await _metadataStorage.GetMetadata(new List<string> {deleteImageRequest.ImageId},
-                deleteImageRequest.PartitionKey, CancellationToken.None);
-            if (metadata == null || !metadata.Any())
-                return NotFound(string.Format(ImageNotFound, deleteImageRequest.ImageId));
-            
-            var deletedMetadata = await _metadataStorage.RemoveMetadata(deleteImageRequest.ImageId, deleteImageRequest.PartitionKey, CancellationToken.None);
-            if (!deletedMetadata)
-                return NotFound(string.Format(ImageNotFound, deleteImageRequest.ImageId));
+            var imageDeleteResult =
+                await _imageDeleteService.DeleteOriginalImageMetadata(deleteImageRequest.ImageId,
+                    deleteImageRequest.PartitionKey);
 
-            var imageMetadata = metadata[0];
-            
+            if (imageDeleteResult == null)
+                return NotFound(string.Format(ImageNotFound, deleteImageRequest.ImageId));
+           
             await _eventBus.Publish(_topicsConfiguration.Value.DeletedImagesTopicName, new ImageDeletedIntegrationEvent
             {
-                ImageId = deleteImageRequest.ImageId,
-                ImageName = imageMetadata.Name,
-                ThumbnailNames = imageMetadata.Thumbnails != null 
-                    ? imageMetadata.Thumbnails.Select(x => x.Name).ToArray() 
-                    : new string[0]
+                ImageId = imageDeleteResult.ImageId,
+                ImageName = imageDeleteResult.ImageName,
+                ThumbnailNames = imageDeleteResult.ThumbnailNames
             });
-            
-            _logger.LogInformation(MetadataRemoved, deleteImageRequest.ImageId);
-            
+
             return NoContent();
         }
     }

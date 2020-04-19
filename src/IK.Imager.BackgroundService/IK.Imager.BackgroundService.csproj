@@ -19,6 +19,7 @@
       <ProjectReference Include="..\IK.Imager.EventBus.AzureServiceBus\IK.Imager.EventBus.AzureServiceBus.csproj" />
       <ProjectReference Include="..\IK.Imager.ImageBlobStorage.AzureFiles\IK.Imager.ImageBlobStorage.AzureFiles.csproj" />
       <ProjectReference Include="..\IK.Imager.ImageMetadataStorage.CosmosDB\IK.Imager.ImageMetadataStorage.CosmosDB.csproj" />
+      <ProjectReference Include="..\IK.Imager.IntegrationEvents\IK.Imager.IntegrationEvents.csproj" />
       <ProjectReference Include="..\IK.Imager.Storage.Abstractions\IK.Imager.Storage.Abstractions.csproj" />
     </ItemGroup>
 

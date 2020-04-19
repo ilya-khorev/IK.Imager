@@ -1,16 +1,19 @@
 using System;
 using System.IO;
 using System.Reflection;
-using IK.Imager.Api.Configuration;
+using AutoMapper;
 using IK.Imager.Api.Filters;
 using IK.Imager.Api.Services;
 using IK.Imager.Core;
 using IK.Imager.Core.Abstractions;
-using IK.Imager.Core.Abstractions.IntegrationEvents;
+using IK.Imager.Core.Abstractions.Services;
+using IK.Imager.Core.Configuration;
+using IK.Imager.Core.Services;
 using IK.Imager.EventBus.Abstractions;
 using IK.Imager.EventBus.AzureServiceBus;
 using IK.Imager.ImageMetadataStorage.CosmosDB;
 using IK.Imager.ImageBlobStorage.AzureFiles;
+using IK.Imager.IntegrationEvents;
 using IK.Imager.Storage.Abstractions.Storage;
 using Microsoft.ApplicationInsights.AspNetCore.Extensions;
 using Microsoft.ApplicationInsights.Extensibility.PerfCounterCollector.QuickPulse;
@@ -31,7 +34,7 @@ namespace IK.Imager.Api
     {
         private const string ApiTitle = "IK.Imager API";
         private const string CurrentVersion = "v1.0";
-        
+
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
@@ -43,7 +46,7 @@ namespace IK.Imager.Api
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllers(options => { options.Filters.Add(typeof(GlobalExceptionFilter)); });
-            
+
             //todo sort endpoints in swagger
 
             services.AddSwaggerGen(c =>
@@ -51,7 +54,9 @@ namespace IK.Imager.Api
                 c.SwaggerDoc(CurrentVersion, new OpenApiInfo {Title = ApiTitle, Version = CurrentVersion});
                 c.IncludeXmlComments(XmlCommentsFilePath);
             });
-            
+
+            services.AddAutoMapper(c => c.AddProfile<AutoMapping>(), typeof(Startup));
+
             RegisterConfigurations(services);
 
             services.AddSingleton<IEventBus, ServiceBus>();
@@ -60,10 +65,14 @@ namespace IK.Imager.Api
             services.AddSingleton<IImageMetadataReader, ImageMetadataReader>();
             services.AddSingleton<IImageIdentifierProvider, ImageIdentifierProvider>();
 
+            services.AddSingleton<IImageUploadService, ImageUploadService>();
+            services.AddSingleton<IImageSearchService, ImageSearchService>();
+            services.AddSingleton<IImageDeleteService, ImageDeleteService>();
+
             services.AddHttpClient<ImageDownloadClient>()
-                .AddTransientHttpErrorPolicy(p => 
+                .AddTransientHttpErrorPolicy(p =>
                     p.WaitAndRetryAsync(3, _ => TimeSpan.FromMilliseconds(500)));
-            
+
             services.AddHealthChecks(); //todo
             SetupAppInsights(services);
         }
@@ -75,13 +84,15 @@ namespace IK.Imager.Api
 
             services.Configure<ServiceBusSettings>(Configuration.GetSection("ServiceBus"));
             services.AddSingleton(resolver => resolver.GetRequiredService<IOptions<ServiceBusSettings>>().Value);
-            
+
             services.Configure<ImageAzureStorageConfiguration>(Configuration.GetSection("AzureStorage"));
-            services.AddSingleton(resolver => resolver.GetRequiredService<IOptions<ImageAzureStorageConfiguration>>().Value);
-            
+            services.AddSingleton(resolver =>
+                resolver.GetRequiredService<IOptions<ImageAzureStorageConfiguration>>().Value);
+
             services.Configure<ImageMetadataCosmosDbStorageConfiguration>(Configuration.GetSection("CosmosDb"));
-            services.AddSingleton(resolver => resolver.GetRequiredService<IOptions<ImageMetadataCosmosDbStorageConfiguration>>().Value);
-            
+            services.AddSingleton(resolver =>
+                resolver.GetRequiredService<IOptions<ImageMetadataCosmosDbStorageConfiguration>>().Value);
+
             services.Configure<TopicsConfiguration>(Configuration.GetSection("Topics"));
             services.AddSingleton(resolver => resolver.GetRequiredService<IOptions<TopicsConfiguration>>().Value);
         }
@@ -114,11 +125,11 @@ namespace IK.Imager.Api
                 return xmlPath;
             }
         }
-        
+
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
-            if (env.IsDevelopment()) 
+            if (env.IsDevelopment())
                 app.UseDeveloperExceptionPage();
 
             app.UseRouting();
@@ -134,7 +145,7 @@ namespace IK.Imager.Api
                     }
                 );
             });
-            
+
             app.UseEndpoints(endpoints => { endpoints.MapControllers(); });
         }
     }
