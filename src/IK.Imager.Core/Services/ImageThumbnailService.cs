@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -78,7 +77,6 @@ namespace IK.Imager.Core.Services
                 fileExtension = PngFileExtension;
             }
             
-            var utcNow = DateTime.UtcNow;
             var imageStream = originalImageStream;
             foreach (var targetWidth in _thumbnailTargetWidth)
             {
@@ -97,7 +95,7 @@ namespace IK.Imager.Core.Services
                     Id = thumbnailImageId,
                     Name = thumbnailImageName,
                     MD5Hash = uploadedBlob.MD5Hash,
-                    DateAddedUtc = utcNow,
+                    DateAddedUtc = uploadedBlob.DateAdded.DateTime,
                     MimeType = mimeType,
                     Height = resizingResult.Size.Height,
                     Width = resizingResult.Size.Width,
