@@ -4,10 +4,10 @@ version: '3.4'
 
 services:
   ik.imager.api:
-    image: ${DOCKER_REGISTRY-}ik-imager-api
-    build:
-      context: .
-      dockerfile: IK.Imager.Api\Dockerfile
+    image: ilyakhorev/ik-imager-api:1.0
+#    build:
+#      context: .
+#      dockerfile: IK.Imager.Api\Dockerfile
     environment:
       - ServiceBus__ConnectionString=${ServiceBus_ConnectionString}
       - AzureStorage__ConnectionString=${AzureStorage_ConnectionString}
@@ -18,10 +18,10 @@ services:
       - ApplicationInsights__AuthenticationApiKey=${AppInsights_AuthenticationApiKey}
 
   ik.imager.backgroundservice:
-    image: ${DOCKER_REGISTRY-}ik-imager-backgroundservice
-    build:
-      context: .
-      dockerfile: IK.Imager.BackgroundService\Dockerfile
+    image: ilyakhorev/ik-imager-backgroundservice:1.0
+#    build:
+#      context: .
+#      dockerfile: IK.Imager.BackgroundService\Dockerfile
     environment:
       - ServiceBus__ConnectionString=${ServiceBus_ConnectionString}
       - AzureStorage__ConnectionString=${AzureStorage_ConnectionString}
