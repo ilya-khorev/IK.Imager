@@ -13,6 +13,7 @@ COPY ["IK.Imager.EventBus.AzureServiceBus/IK.Imager.EventBus.AzureServiceBus.csp
 COPY ["IK.Imager.EventBus.Abstractions/IK.Imager.EventBus.Abstractions.csproj", "IK.Imager.EventBus.Abstractions/"]
 COPY ["IK.Imager.Core/IK.Imager.Core.csproj", "IK.Imager.Core/"]
 COPY ["IK.Imager.Core.Abstractions/IK.Imager.Core.Abstractions.csproj", "IK.Imager.Core.Abstractions/"]
+COPY ["IK.Imager.IntegrationEvents/IK.Imager.IntegrationEvents.csproj", "IK.Imager.IntegrationEvents/"]
 COPY ["IK.Imager.Utils/IK.Imager.Utils.csproj", "IK.Imager.Utils/"]
 COPY ["IK.Imager.ImageBlobStorage.AzureFiles/IK.Imager.ImageBlobStorage.AzureFiles.csproj", "IK.Imager.ImageBlobStorage.AzureFiles/"]
 COPY ["IK.Imager.Storage.Abstractions/IK.Imager.Storage.Abstractions.csproj", "IK.Imager.Storage.Abstractions/"]
