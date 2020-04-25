@@ -54,4 +54,4 @@ Another key functionality of the service is image removal. When removal request 
 5) Docker - both microservices are avalable as docker images on docker hub (see links above)
 
 ### Dependencies graph
-![](docs/DependenciesGraph.png)
+![](docs/Dependencies.png)
