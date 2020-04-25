@@ -43,11 +43,15 @@ Internally it communicates with Azure Blob Storage for storing image files and w
 
 2) Background microservice. 
 Used for thumbnails generating that happens right after the original image is uploaded via API microservice.  
-Another key functionality is image removal. When removal request comes to the API, it just clears up the related metadata object, whereas the blob files of the image and its thumbnails are removed later in the background microservice.
+Another key functionality of the service is image removal. When removal request comes to the API, it just clears up the related metadata object, whereas the blob files of the image and its thumbnails are removed later within the background microservice.
 
-Technologies used:
-1) Azure Blob Storage - this is where image files are stored.
+### Technologies used
+1) Azure Blob Storage. This is where image files are stored.
 2) Azure Cosmos DB - used for storing of metadata objects.
-3) Azure ServiceBus - used for passing some events from API to the Background Service
-4) Asp.Net Core 3.1
-5) Docker - both microservices are avalable as docker images on docker hub
+3) Azure ServiceBus - used for passing some events from API to the Background Service.
+4) Azure Application Insights - used as a storage of application logs.
+4) This microservices are written using .Net Core 3.1
+5) Docker - both microservices are avalable as docker images on docker hub (see links above)
+
+### Dependencies graph
+![](docs/DependenciesGraph.png)
