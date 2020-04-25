@@ -23,9 +23,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IK.Imager.Core.Abstractions
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "EventBus", "EventBus", "{F8B26A7D-F287-461B-8722-E74F1C4288A0}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IK.Imager.EventBus.Abstractions", "IK.Imager.EventBus.Abstractions\IK.Imager.EventBus.Abstractions.csproj", "{FFD71374-7A8E-4EFB-9EC1-851539B985B8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IK.Imager.EventBus.Abstractions", "EventBus\IK.Imager.EventBus.Abstractions\IK.Imager.EventBus.Abstractions.csproj", "{FFD71374-7A8E-4EFB-9EC1-851539B985B8}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IK.Imager.EventBus.AzureServiceBus", "IK.Imager.EventBus.AzureServiceBus\IK.Imager.EventBus.AzureServiceBus.csproj", "{FF1F9008-7073-4141-9B8B-1B1A431772F5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IK.Imager.EventBus.AzureServiceBus", "EventBus\IK.Imager.EventBus.AzureServiceBus\IK.Imager.EventBus.AzureServiceBus.csproj", "{FF1F9008-7073-4141-9B8B-1B1A431772F5}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IK.Imager.Api", "IK.Imager.Api\IK.Imager.Api.csproj", "{7E9E39E6-FA5C-4902-9627-6B01D4249E46}"
 EndProject
