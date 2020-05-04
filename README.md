@@ -13,6 +13,12 @@ There are 2 ways to upload an image to the system
 2) Providing binary data as a part of multipart/form-data:
 ![](docs/UploadImageRequest.png)
 
+#### Partitioning
+When uploading an image, it is necessary to specify a partition key. This key is needed for Cosmos DB, which is used as metadata storage in this project. Partitioning is a way to scale incoming data and keep performance very high, so it's very important to select an appropriate partition key for your images.
+It's recommended to use something meaningful, for example:
+1) Let's say you want to store images from different websites. In this case, as a partition key, you may select a web site name, where the images are originally hosted. 
+2) Another example would be to store product images of a particular shop. In this case, you might consider using a combination of shop id and some text phrase as a partition key, such as "shop_234".
+
 ### Image Validation
 Before the image is saved to the data storage, it's being checked for the image size, dimensions, and format.
 
@@ -29,10 +35,13 @@ The system also verifies the given image's size and compare it with the configur
 
 ### Image Thumbnails
 Once a new image is uploaded into the system, the background process starts to generate thumbnails, which will subsequently become available to the clients via the API. Thumbnails are generated for particular sizes specified in the configuration. An aspect ratio of an image is retained during this process.
+Thumbnails are returned as a part of the image search response, together with an original image's metadata.
+However, keep in mind, that there is a small delay before thumbnails are returned - the background process should generate them after an image is uploaded. Usually, it takes around 2 secs, which is absolutely fine for most use-cases. 
 
 ### Image Search
 A client is able to request a metadata object for any image uploaded earlier, providing an image identifier. 
 A metadata object will also contain an image URL, which leads directly to the image blob storage or CDN (depending on configuration settings).
+PartitionKey is an optional parameter in this request. However, if you search for objects located in one partition, it's highly recommended to pass the partition key, as it will significantly improve your search performance.
 
 ![](docs/GetImageRequest.png)
 
