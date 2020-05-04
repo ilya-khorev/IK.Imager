@@ -52,6 +52,32 @@ Image removal is available via a simple API request. The system will clear up al
 [ilyakhorev/ik-imager-api](https://hub.docker.com/r/ilyakhorev/ik-imager-api)  
 [ilyakhorev/ik-imager-backgroundservice](https://hub.docker.com/r/ilyakhorev/ik-imager-backgroundservice)
 
+### Environment Variables
+Connections strings and behaviour settings, defined in the configuration file, can also be passed via the following environment variables.
+
+#### Mandatory Parameters
+
+Below are the required parameters needed for both microservices:  
+
+Parameter  |   Description
+:--- | :--- 
+ServiceBus__ConnectionString   |   Connection string to Azure Service Bus
+AzureStorage__ConnectionString   |   Connection string to Azure Storage account
+APPINSIGHTS_INSTRUMENTATIONKEY   |   Instrumentation key of your Application Insights 
+ApplicationInsights__AuthenticationApiKey   |   Authentication API key of your Application Insights 
+
+#### Optional Parameters
+
+Parameter  |   Default value   |   Description
+:--- | :--- | :---
+Logging__LogLevel__Default   |   Information   |   Minimum log level, from which logs are passed to logger providers. Only 2 logger providers are added: Console and Application Insights
+Logging__ApplicationInsights__LogLevel__Default   |   Information   |   Minimum log level, from which logs are sent to Application Insights
+
+The full list of configuration parameters can be found in the corresponding appsettings files   
+
+[API appsettings](../master/src/IK.Imager.Api/appsettings.json)   
+[BackgroundService appsettings](../master/src/IK.Imager.BackgroundService/appsettings.json)
+
 ## Architecture Overview
 ![](docs/Architecture.svg)
 
