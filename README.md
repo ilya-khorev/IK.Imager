@@ -69,8 +69,8 @@ Another key functionality of the service is image removal. When removal request 
 2) Azure Cosmos DB - used for storing metadata objects.
 3) Azure ServiceBus - used for passing some events from API to the Background Service.
 4) Azure Application Insights - used as a storage of application logs.
-4) This microservices are written using .Net Core 3.1
-5) Docker - both microservices are available as docker images on docker hub (see links above)
+4) The microservices are written using .Net Core 3.1
+5) Docker - both microservices are available as docker images on Docker Hub (see links above)
 
 ### Dependencies graph
 ![](docs/Dependencies.png)
