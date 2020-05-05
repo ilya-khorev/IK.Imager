@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Web;
 using IK.Imager.Storage.Abstractions.Models;
 using IK.Imager.Storage.Abstractions.Storage;
 
@@ -10,7 +11,7 @@ namespace IK.Imager.Core.Tests.Mocks
 {
     public class MockImageBlobStorage: IImageBlobStorage
     {
-        private readonly Dictionary<string, MemoryStream> _streamsDictionary = new Dictionary<string, MemoryStream>();
+        private readonly Dictionary<string, MemoryStream> _imagesDictionary = new Dictionary<string, MemoryStream>();
         
         public async Task<UploadImageResult> UploadImage(string imageName, Stream imageStream, ImageSizeType imageSizeType, string contentType,
             CancellationToken cancellationToken)
@@ -18,11 +19,11 @@ namespace IK.Imager.Core.Tests.Mocks
             var memoryStream = new MemoryStream();
             await imageStream.CopyToAsync(memoryStream, cancellationToken);
             memoryStream.Position = 0;
-            _streamsDictionary.TryAdd(imageName, memoryStream);
+            _imagesDictionary.TryAdd(imageName, memoryStream);
             
             return new UploadImageResult
             {
-                Url = new Uri("http://test.com"),
+                Url = GetImageUri(imageName, imageSizeType),
                 DateAdded = DateTimeOffset.Now,
                 MD5Hash = Guid.NewGuid().ToString()
             };
@@ -30,7 +31,7 @@ namespace IK.Imager.Core.Tests.Mocks
 
         public async Task<MemoryStream> DownloadImage(string imageName, ImageSizeType imageSizeType, CancellationToken cancellationToken)
         {
-            if (_streamsDictionary.TryGetValue(imageName, out var value))
+            if (_imagesDictionary.TryGetValue(imageName, out var value))
             {
                 MemoryStream outMemoryStream = new MemoryStream();
                 await value.CopyToAsync(outMemoryStream, cancellationToken);
@@ -43,17 +44,22 @@ namespace IK.Imager.Core.Tests.Mocks
 
         public Task<bool> TryDeleteImage(string imageName, ImageSizeType imageSizeType, CancellationToken cancellationToken)
         {
-            throw new NotImplementedException();
+            if (!_imagesDictionary.ContainsKey(imageName))
+                return Task.FromResult(false);
+
+            _imagesDictionary.Remove(imageName);
+            return Task.FromResult(true);
         }
 
         public Uri GetImageUri(string imageName, ImageSizeType imageSizeType)
         {
-            throw new NotImplementedException();
+            return new Uri("http://test.com/" + HttpUtility.UrlEncode(imageSizeType.ToString()) + "/" +
+                           HttpUtility.UrlEncode(imageName));
         }
 
         public Task<bool> ImageExists(string imageName, ImageSizeType imageSizeType, CancellationToken cancellationToken)
         {
-            throw new NotImplementedException();
+            return Task.FromResult(_imagesDictionary.ContainsKey(imageName));
         }
     }
 }

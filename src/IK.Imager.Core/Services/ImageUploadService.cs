@@ -1,15 +1,12 @@
-﻿using System.ComponentModel.DataAnnotations;
-using System.IO;
+﻿using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using IK.Imager.Core.Abstractions;
 using IK.Imager.Core.Abstractions.Models;
 using IK.Imager.Core.Abstractions.Services;
-using IK.Imager.Core.Configuration;
 using IK.Imager.Storage.Abstractions.Models;
 using IK.Imager.Storage.Abstractions.Storage;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
 namespace IK.Imager.Core.Services
 {
@@ -19,24 +16,21 @@ namespace IK.Imager.Core.Services
         private readonly IImageMetadataReader _metadataReader;
         private readonly IImageBlobStorage _blobStorage;
         private readonly IImageMetadataStorage _metadataStorage;
-        private readonly IOptions<ImageLimitationSettings> _limitationSettings;
+        private readonly IImageValidator _imageValidator;
         private readonly IImageIdentifierProvider _imageIdentifierProvider;
 
-        private const string UnsupportedFormat = "Unsupported image format. Please use one of the following formats: {0}.";
-        private const string IncorrectSize = "Image size must be between {0} and {1} bytes.";
-        private const string IncorrectDimensions = "Image width must be between {0} and {1} px. Image height must be between {2} and {3} px.";
         private const string CheckingImage = "Starting to check the image.";
         private const string UploadedToBlobStorage = "Uploaded the image to the blob storage, id={0}.";
         private const string UploadingFinished = "Image {0} and its metadata has been saved.";
         
-        public ImageUploadService(ILogger<ImageUploadService> logger, IImageMetadataReader metadataReader, IImageBlobStorage blobStorage, IImageMetadataStorage metadataStorage, 
-           IOptions<ImageLimitationSettings> limitationSettings, IImageIdentifierProvider imageIdentifierProvider)
+        public ImageUploadService(ILogger<ImageUploadService> logger, IImageMetadataReader metadataReader, IImageBlobStorage blobStorage, 
+            IImageMetadataStorage metadataStorage, IImageValidator imageValidator, IImageIdentifierProvider imageIdentifierProvider)
         {
             _logger = logger;
             _metadataReader = metadataReader;
             _blobStorage = blobStorage;
             _metadataStorage = metadataStorage;
-            _limitationSettings = limitationSettings;
+            _imageValidator = imageValidator;
             _imageIdentifierProvider = imageIdentifierProvider;
         }
         
@@ -44,20 +38,13 @@ namespace IK.Imager.Core.Services
         {
              _logger.LogDebug(CheckingImage);
             var imageFormat = _metadataReader.DetectFormat(imageStream); 
-            var limits = _limitationSettings.Value;
-            
-            if (imageFormat == null || !limits.Types.Contains(imageFormat.ImageType.ToString()))
-                throw new ValidationException(string.Format(UnsupportedFormat, string.Join(",", limits.Types)));
-            
+            _imageValidator.CheckFormat(imageFormat);
             _logger.LogDebug(imageFormat.ToString());
 
             var imageSize = _metadataReader.ReadSize(imageStream);
+            _imageValidator.CheckSize(imageSize);
             _logger.LogDebug(imageSize.ToString());
 
-            string sizeValidationError = ValidateSize(imageSize, limits);
-            if (sizeValidationError != null)
-                throw new ValidationException(sizeValidationError);
-             
             //Firstly, saving the image stream to the blob storage
             string imageId = _imageIdentifierProvider.GenerateUniqueId();
             string imageName = _imageIdentifierProvider.GetImageName(imageId, imageFormat.FileExtension);
@@ -98,21 +85,6 @@ namespace IK.Imager.Core.Services
                 Width = imageSize.Width,
                 MimeType = imageFormat.MimeType
             };
-        }
-        
-        private string ValidateSize(ImageSize imageSize, ImageLimitationSettings limits)
-        {
-            if (imageSize.Bytes > limits.SizeBytes.Max || imageSize.Bytes < limits.SizeBytes.Min)
-                return string.Format(IncorrectSize, limits.SizeBytes.Min, limits.SizeBytes.Max);
-            
-            if (imageSize.Width > limits.Width.Max || imageSize.Width < limits.Width.Min || 
-                imageSize.Height > limits.Height.Max || imageSize.Height < limits.Height.Min)
-                return string.Format(IncorrectDimensions, limits.Width.Min, limits.Width.Max, limits.Height.Min, limits.Height.Max);
-
-            //todo extract to a separate class ImageValidator
-            //todo add aspect ration restrictions
-            
-            return null;
         }
     }
 }

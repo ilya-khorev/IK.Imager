@@ -34,7 +34,11 @@ namespace IK.Imager.Core.Tests.Mocks
 
         public Task<bool> RemoveMetadata(string imageId, string partitionKey, CancellationToken cancellationToken)
         {
-            throw new System.NotImplementedException();
+            if (!_dictionary.ContainsKey(imageId))
+                return Task.FromResult(false);
+            
+            _dictionary.Remove(imageId);
+            return Task.FromResult(true);
         }
     }
 }

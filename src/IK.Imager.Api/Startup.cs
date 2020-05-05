@@ -64,11 +64,11 @@ namespace IK.Imager.Api
             services.AddSingleton<IImageBlobStorage, ImageBlobAzureStorage>();
             services.AddSingleton<IImageMetadataReader, ImageMetadataReader>();
             services.AddSingleton<IImageIdentifierProvider, ImageIdentifierProvider>();
-
             services.AddSingleton<IImageUploadService, ImageUploadService>();
             services.AddSingleton<IImageSearchService, ImageSearchService>();
             services.AddSingleton<IImageDeleteService, ImageDeleteService>();
-
+            services.AddSingleton<IImageValidator, ImageValidator>();
+            
             services.AddHttpClient<ImageDownloadClient>()
                 .AddTransientHttpErrorPolicy(p =>
                     p.WaitAndRetryAsync(3, _ => TimeSpan.FromMilliseconds(500)));

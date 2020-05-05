@@ -1,12 +1,10 @@
 using System;
-using System.IO;
-using System.Threading;
+using System.Linq;
 using System.Threading.Tasks;
 using IK.Imager.Core.Abstractions;
 using IK.Imager.Core.Configuration;
 using IK.Imager.Core.Services;
 using IK.Imager.Core.Tests.Mocks;
-using IK.Imager.Storage.Abstractions.Models;
 using IK.Imager.Storage.Abstractions.Storage;
 using Microsoft.Extensions.Options;
 using Xunit;
@@ -37,7 +35,10 @@ namespace IK.Imager.Core.Tests
         {
             string partitionKey = Guid.NewGuid().ToString();
             string contentType = "image/jpeg";
-            var uploadImageResult = await UploadImage("Images\\jpeg\\1043-800x600.jpg", 800, 600, contentType, ImageType.JPEG, partitionKey);
+            int width = 800;
+            int height = 600;
+            double aspectRatio = width / (double)height; 
+            var uploadImageResult = await ImageTestsHelper.UploadImage(_blobStorage, _metadataStorage,"Images\\jpeg\\1043-800x600.jpg", width, height, contentType, ImageType.JPEG, partitionKey);
 
             var imageWithGeneratedThumbnails = await _thumbnailsService.GenerateThumbnails(uploadImageResult.Id, partitionKey);
             Assert.Equal(Value.TargetWidth.Length, imageWithGeneratedThumbnails.Count);
@@ -47,7 +48,10 @@ namespace IK.Imager.Core.Tests
                 Assert.Equal(Value.TargetWidth[i++],imageThumbnail.Width);
                 Assert.Equal(contentType,imageThumbnail.MimeType);
                 Assert.NotNull(imageThumbnail.Id);
-                Assert.True(imageThumbnail.Height > 0);
+                
+                //Making sure aspect ration is retained
+                double thumbnailAspectRation = imageThumbnail.Width / (double)imageThumbnail.Height;
+                Assert.Equal(aspectRatio, thumbnailAspectRation);
             }
         }
 
@@ -63,8 +67,9 @@ namespace IK.Imager.Core.Tests
         {
             string partitionKey = Guid.NewGuid().ToString();
             string contentType = "image/gif";
-            var uploadImageResult = await UploadImage("Images\\gif\\giphy_200x200.gif", 200, 200, contentType, ImageType.GIF, partitionKey);
-            Assert.Null(uploadImageResult.Thumbnails);
+            var uploadImageResult = await ImageTestsHelper.UploadImage(_blobStorage, _metadataStorage, "Images\\gif\\giphy_200x200.gif", 200, 200, contentType, ImageType.GIF, partitionKey);
+            var imageWithGeneratedThumbnails = await _thumbnailsService.GenerateThumbnails(uploadImageResult.Id, partitionKey);
+            Assert.False(imageWithGeneratedThumbnails.Any());
         }
 
         [Fact]
@@ -72,7 +77,7 @@ namespace IK.Imager.Core.Tests
         {
             string partitionKey = Guid.NewGuid().ToString();
             string contentType = "image/bmp";
-            var uploadImageResult = await UploadImage("Images\\bmp\\1068-800x1600.bmp", 800, 1200, contentType, ImageType.BMP, partitionKey);
+            var uploadImageResult = await ImageTestsHelper.UploadImage(_blobStorage, _metadataStorage,"Images\\bmp\\1068-800x1600.bmp", 800, 1200, contentType, ImageType.BMP, partitionKey);
             var imageWithGeneratedThumbnails = await _thumbnailsService.GenerateThumbnails(uploadImageResult.Id, partitionKey);
 
             foreach (var imageThumbnail in imageWithGeneratedThumbnails)
@@ -85,55 +90,5 @@ namespace IK.Imager.Core.Tests
         {
             TargetWidth = new [] { 200, 300, 500 }
         };
-
-        private async Task<ImageMetadata> UploadImage(string imagePath, int width, int height, string contentType, ImageType imageType, string partitionKey)
-        {
-            string extension = "";
-            switch (imageType)
-            {
-                case ImageType.BMP:
-                    extension = ".bmp";
-                    break;
-                
-                case ImageType.JPEG:
-                    extension = ".jpeg";
-                    break;
-                
-                case ImageType.PNG:
-                    extension = ".png";
-                    break;
-                
-                case ImageType.GIF:
-                    extension = ".gif";
-                    break;
-            }
-            
-            await using FileStream file = OpenFileForReading(imagePath);
-            string imageId = Guid.NewGuid().ToString();
-            string imageName = imageId + extension;
-            var uploadImageResult = await _blobStorage.UploadImage(imageName, file, ImageSizeType.Original, contentType, CancellationToken.None);
-
-            var imageMetadata = new ImageMetadata
-            {
-                Id = imageId,
-                Name = imageName,
-                DateAddedUtc = uploadImageResult.DateAdded.DateTime,
-                Height = height,
-                Width = width,
-                MD5Hash = uploadImageResult.MD5Hash,
-                SizeBytes = file.Length,
-                MimeType = contentType,
-                ImageType = imageType,
-                PartitionKey = partitionKey 
-            };
-
-            await _metadataStorage.SetMetadata(imageMetadata, CancellationToken.None);
-            return imageMetadata;
-        }
-        
-        private FileStream OpenFileForReading(string filePath)
-        {
-            return File.Open(filePath, FileMode.Open, FileAccess.Read);
-        }
     }
 }
