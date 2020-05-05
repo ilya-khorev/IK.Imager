@@ -125,18 +125,23 @@ namespace IK.Imager.ImageMetadataStorage.CosmosDB
             var indexingPolicy = new IndexingPolicy();
             indexingPolicy.IncludedPaths.Add(new IncludedPath { Path = "/*" });
             //It's unlikely that we will ever request by the following properties, so stop indexing them to save some money
-            indexingPolicy.ExcludedPaths.Add(new ExcludedPath { Path = "/" + nameof(ImageMetadata.Thumbnails) + "/*" });
-            indexingPolicy.ExcludedPaths.Add(new ExcludedPath { Path = "/" + nameof(ImageMetadata.SizeBytes) + "/*" });
-            indexingPolicy.ExcludedPaths.Add(new ExcludedPath { Path = "/" + nameof(ImageMetadata.MD5Hash) + "/*" });
-            indexingPolicy.ExcludedPaths.Add(new ExcludedPath { Path = "/" + nameof(ImageMetadata.Width) + "/*"  });
-            indexingPolicy.ExcludedPaths.Add(new ExcludedPath { Path = "/" + nameof(ImageMetadata.Height) + "/*"  });
-            indexingPolicy.ExcludedPaths.Add(new ExcludedPath { Path = "/" + nameof(ImageMetadata.MimeType) + "/*" });
+            IgnoreIndexing(indexingPolicy,nameof(ImageMetadata.Thumbnails));
+            IgnoreIndexing(indexingPolicy,nameof(ImageMetadata.SizeBytes));
+            IgnoreIndexing(indexingPolicy,nameof(ImageMetadata.MD5Hash));
+            IgnoreIndexing(indexingPolicy,nameof(ImageMetadata.Width));
+            IgnoreIndexing(indexingPolicy,nameof(ImageMetadata.Height));
+            IgnoreIndexing(indexingPolicy,nameof(ImageMetadata.MimeType));
             containerProperties.IndexingPolicy = indexingPolicy;
             
             _containerInternal = (await databaseResponse.Database.CreateContainerIfNotExistsAsync(containerProperties,
                 throughput: _configuration.ContainerThroughPutOnCreation)).Container;
 
             return _containerInternal;
+        }
+
+        private void IgnoreIndexing(IndexingPolicy indexingPolicy, string param)
+        {
+            indexingPolicy.ExcludedPaths.Add(new ExcludedPath { Path = "/" + param + "/*" });
         }
     }
 }

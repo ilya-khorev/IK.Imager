@@ -65,6 +65,8 @@ namespace IK.Imager.Api.Controllers
             return await UploadImage(imageFileRequest.File.OpenReadStream(), imageFileRequest.PartitionKey);
         }
         
+        //todo add image restrictions as a part of the request model
+
         /// <summary>
         /// Upload a new image using the given image url.
         /// After uploading the image, the system launches the asynchronous process of thumbnails generating.
