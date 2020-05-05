@@ -27,7 +27,7 @@ namespace IK.Imager.Core.Services
         private const string IncorrectDimensions = "Image width must be between {0} and {1} px. Image height must be between {2} and {3} px.";
         private const string CheckingImage = "Starting to check the image.";
         private const string UploadedToBlobStorage = "Uploaded the image to the blob storage, id={0}.";
-        private const string UploadedToMetadataStorage = "Saved metadata for the current image.";
+        private const string UploadingFinished = "Image {0} and its metadata has been saved.";
         
         public ImageUploadService(ILogger<ImageUploadService> logger, IImageMetadataReader metadataReader, IImageBlobStorage blobStorage, IImageMetadataStorage metadataStorage, 
            IOptions<ImageLimitationSettings> limitationSettings, IImageIdentifierProvider imageIdentifierProvider)
@@ -44,14 +44,13 @@ namespace IK.Imager.Core.Services
         {
              _logger.LogDebug(CheckingImage);
             var imageFormat = _metadataReader.DetectFormat(imageStream); 
-            if (imageFormat != null)
-                _logger.LogDebug(imageFormat.ToString());
-            
             var limits = _limitationSettings.Value;
             
             if (imageFormat == null || !limits.Types.Contains(imageFormat.ImageType.ToString()))
                 throw new ValidationException(string.Format(UnsupportedFormat, string.Join(",", limits.Types)));
             
+            _logger.LogDebug(imageFormat.ToString());
+
             var imageSize = _metadataReader.ReadSize(imageStream);
             _logger.LogDebug(imageSize.ToString());
 
@@ -86,7 +85,7 @@ namespace IK.Imager.Core.Services
                 PartitionKey = partitionKey 
             }, CancellationToken.None);
             
-            _logger.LogDebug(UploadedToMetadataStorage);
+            _logger.LogInformation(string.Format(UploadingFinished, imageId));
 
             return new ImageInfo
             {
@@ -110,6 +109,9 @@ namespace IK.Imager.Core.Services
                 imageSize.Height > limits.Height.Max || imageSize.Height < limits.Height.Min)
                 return string.Format(IncorrectDimensions, limits.Width.Min, limits.Width.Max, limits.Height.Min, limits.Height.Max);
 
+            //todo extract to a separate class ImageValidator
+            //todo add aspect ration restrictions
+            
             return null;
         }
     }

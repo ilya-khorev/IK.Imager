@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using IK.Imager.Core.Abstractions.Models;
 using Xunit;
 
@@ -18,34 +19,34 @@ namespace IK.Imager.Core.Tests
         }
 
         [Fact]
-        public void JpegResizingTest()
+        public async Task JpegResizingTest()
         {
-            ResizingTest(ImageTestsHelper.JpegImagesDirectory);
+            await CheckDimensionsAfterResize(ImageTestsHelper.JpegImagesDirectory);
         }
         
         [Fact]
-        public void PngResizingTest()
+        public async Task PngResizingTest()
         {
-            ResizingTest(ImageTestsHelper.PngImagesDirectory);
+            await CheckDimensionsAfterResize(ImageTestsHelper.PngImagesDirectory);
         }
         
         [Fact]
-        public void BmpResizingTest()
+        public async Task BmpResizingTest()
         {
-            ResizingTest(ImageTestsHelper.BmpImagesDirectory);
+            await CheckDimensionsAfterResize(ImageTestsHelper.BmpImagesDirectory);
         }
         
         [Fact]
-        public void GifResizingTest()
+        public async Task GifResizingTest()
         {
-            ResizingTest(ImageTestsHelper.GifImagesDirectory);
+            await CheckDimensionsAfterResize(ImageTestsHelper.GifImagesDirectory);
         }
 
-        private void ResizingTest(string directory)
+        private async Task CheckDimensionsAfterResize(string directory)
         {
-            var images = SelectImages(directory);
+            var images = GetImagesFromDirectory(directory);
 
-            var originalImageStream = ImageTestsHelper.OpenFileForReading(images[0].FilePath);
+            await using var originalImageStream = ImageTestsHelper.OpenFileForReading(images[0].FilePath);
             
             for (int i = 1; i < images.Count; i++)
             {
@@ -55,11 +56,12 @@ namespace IK.Imager.Core.Tests
         }
 
         /// <summary>
-        /// Getting a list of images in a given directory and sort them from biggest to the smallest
+        /// Getting a list of images in a given directory and sort them from biggest to the smallest.
+        /// It parses the image file names, taking into consideration the following image name format: [name]-[width]x[height].(jpg|png|bmp|gif)
         /// </summary>
         /// <param name="directory"></param>
         /// <returns></returns>
-        private List<ImageInfo> SelectImages(string directory)
+        private List<ImageInfo> GetImagesFromDirectory(string directory)
         {
             var files = Directory.GetFiles(directory);
             List<ImageInfo> result = new List<ImageInfo>(files.Length);
