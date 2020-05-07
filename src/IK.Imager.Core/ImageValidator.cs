@@ -11,9 +11,7 @@ namespace IK.Imager.Core
         private readonly IOptions<ImageLimitationSettings> _limitationSettings;
 
         private const string UnsupportedFormat = "Unsupported image format. Please use one of the following formats: {0}.";
-
         private const string IncorrectSize = "Image size must be between {0} and {1} bytes.";
-
         private const string IncorrectDimensions = "Image width must be between {0} and {1} px. Image height must be between {2} and {3} px.";
 
         public ImageValidator(IOptions<ImageLimitationSettings> limitationSettings)
