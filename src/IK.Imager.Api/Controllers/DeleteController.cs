@@ -46,7 +46,7 @@ namespace IK.Imager.Api.Controllers
         public async Task<IActionResult> Delete(DeleteImageRequest deleteImageRequest)
         {
             var imageDeleteResult =
-                await _imageDeleteService.DeleteOriginalImageMetadata(deleteImageRequest.ImageId,
+                await _imageDeleteService.DeleteImageMetadata(deleteImageRequest.ImageId,
                     deleteImageRequest.PartitionKey);
 
             if (imageDeleteResult == null)

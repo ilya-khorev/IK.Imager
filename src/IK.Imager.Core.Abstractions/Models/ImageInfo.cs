@@ -12,6 +12,8 @@ namespace IK.Imager.Core.Abstractions.Models
         /// </summary>
         public string Id { get; set; }
         
+        public string Name { get; set; }
+        
         /// <summary>
         /// Image https url
         /// </summary>

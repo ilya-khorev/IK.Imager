@@ -77,6 +77,7 @@ namespace IK.Imager.Core.Services
             return new ImageInfo
             {
                 Id = imageId,
+                Name = imageName,
                 Hash = uploadImageResult.MD5Hash,
                 DateAdded = uploadImageResult.DateAdded,
                 Url = uploadImageResult.Url.ToString(),

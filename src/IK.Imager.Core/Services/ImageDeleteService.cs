@@ -30,7 +30,7 @@ namespace IK.Imager.Core.Services
             _blobStorage = blobStorage;
         }
         
-        public async Task<ImageShortInfo> DeleteOriginalImageMetadata(string imageId, string partitionKey)
+        public async Task<ImageShortInfo> DeleteImageMetadata(string imageId, string partitionKey)
         {
             _logger.LogDebug(MetadataRemoving, imageId, partitionKey);
             
@@ -55,7 +55,7 @@ namespace IK.Imager.Core.Services
             };
         }
 
-        public async Task DeleteImagesWithMetadata(ImageShortInfo imageShortInfo)
+        public async Task DeleteImageAndThumbnails(ImageShortInfo imageShortInfo)
         {
             _logger.LogDebug(Removing, imageShortInfo);
             

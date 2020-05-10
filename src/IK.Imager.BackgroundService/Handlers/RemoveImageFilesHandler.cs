@@ -21,7 +21,7 @@ namespace IK.Imager.BackgroundService.Handlers
         
         public async Task Handle(ImageDeletedIntegrationEvent iEvent)
         {
-            await _imageDeleteService.DeleteImagesWithMetadata(new ImageShortInfo
+            await _imageDeleteService.DeleteImageAndThumbnails(new ImageShortInfo
             {
                 ImageId = iEvent.ImageId,
                 ImageName = iEvent.ImageName,
