@@ -68,6 +68,7 @@ namespace IK.Imager.Api
             services.AddSingleton<IImageSearchService, ImageSearchService>();
             services.AddSingleton<IImageDeleteService, ImageDeleteService>();
             services.AddSingleton<IImageValidator, ImageValidator>();
+            services.AddSingleton<ICdnService, CdnService>();
             
             services.AddHttpClient<ImageDownloadClient>()
                 .AddTransientHttpErrorPolicy(p =>
