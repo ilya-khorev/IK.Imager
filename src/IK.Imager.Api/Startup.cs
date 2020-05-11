@@ -95,6 +95,9 @@ namespace IK.Imager.Api
 
             services.Configure<TopicsConfiguration>(Configuration.GetSection("Topics"));
             services.AddSingleton(resolver => resolver.GetRequiredService<IOptions<TopicsConfiguration>>().Value);
+            
+            services.Configure<CdnSettings>(Configuration.GetSection("Cdn"));
+            services.AddSingleton(resolver => resolver.GetRequiredService<IOptions<CdnSettings>>().Value);
         }
 
         private void SetupAppInsights(IServiceCollection services)

@@ -26,7 +26,7 @@ namespace IK.Imager.Core.Tests
             _blobStorage = new MockImageBlobStorage();
             _metadataStorage = new MockImageMetadataStorage();
             _imageSearchService = new ImageSearchService(output.BuildLoggerFor<ImageSearchService>(), _metadataStorage,
-                _blobStorage);
+                _blobStorage, new MockCdnService());
 
             var imageIdentifierProvider = new ImageIdentifierProvider();
             IImageMetadataReader imageMetadataReader = new ImageMetadataReader();

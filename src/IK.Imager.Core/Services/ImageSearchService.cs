@@ -14,13 +14,15 @@ namespace IK.Imager.Core.Services
         private readonly ILogger<ImageSearchService> _logger;
         private readonly IImageMetadataStorage _metadataStorage;
         private readonly IImageBlobStorage _blobStorage;
+        private readonly ICdnService _cdnService;
         private const string FoundImages = "Found {0} image(s) for requested {1} image id(s)";
         
-        public ImageSearchService(ILogger<ImageSearchService> logger, IImageMetadataStorage metadataStorage, IImageBlobStorage blobStorage)
+        public ImageSearchService(ILogger<ImageSearchService> logger, IImageMetadataStorage metadataStorage, IImageBlobStorage blobStorage, ICdnService cdnService)
         {
             _logger = logger;
             _metadataStorage = metadataStorage;
             _blobStorage = blobStorage;
+            _cdnService = cdnService;
         }
         
         public async Task<ImagesSearchResult> Search(string[] imageIds, string partitionKey)
@@ -42,7 +44,7 @@ namespace IK.Imager.Core.Services
                     Height = imageMetadata.Height,
                     Width = imageMetadata.Width,
                     Tags = imageMetadata.Tags ?? new Dictionary<string, string>(),
-                    Url = _blobStorage.GetImageUri(imageMetadata.Name, ImageSizeType.Original).ToString(),
+                    Url = _cdnService.TryTransformToCdnUri(_blobStorage.GetImageUri(imageMetadata.Name, ImageSizeType.Original)).ToString(),
                     DateAdded = imageMetadata.DateAddedUtc,
                     MimeType = imageMetadata.MimeType,
                     Thumbnails = new List<ImageInfo>()
@@ -62,7 +64,7 @@ namespace IK.Imager.Core.Services
                             Width = thumbnail.Width,
                             DateAdded = thumbnail.DateAddedUtc,
                             MimeType = thumbnail.MimeType,
-                            Url = _blobStorage.GetImageUri(thumbnail.Name, ImageSizeType.Thumbnail).ToString()
+                            Url = _cdnService.TryTransformToCdnUri(_blobStorage.GetImageUri(thumbnail.Name, ImageSizeType.Thumbnail)).ToString()
                         });
                     }
                     
