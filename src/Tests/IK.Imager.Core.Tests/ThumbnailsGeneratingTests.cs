@@ -13,11 +13,12 @@ using ImageType = IK.Imager.Storage.Abstractions.Models.ImageType;
 
 namespace IK.Imager.Core.Tests
 {
-    public class ThumbnailsGeneratingTests: IOptions<ImageThumbnailsSettings>
+    public class ThumbnailsGeneratingTests
     {
         private readonly ImageThumbnailService _thumbnailsService;
         private readonly IImageBlobStorage _blobStorage;
         private readonly IImageMetadataStorage _metadataStorage;
+        private readonly IOptions<ImageThumbnailsSettings> _imageThumbnailSettings;
         
         public ThumbnailsGeneratingTests(ITestOutputHelper output)
         {
@@ -25,9 +26,11 @@ namespace IK.Imager.Core.Tests
 
             _blobStorage = new MockImageBlobStorage();
             _metadataStorage = new MockImageMetadataStorage();
+
+            _imageThumbnailSettings = new MockImageThumbnailsSettings();
             
             IImageIdentifierProvider imageIdentifierProvider = new ImageIdentifierProvider();
-            _thumbnailsService = new ImageThumbnailService(output.BuildLoggerFor<ImageThumbnailService>(), imageResizing, _blobStorage, _metadataStorage, imageIdentifierProvider, this);
+            _thumbnailsService = new ImageThumbnailService(output.BuildLoggerFor<ImageThumbnailService>(), imageResizing, _blobStorage, _metadataStorage, imageIdentifierProvider, _imageThumbnailSettings);
         }
         
         [Fact]
@@ -41,11 +44,11 @@ namespace IK.Imager.Core.Tests
             var uploadImageResult = await ImageTestsHelper.UploadImage(_blobStorage, _metadataStorage,"Images\\jpeg\\1043-800x600.jpg", width, height, contentType, ImageType.JPEG, partitionKey);
 
             var imageWithGeneratedThumbnails = await _thumbnailsService.GenerateThumbnails(uploadImageResult.Id, partitionKey);
-            Assert.Equal(Value.TargetWidth.Length, imageWithGeneratedThumbnails.Count);
+            Assert.Equal(_imageThumbnailSettings.Value.TargetWidth.Length, imageWithGeneratedThumbnails.Count);
             int i = 0;
             foreach (var imageThumbnail in imageWithGeneratedThumbnails)
             {
-                Assert.Equal(Value.TargetWidth[i++],imageThumbnail.Width);
+                Assert.Equal(_imageThumbnailSettings.Value.TargetWidth[i++],imageThumbnail.Width);
                 Assert.Equal(contentType,imageThumbnail.MimeType);
                 Assert.NotNull(imageThumbnail.Id);
                 
@@ -85,10 +88,5 @@ namespace IK.Imager.Core.Tests
                 Assert.Equal("image/png", imageThumbnail.MimeType);
             }
         }
-
-        public ImageThumbnailsSettings Value { get; } = new ImageThumbnailsSettings
-        {
-            TargetWidth = new [] { 200, 300, 500 }
-        };
     }
 }

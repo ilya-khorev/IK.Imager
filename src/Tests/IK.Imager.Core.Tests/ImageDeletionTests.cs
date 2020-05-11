@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -40,7 +39,7 @@ namespace IK.Imager.Core.Tests
         public async Task ShouldRemoveMetadataOnly()
         {
             var partitionKey = Guid.NewGuid().ToString();
-            var uploadedImage = await UploadImage(partitionKey);
+            var uploadedImage = await ImageTestsHelper.UploadRandomlySelectedImage(partitionKey, _imageUploadService);
             var deletionResult = await _imageDeleteService.DeleteImageMetadata(uploadedImage.Id, partitionKey);
             
             Assert.Equal(uploadedImage.Id, deletionResult.ImageId);
@@ -57,7 +56,7 @@ namespace IK.Imager.Core.Tests
         public async Task ShouldRemoveImageAndItsThumbnails()
         {
             var partitionKey = Guid.NewGuid().ToString();
-            var uploadedImage = await UploadImage(partitionKey); 
+            var uploadedImage = await ImageTestsHelper.UploadRandomlySelectedImage(partitionKey, _imageUploadService);
             await _imageDeleteService.DeleteImageAndThumbnails(new ImageShortInfo()
             {
                 ImageId = uploadedImage.Id,
@@ -67,12 +66,6 @@ namespace IK.Imager.Core.Tests
             
             var imageExists = await _blobStorage.ImageExists(uploadedImage.Name, ImageSizeType.Original, CancellationToken.None);
             Assert.False(imageExists);
-        }
-        
-        private async Task<ImageInfo> UploadImage(string partitionKey)
-        {
-            await using FileStream file = ImageTestsHelper.OpenFileForReading("Images\\png\\1060-800x800.png");
-            return await _imageUploadService.UploadImage(file, partitionKey);
         }
     }
 }

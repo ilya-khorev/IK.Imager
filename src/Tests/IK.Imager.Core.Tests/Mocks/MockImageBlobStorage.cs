@@ -16,9 +16,10 @@ namespace IK.Imager.Core.Tests.Mocks
         public async Task<UploadImageResult> UploadImage(string imageName, Stream imageStream, ImageSizeType imageSizeType, string contentType,
             CancellationToken cancellationToken)
         {
+            imageStream.Position = 0;
             var memoryStream = new MemoryStream();
             await imageStream.CopyToAsync(memoryStream, cancellationToken);
-            memoryStream.Position = 0;
+            memoryStream.Position = 0L;
             _imagesDictionary.TryAdd(imageName, memoryStream);
             
             return new UploadImageResult
@@ -35,7 +36,7 @@ namespace IK.Imager.Core.Tests.Mocks
             {
                 MemoryStream outMemoryStream = new MemoryStream();
                 await value.CopyToAsync(outMemoryStream, cancellationToken);
-                outMemoryStream.Position = 0;
+                outMemoryStream.Position = 0L;
                 return outMemoryStream;
             }
 
