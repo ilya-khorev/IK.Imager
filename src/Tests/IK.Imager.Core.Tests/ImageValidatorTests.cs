@@ -5,7 +5,6 @@ using IK.Imager.Core.Configuration;
 using Microsoft.Extensions.Options;
 using Moq;
 using Xunit;
-using Range = IK.Imager.Core.Configuration.Range;
 
 namespace IK.Imager.Core.Tests
 {
@@ -135,6 +134,34 @@ namespace IK.Imager.Core.Tests
                 imageValidator.CheckSize(size);
             });
         }
+        
+        [Fact]
+        public void ShouldThrowIfAspectRatioIsSmallerThanThreshold()
+        {
+            var settings = GetSettings();
+            var imageValidator = new ImageValidator(GetSettings());
+            var size = GetValidSize();
+            
+            size.Width = (int)(size.Height * settings.Value.AspectRatio.Min) - 5;
+            Assert.Throws<ValidationException>(() =>
+            {
+                imageValidator.CheckSize(size);
+            });
+        }
+        
+        [Fact]
+        public void ShouldThrowIfAspectRatioIsGreaterThanThreshold()
+        {
+            var settings = GetSettings();
+            var imageValidator = new ImageValidator(GetSettings());
+            var size = GetValidSize();
+            
+            size.Width = (int)(size.Height * settings.Value.AspectRatio.Max) + 5;
+            Assert.Throws<ValidationException>(() =>
+            {
+                imageValidator.CheckSize(size);
+            });
+        }
 
         private ImageSize GetValidSize()
         {
@@ -151,21 +178,26 @@ namespace IK.Imager.Core.Tests
             var optionsMock = new Mock<IOptions<ImageLimitationSettings>>();
             optionsMock.Setup(x => x.Value).Returns(new ImageLimitationSettings()
             {
-                Height = new Range
+                Height = new Range<int>
                 {
                     Min = 10,
                     Max = 1000
                 },
-                Width = new Range
+                Width = new Range<int>
                 {
                     Min = 10,
                     Max = 1000
                 },
-                SizeBytes = new Range
+                SizeBytes = new Range<int>
                 {
                     Min = 1000,
                     Max = 10000000
                 },
+                AspectRatio = new Range<double>()
+                {
+                    Min = 0.5,
+                    Max = 2
+                }
             });
 
             return optionsMock.Object;

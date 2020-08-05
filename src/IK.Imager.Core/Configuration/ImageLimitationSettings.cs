@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace IK.Imager.Core.Configuration
 {
@@ -10,37 +12,88 @@ namespace IK.Imager.Core.Configuration
         /// <summary>
         /// Max and min image width in pixels 
         /// </summary>
-        public Range Width { get; set; }
+        public Range<int> Width { get; set; }
         
         /// <summary>
         /// Max and min image height in pixels 
         /// </summary>
-        public Range Height { get; set; }
+        public Range<int> Height { get; set; }
         
         /// <summary>
         /// Max and min image size in bytes
         /// </summary>
-        public Range SizeBytes { get; set; }
+        public Range<int> SizeBytes { get; set; }
+        
+        /// <summary>
+        /// Max and min image aspect ratio
+        /// Aspect ratio - the ratio of its width to its height
+        /// </summary>
+        public Range<double> AspectRatio { get; set; }
         
         /// <summary>
         /// Supported image types (PNG, BMP, GIF, JPEG only allowed)
         /// </summary>
         public List<string> Types { get; set; }
+
+        public void MergeWith(ImageLimitationSettings settings)
+        {
+            if (settings == null)
+                return;
+
+            if (settings.Height != null)
+            {
+                Height = new Range<int>
+                {
+                    Min = settings.Height.Min,
+                    Max = settings.Height.Max
+                };
+            }
+
+            if (settings.Width != null)
+            {
+                Width = new Range<int>
+                {
+                    Min = settings.Width.Min,
+                    Max = settings.Width.Max
+                };
+            }
+
+            if (settings.SizeBytes != null)
+            {
+                SizeBytes = new Range<int>
+                {
+                    Min = settings.SizeBytes.Min,
+                    Max = settings.SizeBytes.Max
+                };
+            }
+            
+            if (settings.AspectRatio != null)
+            {
+                AspectRatio = new Range<double>
+                {
+                    Min = settings.AspectRatio.Min,
+                    Max = settings.AspectRatio.Max
+                };
+            }
+
+            if (settings.Types != null) 
+                Types = settings.Types.ToList();
+        }
     }
 
     /// <summary>
     /// Type that represent a range with min and max values
     /// </summary>
-    public class Range
+    public class Range<T> where T: IComparable<T>
     {
         /// <summary>
         /// Min value
         /// </summary>
-        public int Min { get; set; }
+        public T Min { get; set; }
         
         /// <summary>
         /// Max value
         /// </summary>
-        public int Max { get; set; }
+        public T Max { get; set; }
     }
 }
