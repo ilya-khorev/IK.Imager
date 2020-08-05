@@ -4,6 +4,7 @@
 
 ## Functionality
 Quick and easy way to store, search, and manage image binary data and also image metadata, such as size, dimensions, thumbnails, and tags.
+Once a new image is uploaded, the system will automatically generate thumbnails for this image relying on the given parameters.
 
 ### Image Upload
 There are 2 ways to upload an image to the system
