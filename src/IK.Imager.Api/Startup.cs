@@ -55,7 +55,7 @@ namespace IK.Imager.Api
                 c.IncludeXmlComments(XmlCommentsFilePath);
             });
 
-            services.AddAutoMapper(c => c.AddProfile<AutoMapping>(), typeof(Startup));
+            services.AddAutoMapper(c => c.AddProfile<MappingProfile>(), typeof(Startup));
 
             RegisterConfigurations(services);
 
@@ -106,11 +106,11 @@ namespace IK.Imager.Api
             ApplicationInsightsServiceOptions aiOptions = new ApplicationInsightsServiceOptions();
             var appInsightsDependencyConfigValue =
                 Configuration.GetValue<bool>("ApplicationInsights:EnableDependencyTrackingTelemetryModule");
-            //dependency tracking is disabled by default as it is quite expensive
+            //dependency tracking is disabled by default as it is produce a lot of logs and therefore quite expensive
             aiOptions.EnableDependencyTrackingTelemetryModule = appInsightsDependencyConfigValue;
 
-            //by default instrumentation key is taken from config
-            //Alternatively, specify the instrumentation key in either of the following environment variables.
+            //By default, instrumentation key is taken from the configuration
+            //Alternatively, specify the instrumentation key in either of the following environment variables:
             //APPINSIGHTS_INSTRUMENTATIONKEY or ApplicationInsights:InstrumentationKey
             services.AddApplicationInsightsTelemetry(aiOptions);
 

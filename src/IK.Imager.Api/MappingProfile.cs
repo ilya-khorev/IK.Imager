@@ -4,10 +4,10 @@ using IK.Imager.Core.Abstractions.Models;
 namespace IK.Imager.Api
 {
     /// <inheritdoc />
-    public class AutoMapping : Profile
+    public class MappingProfile : Profile
     {
         /// <inheritdoc />
-        public AutoMapping()
+        public MappingProfile()
         {
             CreateMap<ImageInfo, IK.Imager.Api.Contract.ImageInfo>();
             CreateMap<ImageFullInfoWithThumbnails, IK.Imager.Api.Contract.ImageFullInfoWithThumbnails>();

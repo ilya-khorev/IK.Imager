@@ -32,7 +32,7 @@ namespace IK.Imager.Core.Tests
             IImageMetadataReader imageMetadataReader = new ImageMetadataReader();
             IImageValidator imageValidator = new MockImageValidator();
             _imageUploadService = new ImageUploadService(output.BuildLoggerFor<ImageUploadService>(), imageMetadataReader, _blobStorage,
-                _metadataStorage, imageValidator, imageIdentifierProvider);
+                _metadataStorage, imageValidator, imageIdentifierProvider, new MockCdnService());
         }
         
         [Fact]

@@ -18,13 +18,14 @@ namespace IK.Imager.Core.Services
         private readonly IImageMetadataStorage _metadataStorage;
         private readonly IImageValidator _imageValidator;
         private readonly IImageIdentifierProvider _imageIdentifierProvider;
+        private readonly ICdnService _cdnService;
 
         private const string CheckingImage = "Starting to check the image.";
         private const string UploadedToBlobStorage = "Uploaded the image to the blob storage, id={0}.";
         private const string UploadingFinished = "Image {0} and its metadata has been saved.";
         
         public ImageUploadService(ILogger<ImageUploadService> logger, IImageMetadataReader metadataReader, IImageBlobStorage blobStorage, 
-            IImageMetadataStorage metadataStorage, IImageValidator imageValidator, IImageIdentifierProvider imageIdentifierProvider)
+            IImageMetadataStorage metadataStorage, IImageValidator imageValidator, IImageIdentifierProvider imageIdentifierProvider, ICdnService cdnService)
         {
             _logger = logger;
             _metadataReader = metadataReader;
@@ -32,6 +33,7 @@ namespace IK.Imager.Core.Services
             _metadataStorage = metadataStorage;
             _imageValidator = imageValidator;
             _imageIdentifierProvider = imageIdentifierProvider;
+            _cdnService = cdnService;
         }
         
         public async Task<ImageInfo> UploadImage(Stream imageStream, string partitionKey)
@@ -48,6 +50,9 @@ namespace IK.Imager.Core.Services
             //Firstly, saving the image stream to the blob storage
             string imageId = _imageIdentifierProvider.GenerateUniqueId();
             string imageName = _imageIdentifierProvider.GetImageName(imageId, imageFormat.FileExtension);
+            
+            //todo check if such name already exist (it's unlikely, but worth checking)
+            
             var uploadImageResult = await _blobStorage.UploadImage(imageName, imageStream, ImageSizeType.Original, imageFormat.MimeType, CancellationToken.None);
             _logger.LogDebug(UploadedToBlobStorage, imageId);
             
@@ -80,7 +85,7 @@ namespace IK.Imager.Core.Services
                 Name = imageName,
                 Hash = uploadImageResult.MD5Hash,
                 DateAdded = uploadImageResult.DateAdded,
-                Url = uploadImageResult.Url.ToString(),
+                Url = _cdnService.TryTransformToCdnUri(uploadImageResult.Url).ToString(),
                 Bytes = imageSize.Bytes,
                 Height = imageSize.Height,
                 Width = imageSize.Width,
