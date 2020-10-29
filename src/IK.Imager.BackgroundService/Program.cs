@@ -3,8 +3,8 @@ using IK.Imager.BackgroundService.Handlers;
 using IK.Imager.Core;
 using IK.Imager.Core.Abstractions;
 using IK.Imager.Core.Abstractions.Services;
-using IK.Imager.Core.Configuration;
 using IK.Imager.Core.Services;
+using IK.Imager.Core.Settings;
 using IK.Imager.EventBus.Abstractions;
 using IK.Imager.EventBus.AzureServiceBus;
 using IK.Imager.ImageBlobStorage.AzureFiles;
@@ -86,11 +86,11 @@ namespace IK.Imager.BackgroundService
             services.Configure<ServiceBusSettings>(configuration.GetSection("ServiceBus"));
             services.AddSingleton(resolver => resolver.GetRequiredService<IOptions<ServiceBusSettings>>().Value);
             
-            services.Configure<ImageAzureStorageConfiguration>(configuration.GetSection("AzureStorage"));
-            services.AddSingleton(resolver => resolver.GetRequiredService<IOptions<ImageAzureStorageConfiguration>>().Value);
+            services.Configure<ImageAzureStorageSettings>(configuration.GetSection("AzureStorage"));
+            services.AddSingleton(resolver => resolver.GetRequiredService<IOptions<ImageAzureStorageSettings>>().Value);
             
-            services.Configure<ImageMetadataCosmosDbStorageConfiguration>(configuration.GetSection("CosmosDb"));
-            services.AddSingleton(resolver => resolver.GetRequiredService<IOptions<ImageMetadataCosmosDbStorageConfiguration>>().Value);
+            services.Configure<ImageMetadataCosmosDbStorageSettings>(configuration.GetSection("CosmosDb"));
+            services.AddSingleton(resolver => resolver.GetRequiredService<IOptions<ImageMetadataCosmosDbStorageSettings>>().Value);
             
             services.Configure<TopicsConfiguration>(configuration.GetSection("Topics"));
             services.AddSingleton(resolver => resolver.GetRequiredService<IOptions<TopicsConfiguration>>().Value);

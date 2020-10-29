@@ -9,16 +9,17 @@ using IK.Imager.Storage.Abstractions.Storage;
 using IK.Imager.Utils;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Azure.Cosmos.Linq;
+using Microsoft.Extensions.Options;
 
 namespace IK.Imager.ImageMetadataStorage.CosmosDB
 {
     public class ImageMetadataCosmosDbStorage : IImageMetadataStorage
     {
-        private readonly ImageMetadataCosmosDbStorageConfiguration _configuration;
+        private readonly IOptions<ImageMetadataCosmosDbStorageSettings> _settings;
 
-        public ImageMetadataCosmosDbStorage(ImageMetadataCosmosDbStorageConfiguration configuration)
+        public ImageMetadataCosmosDbStorage(IOptions<ImageMetadataCosmosDbStorageSettings> settings)
         {
-            _configuration = configuration;
+            _settings = settings;
         }
 
         public async Task SetMetadata(ImageMetadata metadata, CancellationToken cancellationToken)
@@ -117,10 +118,10 @@ namespace IK.Imager.ImageMetadataStorage.CosmosDB
             if (_containerInternal != null)
                 return _containerInternal;
 
-            CosmosClient client = new CosmosClient(_configuration.ConnectionString);
-            var databaseResponse = await client.CreateDatabaseIfNotExistsAsync(_configuration.DatabaseId);
+            CosmosClient client = new CosmosClient(_settings.Value.ConnectionString);
+            var databaseResponse = await client.CreateDatabaseIfNotExistsAsync(_settings.Value.DatabaseId);
 
-            ContainerProperties containerProperties = new ContainerProperties(_configuration.ContainerId, "/" + nameof(ImageMetadata.PartitionKey));
+            ContainerProperties containerProperties = new ContainerProperties(_settings.Value.ContainerId, "/" + nameof(ImageMetadata.PartitionKey));
            
             var indexingPolicy = new IndexingPolicy();
             indexingPolicy.IncludedPaths.Add(new IncludedPath { Path = "/*" });
@@ -134,7 +135,7 @@ namespace IK.Imager.ImageMetadataStorage.CosmosDB
             containerProperties.IndexingPolicy = indexingPolicy;
             
             _containerInternal = (await databaseResponse.Database.CreateContainerIfNotExistsAsync(containerProperties,
-                throughput: _configuration.ContainerThroughPutOnCreation)).Container;
+                throughput: _settings.Value.ContainerThroughPutOnCreation)).Container;
 
             return _containerInternal;
         }

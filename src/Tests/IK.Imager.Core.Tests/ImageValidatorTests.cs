@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using IK.Imager.Core.Abstractions.Models;
-using IK.Imager.Core.Configuration;
+using IK.Imager.Core.Settings;
 using Microsoft.Extensions.Options;
 using Moq;
 using Xunit;
@@ -13,7 +13,7 @@ namespace IK.Imager.Core.Tests
         [Fact]
         public void CheckFormatSucceeded()
         {
-            var optionsMock = new Mock<IOptions<ImageLimitationSettings>>();
+            var optionsMock = new Mock<IOptionsSnapshot<ImageLimitationSettings>>();
             optionsMock.Setup(x => x.Value).Returns(new ImageLimitationSettings()
             {
                 Types = new List<string> { "PNG", "BMP", "JPEG", "GIF"}
@@ -26,7 +26,7 @@ namespace IK.Imager.Core.Tests
         [Fact]
         public void ShouldThrowIfFormatIsNull()
         {
-            var optionsMock = new Mock<IOptions<ImageLimitationSettings>>();
+            var optionsMock = new Mock<IOptionsSnapshot<ImageLimitationSettings>>();
             optionsMock.Setup(x => x.Value).Returns(new ImageLimitationSettings()
             {
                 Types = new List<string> { "PNG", "BMP", "JPEG", "GIF"}
@@ -39,7 +39,7 @@ namespace IK.Imager.Core.Tests
         [Fact]
         public void ShouldThrowIfFormatIsNotSupported()
         {
-            var optionsMock = new Mock<IOptions<ImageLimitationSettings>>();
+            var optionsMock = new Mock<IOptionsSnapshot<ImageLimitationSettings>>();
             optionsMock.Setup(x => x.Value).Returns(new ImageLimitationSettings()
             {
                 Types = new List<string> { "PNG"}
@@ -173,9 +173,9 @@ namespace IK.Imager.Core.Tests
             };
         }
         
-        private IOptions<ImageLimitationSettings> GetSettings()
+        private IOptionsSnapshot<ImageLimitationSettings> GetSettings()
         {
-            var optionsMock = new Mock<IOptions<ImageLimitationSettings>>();
+            var optionsMock = new Mock<IOptionsSnapshot<ImageLimitationSettings>>();
             optionsMock.Setup(x => x.Value).Returns(new ImageLimitationSettings()
             {
                 Height = new Range<int>

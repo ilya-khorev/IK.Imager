@@ -1,6 +1,6 @@
 ﻿namespace IK.Imager.ImageBlobStorage.AzureFiles
 {
-    public class ImageAzureStorageConfiguration
+    public class ImageAzureStorageSettings
     {
         /// <summary>
         /// Connection string to Azure account

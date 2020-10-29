@@ -62,7 +62,7 @@ namespace IK.Imager.Api.Controllers
         //todo probably worth uploading using stream https://docs.microsoft.com/en-us/aspnet/core/mvc/models/file-uploads?view=aspnetcore-3.1#upload-large-files-with-streaming
         public async Task<ActionResult<ImageInfo>> PostWithStream([FromForm]UploadImageFileRequest imageFileRequest)
         {
-            return await UploadImage(imageFileRequest.File.OpenReadStream(), imageFileRequest.PartitionKey);
+            return await UploadImage(imageFileRequest.File.OpenReadStream(), imageFileRequest.PartitionKey, imageFileRequest.LimitationSettings);
         }
         
         //todo add image restrictions as a part of the request model
@@ -97,7 +97,7 @@ namespace IK.Imager.Api.Controllers
 
             _logger.LogDebug(DownloadedByUrl, uploadImageRequest.ImageUrl);
             
-            return await UploadImage(imageStream, uploadImageRequest.PartitionKey);
+            return await UploadImage(imageStream, uploadImageRequest.PartitionKey, uploadImageRequest.LimitationSettings);
         }
         
         private BadRequestObjectResult BadRequestAndLog(string message)
@@ -106,8 +106,10 @@ namespace IK.Imager.Api.Controllers
             return BadRequest(message);
         }
         
-        private async Task<ActionResult<ImageInfo>> UploadImage(Stream imageStream, string partitionKey)
+        private async Task<ActionResult<ImageInfo>> UploadImage(Stream imageStream, string partitionKey, ImageLimitationSettingsRequest imageLimitationSettings)
         {
+            //merge imageLimitationSettings with IOptions<ImageLimitationSettings> limitationSettings
+            
             var uploadImageResult = await _imageUploadService.UploadImage(imageStream, partitionKey);
             
             //Once the image file and metadata object are saved, there is time to send a new message to the event bus topic

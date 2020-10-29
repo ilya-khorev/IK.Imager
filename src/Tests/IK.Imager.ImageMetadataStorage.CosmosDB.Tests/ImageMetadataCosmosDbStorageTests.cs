@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using IK.Imager.Storage.Abstractions.Models;
 using IK.Imager.TestsBase;
+using Microsoft.Extensions.Options;
 using Xunit;
 
 namespace IK.Imager.ImageMetadataStorage.CosmosDB.Tests
@@ -16,15 +17,15 @@ namespace IK.Imager.ImageMetadataStorage.CosmosDB.Tests
         
         public ImageMetadataCosmosDbStorageTests()
         {
-            ImageMetadataCosmosDbStorageConfiguration configuration = new ImageMetadataCosmosDbStorageConfiguration
+            ImageMetadataCosmosDbStorageSettings settings = new ImageMetadataCosmosDbStorageSettings
             {
                 ConnectionString = Constants.CosmosDbConnectionString,
                 ContainerId = Constants.ContainerId,
                 ContainerThroughPutOnCreation = Constants.ContainerThroughPutOnCreation,
                 DatabaseId = Constants.DatabaseId
             };
-            
-            _imageMetadataCosmosDbStorage = new ImageMetadataCosmosDbStorage(configuration);
+   
+            _imageMetadataCosmosDbStorage = new ImageMetadataCosmosDbStorage(new OptionsWrapper<ImageMetadataCosmosDbStorageSettings>(settings));
         }
         
         [Fact]  

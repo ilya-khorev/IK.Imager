@@ -7,8 +7,8 @@ using IK.Imager.Api.Services;
 using IK.Imager.Core;
 using IK.Imager.Core.Abstractions;
 using IK.Imager.Core.Abstractions.Services;
-using IK.Imager.Core.Configuration;
 using IK.Imager.Core.Services;
+using IK.Imager.Core.Settings;
 using IK.Imager.EventBus.Abstractions;
 using IK.Imager.EventBus.AzureServiceBus;
 using IK.Imager.ImageMetadataStorage.CosmosDB;
@@ -22,7 +22,6 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
 using Polly;
 
@@ -64,10 +63,10 @@ namespace IK.Imager.Api
             services.AddSingleton<IImageBlobStorage, ImageBlobAzureStorage>();
             services.AddSingleton<IImageMetadataReader, ImageMetadataReader>();
             services.AddSingleton<IImageIdentifierProvider, ImageIdentifierProvider>();
-            services.AddSingleton<IImageUploadService, ImageUploadService>();
-            services.AddSingleton<IImageSearchService, ImageSearchService>();
-            services.AddSingleton<IImageDeleteService, ImageDeleteService>();
-            services.AddSingleton<IImageValidator, ImageValidator>();
+            services.AddScoped<IImageUploadService, ImageUploadService>();
+            services.AddScoped<IImageSearchService, ImageSearchService>();
+            services.AddScoped<IImageDeleteService, ImageDeleteService>();
+            services.AddScoped<IImageValidator, ImageValidator>();
             services.AddSingleton<ICdnService, CdnService>();
             
             services.AddHttpClient<ImageDownloadClient>()
@@ -81,24 +80,11 @@ namespace IK.Imager.Api
         private void RegisterConfigurations(IServiceCollection services)
         {
             services.Configure<ImageLimitationSettings>(Configuration.GetSection("ImageLimitations"));
-            services.AddSingleton(resolver => resolver.GetRequiredService<IOptions<ImageLimitationSettings>>().Value);
-
             services.Configure<ServiceBusSettings>(Configuration.GetSection("ServiceBus"));
-            services.AddSingleton(resolver => resolver.GetRequiredService<IOptions<ServiceBusSettings>>().Value);
-
-            services.Configure<ImageAzureStorageConfiguration>(Configuration.GetSection("AzureStorage"));
-            services.AddSingleton(resolver =>
-                resolver.GetRequiredService<IOptions<ImageAzureStorageConfiguration>>().Value);
-
-            services.Configure<ImageMetadataCosmosDbStorageConfiguration>(Configuration.GetSection("CosmosDb"));
-            services.AddSingleton(resolver =>
-                resolver.GetRequiredService<IOptions<ImageMetadataCosmosDbStorageConfiguration>>().Value);
-
+            services.Configure<ImageAzureStorageSettings>(Configuration.GetSection("AzureStorage"));
+            services.Configure<ImageMetadataCosmosDbStorageSettings>(Configuration.GetSection("CosmosDb"));
             services.Configure<TopicsConfiguration>(Configuration.GetSection("Topics"));
-            services.AddSingleton(resolver => resolver.GetRequiredService<IOptions<TopicsConfiguration>>().Value);
-            
             services.Configure<CdnSettings>(Configuration.GetSection("Cdn"));
-            services.AddSingleton(resolver => resolver.GetRequiredService<IOptions<CdnSettings>>().Value);
         }
 
         private void SetupAppInsights(IServiceCollection services)

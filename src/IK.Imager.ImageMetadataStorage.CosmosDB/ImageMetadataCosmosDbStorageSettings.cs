@@ -1,6 +1,6 @@
 ﻿namespace IK.Imager.ImageMetadataStorage.CosmosDB
 {
-    public class ImageMetadataCosmosDbStorageConfiguration
+    public class ImageMetadataCosmosDbStorageSettings
     {
         public string ConnectionString { get; set; }
         public string DatabaseId { get; set; }

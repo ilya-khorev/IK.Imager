@@ -1,7 +1,7 @@
 ﻿using System;
 using IK.Imager.Core.Abstractions.Services;
-using IK.Imager.Core.Configuration;
 using IK.Imager.Core.Services;
+using IK.Imager.Core.Settings;
 using Microsoft.Extensions.Options;
 using Moq;
 using Xunit;

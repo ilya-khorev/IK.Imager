@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace IK.Imager.Core.Configuration
+namespace IK.Imager.Core.Settings
 {
     public class CdnSettings
     {

@@ -7,6 +7,7 @@ using IK.Imager.Storage.Abstractions.Storage;
 using IK.Imager.Utils;
 using Microsoft.Azure.Storage;
 using Microsoft.Azure.Storage.Blob;
+using Microsoft.Extensions.Options;
 
 namespace IK.Imager.ImageBlobStorage.AzureFiles
 {
@@ -17,16 +18,16 @@ namespace IK.Imager.ImageBlobStorage.AzureFiles
         private readonly Lazy<CloudBlobContainer> _imagesContainer;
         private readonly Lazy<CloudBlobContainer> _thumbnailsContainer;
 
-        public ImageBlobAzureStorage(ImageAzureStorageConfiguration configuration)
+        public ImageBlobAzureStorage(IOptions<ImageAzureStorageSettings> settings)
         {
-            ArgumentHelper.AssertNotNull(nameof(configuration), configuration);
+            ArgumentHelper.AssertNotNull(nameof(settings), settings);
 
-            var storageAccount = CloudStorageAccount.Parse(configuration.ConnectionString);
+            var storageAccount = CloudStorageAccount.Parse(settings.Value.ConnectionString);
 
             _cloudBlobClient = storageAccount.CreateCloudBlobClient();
 
-            _imagesContainer = new Lazy<CloudBlobContainer>(() => CreateCloudBlobContainer(configuration.ImagesContainerName.ToLowerInvariant()));
-            _thumbnailsContainer = new Lazy<CloudBlobContainer>(() => CreateCloudBlobContainer(configuration.ThumbnailsContainerName.ToLowerInvariant()));
+            _imagesContainer = new Lazy<CloudBlobContainer>(() => CreateCloudBlobContainer(settings.Value.ImagesContainerName.ToLowerInvariant()));
+            _thumbnailsContainer = new Lazy<CloudBlobContainer>(() => CreateCloudBlobContainer(settings.Value.ThumbnailsContainerName.ToLowerInvariant()));
         }
 
         private CloudBlobContainer CreateCloudBlobContainer(string containerName)

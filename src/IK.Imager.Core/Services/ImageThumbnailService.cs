@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using IK.Imager.Core.Abstractions;
 using IK.Imager.Core.Abstractions.Models;
 using IK.Imager.Core.Abstractions.Services;
-using IK.Imager.Core.Configuration;
+using IK.Imager.Core.Settings;
 using IK.Imager.Storage.Abstractions.Models;
 using IK.Imager.Storage.Abstractions.Storage;
 using Microsoft.Extensions.Logging;

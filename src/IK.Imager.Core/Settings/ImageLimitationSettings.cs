@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace IK.Imager.Core.Configuration
+namespace IK.Imager.Core.Settings
 {
     /// <summary>
     /// Image threshold values

@@ -1,4 +1,4 @@
-﻿using IK.Imager.Core.Configuration;
+﻿using IK.Imager.Core.Settings;
 using Microsoft.Extensions.Options;
 
 namespace IK.Imager.Core.Tests.Mocks

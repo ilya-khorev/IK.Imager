@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using IK.Imager.EventBus.Abstractions;
 using Microsoft.Azure.ServiceBus;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 
 namespace IK.Imager.EventBus.AzureServiceBus
@@ -15,10 +16,10 @@ namespace IK.Imager.EventBus.AzureServiceBus
         private readonly ServiceBusPersistentConnection _serviceBusPersistentConnection;
         private readonly ConcurrentDictionary<string, int> _subscriptions = new ConcurrentDictionary<string, int>();
         
-        public ServiceBus(ServiceBusSettings serviceBusSettings, ILogger<ServiceBus> logger)
+        public ServiceBus(IOptions<ServiceBusSettings> serviceBusSettings, ILogger<ServiceBus> logger)
         {
             _logger = logger;
-            _serviceBusPersistentConnection = new ServiceBusPersistentConnection(serviceBusSettings.ConnectionString);
+            _serviceBusPersistentConnection = new ServiceBusPersistentConnection(serviceBusSettings.Value.ConnectionString);
         }
         
         public async Task Publish<TIntegrationEvent>(string topicName, TIntegrationEvent iEvent)
