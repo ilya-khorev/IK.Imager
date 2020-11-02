@@ -5,6 +5,7 @@ using AutoMapper;
 using IK.Imager.Api.Contract;
 using IK.Imager.Api.Services;
 using IK.Imager.Core.Abstractions.Services;
+using IK.Imager.Core.Settings;
 using IK.Imager.EventBus.Abstractions;
 using IK.Imager.IntegrationEvents;
 using Microsoft.AspNetCore.Http;
@@ -26,6 +27,7 @@ namespace IK.Imager.Api.Controllers
         private readonly IEventBus _eventBus;
         private readonly ImageDownloadClient _imageDownloadClient;
         private readonly IOptions<TopicsConfiguration> _topicsConfiguration;
+        private readonly IOptionsSnapshot<ImageLimitationSettings> _imageLimitationSettings;
         private readonly IMapper _mapper;
 
         private const string IncorrectUrlFormat = "Image url is not well formed. It must be absolute url path.";
@@ -35,13 +37,15 @@ namespace IK.Imager.Api.Controllers
 
         /// <inheritdoc />
         public UploadController(ILogger<UploadController> logger, IImageUploadService imageUploadService, 
-            IEventBus eventBus, ImageDownloadClient imageDownloadClient, IOptions<TopicsConfiguration> topicsConfiguration, IMapper mapper)
+            IEventBus eventBus, ImageDownloadClient imageDownloadClient, IOptions<TopicsConfiguration> topicsConfiguration, 
+            IOptionsSnapshot<ImageLimitationSettings> imageLimitationSettings, IMapper mapper)
         {
             _logger = logger;
             _imageUploadService = imageUploadService;
             _eventBus = eventBus;
             _imageDownloadClient = imageDownloadClient;
             _topicsConfiguration = topicsConfiguration;
+            _imageLimitationSettings = imageLimitationSettings;
             _mapper = mapper;
         }
 
@@ -105,10 +109,10 @@ namespace IK.Imager.Api.Controllers
             _logger.LogWarning(message);
             return BadRequest(message);
         }
-        
+
         private async Task<ActionResult<ImageInfo>> UploadImage(Stream imageStream, string partitionKey, ImageLimitationSettingsRequest imageLimitationSettings)
         {
-            //merge imageLimitationSettings with IOptions<ImageLimitationSettings> limitationSettings
+            OverrideImageLimitationSettings(imageLimitationSettings);
             
             var uploadImageResult = await _imageUploadService.UploadImage(imageStream, partitionKey);
             
@@ -122,6 +126,53 @@ namespace IK.Imager.Api.Controllers
             });
             
             return Ok(_mapper.Map<ImageInfo>(uploadImageResult));
+        }
+
+        private void OverrideImageLimitationSettings(ImageLimitationSettingsRequest imageLimitationSettingsRequest)
+        {
+            if (imageLimitationSettingsRequest == null)
+                return;
+
+            if (imageLimitationSettingsRequest.Height != null)
+            {
+                _imageLimitationSettings.Value.Height = new Core.Settings.Range<int>
+                {
+                    Max = imageLimitationSettingsRequest.Height.Max,
+                    Min = imageLimitationSettingsRequest.Height.Min
+                };
+            }
+            
+            if (imageLimitationSettingsRequest.Width != null)
+            {
+                _imageLimitationSettings.Value.Width = new Core.Settings.Range<int>
+                {
+                    Max = imageLimitationSettingsRequest.Width.Max,
+                    Min = imageLimitationSettingsRequest.Width.Min
+                };
+            }
+            
+            if (imageLimitationSettingsRequest.SizeBytes != null)
+            {
+                _imageLimitationSettings.Value.SizeBytes = new Core.Settings.Range<int>
+                {
+                    Max = imageLimitationSettingsRequest.SizeBytes.Max,
+                    Min = imageLimitationSettingsRequest.SizeBytes.Min
+                };
+            }
+            
+            if (imageLimitationSettingsRequest.AspectRatio != null)
+            {
+                _imageLimitationSettings.Value.AspectRatio = new Core.Settings.Range<double>
+                {
+                    Max = imageLimitationSettingsRequest.AspectRatio.Max,
+                    Min = imageLimitationSettingsRequest.AspectRatio.Min
+                };
+            }
+            
+            if (imageLimitationSettingsRequest.Types != null)
+            {
+                _imageLimitationSettings.Value.Types = imageLimitationSettingsRequest.Types;
+            }
         }
     }
 }
