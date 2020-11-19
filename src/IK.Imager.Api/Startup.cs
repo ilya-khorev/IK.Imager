@@ -124,7 +124,7 @@ namespace IK.Imager.Api
 
             app.UseRouting();
 
-            app.UseSwagger(c => { c.SerializeAsV2 = true; });
+            app.UseSwagger();
             app.UseSwaggerUI(c =>
             {
                 app.UseSwaggerUI(
