@@ -6,6 +6,6 @@ namespace IK.Imager.Core.Abstractions.Services
 {
     public interface IImageUploadService
     {
-        Task<ImageInfo> UploadImage(Stream imageStream, string partitionKey);
+        Task<ImageInfo> UploadImage(Stream imageStream, string imageGroup);
     }
 }

@@ -5,6 +5,6 @@ namespace IK.Imager.Core.Abstractions.Services
 {
     public interface IImageSearchService
     {
-        Task<ImagesSearchResult> Search(string[] imageIds, string partitionKey);
+        Task<ImagesSearchResult> Search(string[] imageIds, string imageGroup);
     }
 }

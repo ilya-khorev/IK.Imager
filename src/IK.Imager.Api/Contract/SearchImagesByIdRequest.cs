@@ -15,9 +15,10 @@ namespace IK.Imager.Api.Contract
         public string[] ImageIds { get; set; }
         
         /// <summary>
-        /// Partition key, that was specified when creating these images.
-        /// If the images have different partition keys, split this request into several requests with unique partition key
-        /// This parameter is optional, however, specifying this value will increase this operation performance.
+        /// Image group, which was specified when uploading these images.
+        /// 
+        /// If the images belong to different image groups, you may split this request into several requests with unique image group.
+        /// This parameter is optional. However, specifying this value will increase this operation performance.
         /// </summary>
         public string PartitionKey { get; set; }
     }

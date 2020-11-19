@@ -24,8 +24,8 @@ namespace IK.Imager.Core.Tests
         {
             IImageResizing imageResizing = new ImageResizing();
 
-            _blobStorage = new MockImageBlobStorage();
-            _metadataStorage = new MockImageMetadataStorage();
+            _blobStorage = new InMemoryMockedImageBlobStorage();
+            _metadataStorage = new InMemoryMockedImageMetadataStorage();
 
             _imageThumbnailSettings = new MockImageThumbnailsSettings();
             
@@ -36,14 +36,14 @@ namespace IK.Imager.Core.Tests
         [Fact]
         public async Task ShouldGenerateThumbnails()
         {
-            string partitionKey = Guid.NewGuid().ToString();
+            string imageGroup = Guid.NewGuid().ToString();
             string contentType = "image/jpeg";
             int width = 800;
             int height = 600;
             double aspectRatio = width / (double)height; 
-            var uploadImageResult = await ImageTestsHelper.UploadImage(_blobStorage, _metadataStorage,"Images\\jpeg\\1043-800x600.jpg", width, height, contentType, ImageType.JPEG, partitionKey);
+            var uploadImageResult = await ImageTestsHelper.UploadImage(_blobStorage, _metadataStorage,"Images\\jpeg\\1043-800x600.jpg", width, height, contentType, ImageType.JPEG, imageGroup);
 
-            var imageWithGeneratedThumbnails = await _thumbnailsService.GenerateThumbnails(uploadImageResult.Id, partitionKey);
+            var imageWithGeneratedThumbnails = await _thumbnailsService.GenerateThumbnails(uploadImageResult.Id, imageGroup);
             Assert.Equal(_imageThumbnailSettings.Value.TargetWidth.Length, imageWithGeneratedThumbnails.Count);
             int i = 0;
             foreach (var imageThumbnail in imageWithGeneratedThumbnails)
@@ -68,20 +68,20 @@ namespace IK.Imager.Core.Tests
         [Fact]
         public async Task ShouldGenerateNothingWhenImageIsSmall()
         {
-            string partitionKey = Guid.NewGuid().ToString();
+            string imageGroup = Guid.NewGuid().ToString();
             string contentType = "image/gif";
-            var uploadImageResult = await ImageTestsHelper.UploadImage(_blobStorage, _metadataStorage, "Images\\gif\\giphy_200x200.gif", 200, 200, contentType, ImageType.GIF, partitionKey);
-            var imageWithGeneratedThumbnails = await _thumbnailsService.GenerateThumbnails(uploadImageResult.Id, partitionKey);
+            var uploadImageResult = await ImageTestsHelper.UploadImage(_blobStorage, _metadataStorage, "Images\\gif\\giphy_200x200.gif", 200, 200, contentType, ImageType.GIF, imageGroup);
+            var imageWithGeneratedThumbnails = await _thumbnailsService.GenerateThumbnails(uploadImageResult.Id, imageGroup);
             Assert.False(imageWithGeneratedThumbnails.Any());
         }
 
         [Fact]
         public async Task ShouldGeneratePngThumbnailsForBmpImage()
         {
-            string partitionKey = Guid.NewGuid().ToString();
+            string imageGroup = Guid.NewGuid().ToString();
             string contentType = "image/bmp";
-            var uploadImageResult = await ImageTestsHelper.UploadImage(_blobStorage, _metadataStorage,"Images\\bmp\\1068-800x1600.bmp", 800, 1200, contentType, ImageType.BMP, partitionKey);
-            var imageWithGeneratedThumbnails = await _thumbnailsService.GenerateThumbnails(uploadImageResult.Id, partitionKey);
+            var uploadImageResult = await ImageTestsHelper.UploadImage(_blobStorage, _metadataStorage,"Images\\bmp\\1068-800x1600.bmp", 800, 1200, contentType, ImageType.BMP, imageGroup);
+            var imageWithGeneratedThumbnails = await _thumbnailsService.GenerateThumbnails(uploadImageResult.Id, imageGroup);
 
             foreach (var imageThumbnail in imageWithGeneratedThumbnails)
             {

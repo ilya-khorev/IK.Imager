@@ -25,9 +25,10 @@ namespace IK.Imager.Core.Services
             _cdnService = cdnService;
         }
         
-        public async Task<ImagesSearchResult> Search(string[] imageIds, string partitionKey)
+        /// <inheritdoc />
+        public async Task<ImagesSearchResult> Search(string[] imageIds, string imageGroup)
         {
-            var imagesMetadata = await _metadataStorage.GetMetadata(imageIds, partitionKey, CancellationToken.None);
+            var imagesMetadata = await _metadataStorage.GetMetadata(imageIds, imageGroup, CancellationToken.None);
 
             ImagesSearchResult result = new ImagesSearchResult
             {

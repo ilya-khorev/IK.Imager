@@ -8,7 +8,14 @@ namespace IK.Imager.Storage.Abstractions.Models
 {
     public class ImageMetadata: IImageBasicDetails, IEquatable<ImageMetadata>
     {
-        public string PartitionKey { get; set; }
+        /// <summary>
+        /// Image group which also used to partition data
+        /// </summary>
+        public string ImageGroup { get; set; }
+        
+        /// <summary>
+        /// Image id
+        /// </summary>
         [JsonProperty("id")]
         public string Id { get; set; }
         public long SizeBytes { get; set; }
@@ -57,7 +64,7 @@ namespace IK.Imager.Storage.Abstractions.Models
             if (ReferenceEquals(this, other))
                 return true;
 
-            bool primitivePropertiesEqual = PartitionKey == other.PartitionKey
+            bool primitivePropertiesEqual = ImageGroup == other.ImageGroup
                                             && Id == other.Id
                                             && SizeBytes == other.SizeBytes
                                             && MD5Hash == other.MD5Hash
@@ -126,7 +133,7 @@ namespace IK.Imager.Storage.Abstractions.Models
         {
             unchecked
             {
-                var hashCode = PartitionKey != null ? PartitionKey.GetHashCode() : 0;
+                var hashCode = ImageGroup != null ? ImageGroup.GetHashCode() : 0;
                 hashCode = (hashCode * 397) ^ (Id != null ? Id.GetHashCode() : 0);
                 hashCode = (int) ((hashCode * 397) ^ SizeBytes);
                 hashCode = (hashCode * 397) ^ (MD5Hash != null ? MD5Hash.GetHashCode() : 0);

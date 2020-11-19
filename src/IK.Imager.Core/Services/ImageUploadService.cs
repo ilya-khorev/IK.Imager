@@ -21,8 +21,8 @@ namespace IK.Imager.Core.Services
         private readonly ICdnService _cdnService;
 
         private const string CheckingImage = "Starting to check the image.";
-        private const string UploadedToBlobStorage = "Uploaded the image to the blob storage, id={0}.";
-        private const string UploadingFinished = "Image {0} and its metadata has been saved.";
+        private const string UploadedToBlobStorage = "Uploaded the image to the blob storage, imageId={0}.";
+        private const string UploadingFinished = "Image with id={0} and its metadata have been saved.";
         
         public ImageUploadService(ILogger<ImageUploadService> logger, IImageMetadataReader metadataReader, IImageBlobStorage blobStorage, 
             IImageMetadataStorage metadataStorage, IImageValidator imageValidator, IImageIdentifierProvider imageIdentifierProvider, ICdnService cdnService)
@@ -36,7 +36,7 @@ namespace IK.Imager.Core.Services
             _cdnService = cdnService;
         }
         
-        public async Task<ImageInfo> UploadImage(Stream imageStream, string partitionKey)
+        public async Task<ImageInfo> UploadImage(Stream imageStream, string imageGroup)
         {
              _logger.LogDebug(CheckingImage);
             var imageFormat = _metadataReader.DetectFormat(imageStream); 
@@ -59,9 +59,12 @@ namespace IK.Imager.Core.Services
             //Image stream is no longer needed at this stage
             imageStream.Dispose();
             
-            //Next, saving the metadata object of this image
-            //When the program unexpectedly fails at this stage, there will be just a blob file not connected to any metadata object
-            //and therefore the image will be unavailable to the clients. In most cases it is just fine.
+            /*
+             Next, saving the metadata object of this image
+            
+             If the program unexpectedly fails at this stage, there will be just a blob file, not connected to any metadata object. In this case,
+             the image itself will be unavailable to the clients. And in most cases it is just fine, so an additional handling is not needed here.
+            */
             await _metadataStorage.SetMetadata(new ImageMetadata
             {
                 Id = imageId,
@@ -74,7 +77,7 @@ namespace IK.Imager.Core.Services
                 MimeType = imageFormat.MimeType,
                 ImageType = (Storage.Abstractions.Models.ImageType) imageFormat.ImageType,
                 FileExtension = imageFormat.FileExtension,
-                PartitionKey = partitionKey 
+                ImageGroup = imageGroup 
             }, CancellationToken.None);
             
             _logger.LogInformation(string.Format(UploadingFinished, imageId));

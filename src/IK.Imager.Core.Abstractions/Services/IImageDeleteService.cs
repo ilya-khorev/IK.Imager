@@ -5,7 +5,7 @@ namespace IK.Imager.Core.Abstractions.Services
 {
     public interface IImageDeleteService
     {
-        Task<ImageShortInfo> DeleteImageMetadata(string imageId, string partitionKey);
+        Task<ImageShortInfo> DeleteImageMetadata(string imageId, string imageGroup);
         
         Task DeleteImageAndThumbnails(ImageShortInfo imageShortInfo);
     }

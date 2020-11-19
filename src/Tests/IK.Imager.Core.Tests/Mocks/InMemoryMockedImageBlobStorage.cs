@@ -9,7 +9,7 @@ using IK.Imager.Storage.Abstractions.Storage;
 
 namespace IK.Imager.Core.Tests.Mocks
 {
-    public class MockImageBlobStorage: IImageBlobStorage
+    public class InMemoryMockedImageBlobStorage: IImageBlobStorage
     {
         private readonly Dictionary<string, MemoryStream> _imagesDictionary = new Dictionary<string, MemoryStream>();
         

@@ -23,8 +23,8 @@ namespace IK.Imager.Core.Tests
         public ImageSearchTests(ITestOutputHelper output)
         {
             _output = output;
-            _blobStorage = new MockImageBlobStorage();
-            _metadataStorage = new MockImageMetadataStorage();
+            _blobStorage = new InMemoryMockedImageBlobStorage();
+            _metadataStorage = new InMemoryMockedImageMetadataStorage();
             _imageSearchService = new ImageSearchService(output.BuildLoggerFor<ImageSearchService>(), _metadataStorage,
                 _blobStorage, new MockCdnService());
 
@@ -39,9 +39,9 @@ namespace IK.Imager.Core.Tests
         [Fact]
         public async Task ShouldFindImageById()
         {
-            var partitionKey = Guid.NewGuid().ToString();
-            var uploadedImage = await ImageTestsHelper.UploadRandomlySelectedImage(partitionKey, _imageUploadService);
-            var imagesSearchResult = await _imageSearchService.Search(new[] {uploadedImage.Id}, partitionKey);
+            var imageGroup = Guid.NewGuid().ToString();
+            var uploadedImage = await ImageTestsHelper.UploadRandomlySelectedImage(imageGroup, _imageUploadService);
+            var imagesSearchResult = await _imageSearchService.Search(new[] {uploadedImage.Id}, imageGroup);
 
             Assert.Single(imagesSearchResult.Images);
             Assert.Equal(uploadedImage.Id, imagesSearchResult.Images[0].Id);
@@ -50,28 +50,28 @@ namespace IK.Imager.Core.Tests
         [Fact]
         public async Task ShouldFindMultiplesImagesById()
         {
-            var partitionKey = Guid.NewGuid().ToString();
+            var imageGroup = Guid.NewGuid().ToString();
 
             List<string> ids = new List<string>();
             for (int i = 0; i < 5; i++)
             {
-                var uploadedImage = await ImageTestsHelper.UploadRandomlySelectedImage(partitionKey, _imageUploadService);
+                var uploadedImage = await ImageTestsHelper.UploadRandomlySelectedImage(imageGroup, _imageUploadService);
                 ids.Add(uploadedImage.Id);
             }
             
-            var imagesSearchResult = await _imageSearchService.Search(ids.ToArray(), partitionKey);
+            var imagesSearchResult = await _imageSearchService.Search(ids.ToArray(), imageGroup);
             Assert.Equal(ids.Count, imagesSearchResult.Images.Count);
         }
 
         [Fact]
         public async Task ImageModelShouldHaveAllFieldsCompleted()
         {
-            var partitionKey = Guid.NewGuid().ToString();
-            var uploadedImage = await ImageTestsHelper.UploadRandomlySelectedImage(partitionKey, _imageUploadService);
-            var imagesSearchResult = await _imageSearchService.Search(new[] {uploadedImage.Id}, partitionKey);
+            var imageGroup = Guid.NewGuid().ToString();
+            var uploadedImage = await ImageTestsHelper.UploadRandomlySelectedImage(imageGroup, _imageUploadService);
+            var imagesSearchResult = await _imageSearchService.Search(new[] {uploadedImage.Id}, imageGroup);
             var resultImage = imagesSearchResult.Images[0];
 
-            var imageMetadata = (await _metadataStorage.GetMetadata(new[] {uploadedImage.Id}, partitionKey, CancellationToken.None))[0];
+            var imageMetadata = (await _metadataStorage.GetMetadata(new[] {uploadedImage.Id}, imageGroup, CancellationToken.None))[0];
             Assert.Equal(imageMetadata.SizeBytes, resultImage.Bytes);
             Assert.Equal(imageMetadata.MD5Hash, resultImage.Hash);
             Assert.Equal(imageMetadata.Height, resultImage.Height);
@@ -87,10 +87,10 @@ namespace IK.Imager.Core.Tests
             IImageIdentifierProvider imageIdentifierProvider = new ImageIdentifierProvider();
             var thumbnailsService = new ImageThumbnailService(_output.BuildLoggerFor<ImageThumbnailService>(), imageResizing, _blobStorage, 
                 _metadataStorage, imageIdentifierProvider, imageThumbnailSettings);
-            await thumbnailsService.GenerateThumbnails(uploadedImage.Id, partitionKey);
+            await thumbnailsService.GenerateThumbnails(uploadedImage.Id, imageGroup);
             
-            imagesSearchResult = await _imageSearchService.Search(new[] {uploadedImage.Id}, partitionKey);
-            imageMetadata = (await _metadataStorage.GetMetadata(new[] {uploadedImage.Id}, partitionKey, CancellationToken.None))[0];
+            imagesSearchResult = await _imageSearchService.Search(new[] {uploadedImage.Id}, imageGroup);
+            imageMetadata = (await _metadataStorage.GetMetadata(new[] {uploadedImage.Id}, imageGroup, CancellationToken.None))[0];
             resultImage = imagesSearchResult.Images[0];
             Assert.True(resultImage.Thumbnails.Any());
             foreach (var imageThumbnail in resultImage.Thumbnails)

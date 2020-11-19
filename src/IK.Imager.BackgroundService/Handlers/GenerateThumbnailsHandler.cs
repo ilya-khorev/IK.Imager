@@ -16,7 +16,7 @@ namespace IK.Imager.BackgroundService.Handlers
 
         public async Task Handle(OriginalImageUploadedIntegrationEvent iEvent)
         {
-            await _thumbnailsService.GenerateThumbnails(iEvent.ImageId, iEvent.PartitionKey);
+            await _thumbnailsService.GenerateThumbnails(iEvent.ImageId, iEvent.ImageGroup);
         }
     }
 }

@@ -42,6 +42,7 @@ namespace IK.Imager.ImageBlobStorage.AzureFiles
             return container;
         }
         
+        /// <inheritdoc />
         public async Task<UploadImageResult> UploadImage(string imageName, Stream imageStream, ImageSizeType imageSizeType,
             string imageContentType, CancellationToken cancellationToken)
         {
@@ -62,6 +63,7 @@ namespace IK.Imager.ImageBlobStorage.AzureFiles
             };
         }
 
+        /// <inheritdoc />
         public async Task<MemoryStream> DownloadImage(string imageName, ImageSizeType imageSizeType,
             CancellationToken cancellationToken)
         {
@@ -77,6 +79,7 @@ namespace IK.Imager.ImageBlobStorage.AzureFiles
             return memoryStream;
         }
 
+        /// <inheritdoc />
         public async Task<bool> TryDeleteImage(string imageName, ImageSizeType imageSizeType, CancellationToken cancellationToken)
         {
             ArgumentHelper.AssertNotNullOrEmpty(nameof(imageName), imageName);
@@ -85,6 +88,7 @@ namespace IK.Imager.ImageBlobStorage.AzureFiles
             return await blockBlob.DeleteIfExistsAsync(cancellationToken).ConfigureAwait(false);
         }
 
+        /// <inheritdoc />
         public Uri GetImageUri(string imageName, ImageSizeType imageSizeType)
         {
             ArgumentHelper.AssertNotNullOrEmpty(nameof(imageName), imageName);
@@ -93,6 +97,7 @@ namespace IK.Imager.ImageBlobStorage.AzureFiles
             return blockBlob.Uri;
         }
 
+        /// <inheritdoc />
         public async Task<bool> ImageExists(string imageName, ImageSizeType imageSizeType, CancellationToken cancellationToken)
         {
             ArgumentHelper.AssertNotNullOrEmpty(nameof(imageName), imageName);

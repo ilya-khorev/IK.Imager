@@ -46,9 +46,10 @@ namespace IK.Imager.Core.Services
             _thumbnailTargetWidth = imageThumbnailsSettings.Value.TargetWidth.OrderByDescending(x => x).ToList();
         }
         
-        public async Task<List<ImageThumbnailGeneratingResult>> GenerateThumbnails(string imageId, string partitionKey)
+        /// <inheritdoc />
+        public async Task<List<ImageThumbnailGeneratingResult>> GenerateThumbnails(string imageId, string imageGroup)
         {
-            var imageMetadataList = await _metadataStorage.GetMetadata(new List<string> {imageId}, partitionKey, CancellationToken.None);
+            var imageMetadataList = await _metadataStorage.GetMetadata(new List<string> {imageId}, imageGroup, CancellationToken.None);
             if (imageMetadataList == null || !imageMetadataList.Any())
             {
                 _logger.LogInformation(ImageNotFound, imageId);

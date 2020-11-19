@@ -24,8 +24,8 @@ namespace IK.Imager.Core.Tests
 
         public ImageDeletionTests(ITestOutputHelper output)
         {
-            _blobStorage = new MockImageBlobStorage();
-            _metadataStorage = new MockImageMetadataStorage();
+            _blobStorage = new InMemoryMockedImageBlobStorage();
+            _metadataStorage = new InMemoryMockedImageMetadataStorage();
             _imageDeleteService = new ImageDeleteService(output.BuildLoggerFor<ImageDeleteService>(), _metadataStorage, _blobStorage);
             
             var imageIdentifierProvider = new ImageIdentifierProvider();
@@ -38,13 +38,13 @@ namespace IK.Imager.Core.Tests
         [Fact]
         public async Task ShouldRemoveMetadataOnly()
         {
-            var partitionKey = Guid.NewGuid().ToString();
-            var uploadedImage = await ImageTestsHelper.UploadRandomlySelectedImage(partitionKey, _imageUploadService);
-            var deletionResult = await _imageDeleteService.DeleteImageMetadata(uploadedImage.Id, partitionKey);
+            var imageGroup = Guid.NewGuid().ToString();
+            var uploadedImage = await ImageTestsHelper.UploadRandomlySelectedImage(imageGroup, _imageUploadService);
+            var deletionResult = await _imageDeleteService.DeleteImageMetadata(uploadedImage.Id, imageGroup);
             
             Assert.Equal(uploadedImage.Id, deletionResult.ImageId);
 
-            var metadata = await _metadataStorage.GetMetadata(new List<string>() {uploadedImage.Id}, partitionKey, CancellationToken.None);
+            var metadata = await _metadataStorage.GetMetadata(new List<string>() {uploadedImage.Id}, imageGroup, CancellationToken.None);
             Assert.False(metadata.Any());
 
             var imageExists = await _blobStorage.ImageExists(deletionResult.ImageName, ImageSizeType.Original,
@@ -55,8 +55,8 @@ namespace IK.Imager.Core.Tests
         [Fact]
         public async Task ShouldRemoveImageAndItsThumbnails()
         {
-            var partitionKey = Guid.NewGuid().ToString();
-            var uploadedImage = await ImageTestsHelper.UploadRandomlySelectedImage(partitionKey, _imageUploadService);
+            var imageGroup = Guid.NewGuid().ToString();
+            var uploadedImage = await ImageTestsHelper.UploadRandomlySelectedImage(imageGroup, _imageUploadService);
             await _imageDeleteService.DeleteImageAndThumbnails(new ImageShortInfo()
             {
                 ImageId = uploadedImage.Id,

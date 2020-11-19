@@ -14,6 +14,7 @@ namespace IK.Imager.Core.Services
             _cdnSettings = cdnSettings;
         }
         
+        /// <inheritdoc />
         public Uri TryTransformToCdnUri(Uri originalUri)
         {
             if (_cdnSettings.Value.Uri == null)

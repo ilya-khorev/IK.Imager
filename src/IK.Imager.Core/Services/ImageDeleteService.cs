@@ -17,8 +17,8 @@ namespace IK.Imager.Core.Services
         private readonly IImageMetadataStorage _metadataStorage;
         private readonly IImageBlobStorage _blobStorage;
 
-        private const string MetadataRemoving = "Removing metadata of imageId = {0}, partitionKey = {1}";
-        private const string MetadataRemoved = "Metadata removed for image {0}";
+        private const string MetadataRemoving = "Removing metadata of imageId = {0}, imageGroup = {1}";
+        private const string MetadataRemoved = "Metadata removed for imageId = {0}";
         private const string Removing = "Removing image and thumbnails for {0}";
         private const string OriginalImageDeleted = "Original image {0} has been deleted. ";
         private const string ThumbnailsDeleted = "{0} / {1} thumbnails were deleted.";
@@ -30,20 +30,21 @@ namespace IK.Imager.Core.Services
             _blobStorage = blobStorage;
         }
         
-        public async Task<ImageShortInfo> DeleteImageMetadata(string imageId, string partitionKey)
+        /// <inheritdoc />
+        public async Task<ImageShortInfo> DeleteImageMetadata(string imageId, string imageGroup)
         {
-            _logger.LogDebug(MetadataRemoving, imageId, partitionKey);
+            _logger.LogDebug(MetadataRemoving, imageId, imageGroup);
             
-            var metadata = await _metadataStorage.GetMetadata(new List<string> {imageId}, partitionKey, CancellationToken.None);
+            var metadata = await _metadataStorage.GetMetadata(new List<string> {imageId}, imageGroup, CancellationToken.None);
             if (metadata == null || !metadata.Any())
                 return null;
             
-            var deletedMetadata = await _metadataStorage.RemoveMetadata(imageId, partitionKey, CancellationToken.None);
-            if (!deletedMetadata)
-                return null;
-
             _logger.LogInformation(MetadataRemoved, imageId);
             var imageMetadata = metadata[0];
+            
+            var deletedMetadata = await _metadataStorage.RemoveMetadata(imageMetadata.Id, imageMetadata.ImageGroup, CancellationToken.None);
+            if (!deletedMetadata)
+                return null;
 
             return new ImageShortInfo
             {
@@ -55,6 +56,7 @@ namespace IK.Imager.Core.Services
             };
         }
 
+        /// <inheritdoc />
         public async Task DeleteImageAndThumbnails(ImageShortInfo imageShortInfo)
         {
             _logger.LogDebug(Removing, imageShortInfo);

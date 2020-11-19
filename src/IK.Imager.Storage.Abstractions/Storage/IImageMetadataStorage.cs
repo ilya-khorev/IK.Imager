@@ -8,7 +8,7 @@ namespace IK.Imager.Storage.Abstractions.Storage
     public interface IImageMetadataStorage
     {
         /// <summary>
-        /// Insert or update an image metadata object
+        /// Inserts or updates an image metadata object
         /// </summary>
         /// <param name="metadata">Image metadata</param>
         /// <param name="cancellationToken">Cancellation token to stop operation</param>
@@ -16,17 +16,16 @@ namespace IK.Imager.Storage.Abstractions.Storage
         Task SetMetadata(ImageMetadata metadata, CancellationToken cancellationToken);
         
         /// <summary>
-        /// Get a list of metadata object for a given set of image ids
-        /// PartitionKey is required for this operation, therefore it's more optimized in terms of performance
+        /// Returns a list of metadata object for a given set of image ids and a given image group
         /// </summary>
         /// <param name="imageIds">Image identifiers</param>
-        /// <param name="partitionKey">Partition key where to search the objects</param>
+        /// <param name="imageGroup">Image group to which the requested images belong</param>
         /// <param name="cancellationToken">Cancellation token to stop operation</param>
         /// <returns></returns>
-        Task<List<ImageMetadata>> GetMetadata(ICollection<string> imageIds, string partitionKey, CancellationToken cancellationToken);
+        Task<List<ImageMetadata>> GetMetadata(ICollection<string> imageIds, string imageGroup, CancellationToken cancellationToken);
         
         /// <summary>
-        /// Get a list of metadata object for a given set of image ids
+        /// Returns a list of metadata object for a given set of image ids
         /// </summary>
         /// <param name="imageIds">Image identifiers</param>
         /// <param name="cancellationToken">Cancellation token to stop operation</param>
@@ -34,12 +33,12 @@ namespace IK.Imager.Storage.Abstractions.Storage
         Task<List<ImageMetadata>> GetMetadata(ICollection<string> imageIds, CancellationToken cancellationToken);
         
         /// <summary>
-        /// Removes a metadata object
+        /// Removes a metadata object for a given image id an image group
         /// </summary>
         /// <param name="imageId">Image identifier</param>
-        /// <param name="partitionKey">Partition key</param>
+        /// <param name="imageGroup">Image group of the requested image</param>
         /// <param name="cancellationToken"></param>
         /// <returns>True if the object was found and removed</returns>
-        Task<bool> RemoveMetadata(string imageId, string partitionKey, CancellationToken cancellationToken);
+        Task<bool> RemoveMetadata(string imageId, string imageGroup, CancellationToken cancellationToken);
     }
 }

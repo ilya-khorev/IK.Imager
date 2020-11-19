@@ -20,8 +20,8 @@ namespace IK.Imager.Core.Tests
         private readonly IImageMetadataStorage _metadataStorage;
         public ImageUploadingTests(ITestOutputHelper output)
         {
-            _blobStorage = new MockImageBlobStorage();
-            _metadataStorage = new MockImageMetadataStorage();
+            _blobStorage = new InMemoryMockedImageBlobStorage();
+            _metadataStorage = new InMemoryMockedImageMetadataStorage();
             
             var imageIdentifierProvider = new ImageIdentifierProvider();
             IImageMetadataReader imageMetadataReader = new ImageMetadataReader();
@@ -34,10 +34,10 @@ namespace IK.Imager.Core.Tests
         [Fact]
         public async Task ImageMetadataShouldBeSaved()
         {
-            string partitionKey = Guid.NewGuid().ToString();
-            var uploadedImage = await ImageTestsHelper.UploadRandomlySelectedImage(partitionKey, _imageUploadService);
+            string imageGroup = Guid.NewGuid().ToString();
+            var uploadedImage = await ImageTestsHelper.UploadRandomlySelectedImage(imageGroup, _imageUploadService);
             
-            var metadataResult = await _metadataStorage.GetMetadata(new List<string> { uploadedImage.Id }, partitionKey, CancellationToken.None);
+            var metadataResult = await _metadataStorage.GetMetadata(new List<string> { uploadedImage.Id }, imageGroup, CancellationToken.None);
             Assert.True(metadataResult.Any());
             var metadata = metadataResult[0];
             Assert.Equal(uploadedImage.Bytes, metadata.SizeBytes);
@@ -50,8 +50,8 @@ namespace IK.Imager.Core.Tests
         [Fact]
         public async Task ImageBinaryShouldBeSaved()
         {
-            string partitionKey = Guid.NewGuid().ToString();
-            var uploadedImage = await ImageTestsHelper.UploadRandomlySelectedImage(partitionKey, _imageUploadService);
+            string imageGroup = Guid.NewGuid().ToString();
+            var uploadedImage = await ImageTestsHelper.UploadRandomlySelectedImage(imageGroup, _imageUploadService);
             var stream = await _blobStorage.DownloadImage(uploadedImage.Name, ImageSizeType.Original, CancellationToken.None);
             Assert.True(stream.Length > 0);
         }

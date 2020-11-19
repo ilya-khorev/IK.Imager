@@ -12,6 +12,9 @@ namespace IK.Imager.Core.Abstractions.Models
         /// </summary>
         public string Id { get; set; }
         
+        /// <summary>
+        /// Unique image name
+        /// </summary>
         public string Name { get; set; }
         
         /// <summary>

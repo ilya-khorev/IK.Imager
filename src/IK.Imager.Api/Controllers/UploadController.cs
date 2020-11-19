@@ -66,7 +66,7 @@ namespace IK.Imager.Api.Controllers
         //todo probably worth uploading using stream https://docs.microsoft.com/en-us/aspnet/core/mvc/models/file-uploads?view=aspnetcore-3.1#upload-large-files-with-streaming
         public async Task<ActionResult<ImageInfo>> PostWithStream([FromForm]UploadImageFileRequest imageFileRequest)
         {
-            return await UploadImage(imageFileRequest.File.OpenReadStream(), imageFileRequest.PartitionKey, imageFileRequest.LimitationSettings);
+            return await UploadImage(imageFileRequest.File.OpenReadStream(), imageFileRequest.ImageGroup, imageFileRequest.LimitationSettings);
         }
         
         //todo add image restrictions as a part of the request model
@@ -101,7 +101,7 @@ namespace IK.Imager.Api.Controllers
 
             _logger.LogDebug(DownloadedByUrl, uploadImageRequest.ImageUrl);
             
-            return await UploadImage(imageStream, uploadImageRequest.PartitionKey, uploadImageRequest.LimitationSettings);
+            return await UploadImage(imageStream, uploadImageRequest.ImageGroup, uploadImageRequest.LimitationSettings);
         }
         
         private BadRequestObjectResult BadRequestAndLog(string message)
@@ -110,11 +110,11 @@ namespace IK.Imager.Api.Controllers
             return BadRequest(message);
         }
 
-        private async Task<ActionResult<ImageInfo>> UploadImage(Stream imageStream, string partitionKey, ImageLimitationSettingsRequest imageLimitationSettings)
+        private async Task<ActionResult<ImageInfo>> UploadImage(Stream imageStream, string imageGroup, ImageLimitationSettingsRequest imageLimitationSettings)
         {
             OverrideImageLimitationSettings(imageLimitationSettings);
             
-            var uploadImageResult = await _imageUploadService.UploadImage(imageStream, partitionKey);
+            var uploadImageResult = await _imageUploadService.UploadImage(imageStream, imageGroup);
             
             //Once the image file and metadata object are saved, there is time to send a new message to the event bus topic
             //If the program fails at this stage, this message is not sent and therefore thumbnails are not generated for the image. 
@@ -122,7 +122,7 @@ namespace IK.Imager.Api.Controllers
             await _eventBus.Publish(_topicsConfiguration.Value.UploadedImagesTopicName, new OriginalImageUploadedIntegrationEvent
             {
                 ImageId = uploadImageResult.Id,
-                PartitionKey = partitionKey 
+                ImageGroup = imageGroup 
             });
             
             return Ok(_mapper.Map<ImageInfo>(uploadImageResult));

@@ -6,7 +6,7 @@ using IK.Imager.Storage.Abstractions.Storage;
 
 namespace IK.Imager.Core.Tests.Mocks
 {
-    public class MockImageMetadataStorage: IImageMetadataStorage
+    public class InMemoryMockedImageMetadataStorage: IImageMetadataStorage
     {
         readonly Dictionary<string, ImageMetadata> _dictionary = new Dictionary<string, ImageMetadata>();
         
@@ -16,7 +16,7 @@ namespace IK.Imager.Core.Tests.Mocks
             return Task.CompletedTask;
         }
 
-        public Task<List<ImageMetadata>> GetMetadata(ICollection<string> imageIds, string partitionKey, CancellationToken cancellationToken)
+        public Task<List<ImageMetadata>> GetMetadata(ICollection<string> imageIds, string imageGroup, CancellationToken cancellationToken)
         {
             List<ImageMetadata> result = new List<ImageMetadata>();
             foreach (var imageId in imageIds)
@@ -32,7 +32,7 @@ namespace IK.Imager.Core.Tests.Mocks
             return GetMetadata(imageIds, "", cancellationToken);
         }
 
-        public Task<bool> RemoveMetadata(string imageId, string partitionKey, CancellationToken cancellationToken)
+        public Task<bool> RemoveMetadata(string imageId, string imageGroup, CancellationToken cancellationToken)
         {
             if (!_dictionary.ContainsKey(imageId))
                 return Task.FromResult(false);

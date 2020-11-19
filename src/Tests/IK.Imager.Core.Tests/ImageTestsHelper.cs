@@ -30,7 +30,7 @@ namespace IK.Imager.Core.Tests
         }
         
         public static async Task<ImageMetadata> UploadImage(IImageBlobStorage blobStorage, IImageMetadataStorage metadataStorage, string imagePath, int width, int height, 
-            string contentType, ImageType imageType, string partitionKey)
+            string contentType, ImageType imageType, string imageGroup)
         {
             string extension = "";
             switch (imageType)
@@ -68,21 +68,21 @@ namespace IK.Imager.Core.Tests
                 SizeBytes = file.Length,
                 MimeType = contentType,
                 ImageType = imageType,
-                PartitionKey = partitionKey 
+                ImageGroup = imageGroup 
             };
 
             await metadataStorage.SetMetadata(imageMetadata, CancellationToken.None);
             return imageMetadata;
         }
         
-        public static async Task<ImageInfo> UploadRandomlySelectedImage(string partitionKey, ImageUploadService imageUploadService)
+        public static async Task<ImageInfo> UploadRandomlySelectedImage(string imageGroup, ImageUploadService imageUploadService)
         { 
             var randomlySelectedImageDirectory = ImageDirectories[Random.Next(0, ImageDirectories.Length - 1)];
             var files = Directory.GetFiles(randomlySelectedImageDirectory);
             var randomlySelectedImageFile = files[Random.Next(0, files.Length - 1)];
             
             await using FileStream file = OpenFileForReading(randomlySelectedImageFile);
-            return await imageUploadService.UploadImage(file, partitionKey);
+            return await imageUploadService.UploadImage(file, imageGroup);
         }
     }
 }

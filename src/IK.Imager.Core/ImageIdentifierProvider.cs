@@ -8,7 +8,7 @@ namespace IK.Imager.Core
         public string GenerateUniqueId()
         {
             //since all images are publicly available by url, image path must be random and big enough
-            //for simplicity just concatenating guid and part of another guid
+            //so, for simplicity just concatenating guid and part of another guid
             return (Guid.NewGuid() 
                     + Guid.NewGuid().ToString().Substring(0, 6))
                 .Replace("-", "");

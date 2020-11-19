@@ -47,7 +47,7 @@ namespace IK.Imager.Api.Controllers
         {
             var imageDeleteResult =
                 await _imageDeleteService.DeleteImageMetadata(deleteImageRequest.ImageId,
-                    deleteImageRequest.PartitionKey);
+                    deleteImageRequest.ImageGroup);
 
             if (imageDeleteResult == null)
                 return NotFound(string.Format(ImageNotFound, deleteImageRequest.ImageId));

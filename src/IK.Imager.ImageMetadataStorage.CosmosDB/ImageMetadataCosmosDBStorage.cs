@@ -22,11 +22,12 @@ namespace IK.Imager.ImageMetadataStorage.CosmosDB
             _settings = settings;
         }
 
+        /// <inheritdoc />
         public async Task SetMetadata(ImageMetadata metadata, CancellationToken cancellationToken)
         {
             ArgumentHelper.AssertNotNull(nameof(metadata), metadata);
             ArgumentHelper.AssertNotNullOrEmpty(nameof(metadata.Id), metadata.Id);
-            ArgumentHelper.AssertNotNullOrEmpty(nameof(metadata.PartitionKey), metadata.PartitionKey);
+            ArgumentHelper.AssertNotNullOrEmpty(nameof(metadata.ImageGroup), metadata.ImageGroup);
             ArgumentHelper.AssertNotNullOrEmpty(nameof(metadata.MimeType), metadata.MimeType);
             ArgumentHelper.AssertNotNullOrEmpty(nameof(metadata.MD5Hash), metadata.MD5Hash);
             if (metadata.SizeBytes <= 0)
@@ -38,7 +39,7 @@ namespace IK.Imager.ImageMetadataStorage.CosmosDB
 
             var container = await GetContainer();
 
-            await container.UpsertItemAsync(metadata, new PartitionKey(metadata.PartitionKey), cancellationToken: cancellationToken)
+            await container.UpsertItemAsync(metadata, new PartitionKey(metadata.ImageGroup), cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
         }
 
@@ -47,7 +48,8 @@ namespace IK.Imager.ImageMetadataStorage.CosmosDB
          * https://docs.microsoft.com/en-us/azure/cosmos-db/partitioning-overview
          */
         
-        public async Task<List<ImageMetadata>> GetMetadata(ICollection<string> imageIds, string partitionKey,
+        /// <inheritdoc />
+        public async Task<List<ImageMetadata>> GetMetadata(ICollection<string> imageIds, string imageGroup,
             CancellationToken cancellationToken)
         {
             ArgumentHelper.AssertNotNull(nameof(imageIds), imageIds);
@@ -57,10 +59,10 @@ namespace IK.Imager.ImageMetadataStorage.CosmosDB
             var container = await GetContainer();
 
             QueryRequestOptions queryRequestOptions = null;
-            if (!string.IsNullOrEmpty(partitionKey))
+            if (!string.IsNullOrEmpty(imageGroup))
                 queryRequestOptions = new QueryRequestOptions
                 {
-                    PartitionKey = new PartitionKey(partitionKey)
+                    PartitionKey = new PartitionKey(imageGroup)
                 };
 
             var queryIterator = container
@@ -78,21 +80,23 @@ namespace IK.Imager.ImageMetadataStorage.CosmosDB
             return result;
         }
 
+        /// <inheritdoc />
         public Task<List<ImageMetadata>> GetMetadata(ICollection<string> imageIds, CancellationToken cancellationToken)
         {
             return GetMetadata(imageIds, null, cancellationToken);
         }
 
-        public async Task<bool> RemoveMetadata(string imageId, string partitionKey, CancellationToken cancellationToken)
+        /// <inheritdoc />
+        public async Task<bool> RemoveMetadata(string imageId, string imageGroup, CancellationToken cancellationToken)
         {
             ArgumentHelper.AssertNotNullOrEmpty(nameof(imageId), imageId);
-            ArgumentHelper.AssertNotNullOrEmpty(nameof(partitionKey), partitionKey);
+            ArgumentHelper.AssertNotNullOrEmpty(nameof(imageGroup), imageGroup);
 
             var container = await GetContainer();
             ItemResponse<ImageMetadata> response;
             try
             {
-                response = await container.DeleteItemAsync<ImageMetadata>(imageId, new PartitionKey(partitionKey), cancellationToken: cancellationToken)
+                response = await container.DeleteItemAsync<ImageMetadata>(imageId, new PartitionKey(imageGroup), cancellationToken: cancellationToken)
                     .ConfigureAwait(false);
             }
             catch (CosmosException ex)
@@ -121,7 +125,7 @@ namespace IK.Imager.ImageMetadataStorage.CosmosDB
             CosmosClient client = new CosmosClient(_settings.Value.ConnectionString);
             var databaseResponse = await client.CreateDatabaseIfNotExistsAsync(_settings.Value.DatabaseId);
 
-            ContainerProperties containerProperties = new ContainerProperties(_settings.Value.ContainerId, "/" + nameof(ImageMetadata.PartitionKey));
+            ContainerProperties containerProperties = new ContainerProperties(_settings.Value.ContainerId, "/" + nameof(ImageMetadata.ImageGroup));
            
             var indexingPolicy = new IndexingPolicy();
             indexingPolicy.IncludedPaths.Add(new IncludedPath { Path = "/*" });
