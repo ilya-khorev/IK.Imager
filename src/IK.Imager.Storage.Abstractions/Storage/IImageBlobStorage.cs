@@ -18,7 +18,7 @@ namespace IK.Imager.Storage.Abstractions.Storage
     public interface IImageBlobStorage
     {
         /// <summary>
-        /// Uploads and saves a new image
+        /// Uploads and saves a new image in the storage
         /// </summary>
         /// <param name="imageName">Unique image name (with or without extension)</param>
         /// <param name="imageStream">Image stream</param>

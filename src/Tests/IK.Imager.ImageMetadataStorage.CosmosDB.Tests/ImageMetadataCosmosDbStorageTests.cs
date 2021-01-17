@@ -19,10 +19,10 @@ namespace IK.Imager.ImageMetadataStorage.CosmosDB.Tests
         {
             ImageMetadataCosmosDbStorageSettings settings = new ImageMetadataCosmosDbStorageSettings
             {
-                ConnectionString = Constants.CosmosDbConnectionString,
-                ContainerId = Constants.ContainerId,
-                ContainerThroughPutOnCreation = Constants.ContainerThroughPutOnCreation,
-                DatabaseId = Constants.DatabaseId
+                ConnectionString = Constants.CosmosDb.ConnectionString,
+                ContainerId = Constants.CosmosDb.ContainerId,
+                ContainerThroughPutOnCreation = Constants.CosmosDb.ContainerThroughPutOnCreation,
+                DatabaseId = Constants.CosmosDb.DatabaseId
             };
    
             _imageMetadataCosmosDbStorage = new ImageMetadataCosmosDbStorage(new OptionsWrapper<ImageMetadataCosmosDbStorageSettings>(settings));

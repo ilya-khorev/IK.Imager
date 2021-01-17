@@ -33,12 +33,12 @@ namespace IK.Imager.Storage.Abstractions.Storage
         Task<List<ImageMetadata>> GetMetadata(ICollection<string> imageIds, CancellationToken cancellationToken);
         
         /// <summary>
-        /// Removes a metadata object for a given image id an image group
+        /// Removes a metadata object for a given image id and an image group
         /// </summary>
         /// <param name="imageId">Image identifier</param>
         /// <param name="imageGroup">Image group of the requested image</param>
         /// <param name="cancellationToken"></param>
-        /// <returns>True if the object was found and removed</returns>
+        /// <returns>True, if the object was found and removed</returns>
         Task<bool> RemoveMetadata(string imageId, string imageGroup, CancellationToken cancellationToken);
     }
 }

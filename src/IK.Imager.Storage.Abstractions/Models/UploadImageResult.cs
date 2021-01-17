@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace IK.Imager.Storage.Abstractions.Storage
+namespace IK.Imager.Storage.Abstractions.Models
 {
     public class UploadImageResult
     {

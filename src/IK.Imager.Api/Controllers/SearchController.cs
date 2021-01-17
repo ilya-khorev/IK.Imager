@@ -53,7 +53,7 @@ namespace IK.Imager.Api.Controllers
             }
 
             var searchResult = await _imageSearchService.Search(searchImagesByIdRequest.ImageIds,
-                searchImagesByIdRequest.PartitionKey);
+                searchImagesByIdRequest.ImageGroup);
 
             return Ok(_mapper.Map<ImagesSearchResult>(searchResult));
         }

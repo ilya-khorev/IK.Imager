@@ -15,73 +15,79 @@ namespace IK.Imager.ImageStorage.AzureFiles.Tests
     public class ImageAzureStorageTests
     {
         private readonly ImageBlobAzureStorage _imageBlobAzureStorage;
+        private readonly Random _random;
 
-        private const string Image1Path = "Images\\1018-800x800.jpg";
-        private const string Image2Path = "Images\\1051-800x800.jpg";
-
+        private const string TestImagesFolder = "Images";
         private const string JpegType = "image/jpeg";
-
+        
         public ImageAzureStorageTests()
         {
             ImageAzureStorageSettings settings =
                 new ImageAzureStorageSettings
                 {
-                    ConnectionString = Constants.AzureConnectionString,
-                    ImagesContainerName = Constants.ImagesContainerName,
-                    ThumbnailsContainerName = Constants.ThumbnailsContainerName
+                    ConnectionString = Constants.AzureBlobStorage.ConnectionString,
+                    ImagesContainerName = Constants.AzureBlobStorage.ImagesContainerName,
+                    ThumbnailsContainerName = Constants.AzureBlobStorage.ThumbnailsContainerName
                 };
             _imageBlobAzureStorage = new ImageBlobAzureStorage(new OptionsWrapper<ImageAzureStorageSettings>(settings));
+            _random = new Random();
         }
 
-        [Fact]
-        public async Task UploadImageTest()
+        [Theory]
+        [InlineData(ImageSizeType.Original)]
+        [InlineData(ImageSizeType.Thumbnail)]
+        public async Task UploadImage_TestImage_ReturnsUrlAndHash(ImageSizeType imageType)
         {
-            var imageType = ImageSizeType.Thumbnail;
-            await using var fileStream = OpenImageForReading(Image1Path);
-            string imageName = Guid.NewGuid().ToString();
-            var uploadImageResult = await _imageBlobAzureStorage.UploadImage(imageName, fileStream, imageType, JpegType, CancellationToken.None);
-            Assert.NotNull(uploadImageResult.MD5Hash);
+            await using var fileStream = OpenTestImageForReading();
+            string imageName = GenerateUniqueImageName();
             
+            var uploadImageResult = await _imageBlobAzureStorage.UploadImage(imageName, fileStream, imageType, JpegType, CancellationToken.None);
+            
+            Assert.NotNull(uploadImageResult.Url);
+            Assert.NotNull(uploadImageResult.MD5Hash);
+
             Assert.True(await _imageBlobAzureStorage.ImageExists(imageName, imageType, CancellationToken.None));
         }
         
-        [Fact]
-        public async Task DownloadImageTest()
+        [Theory]
+        [InlineData(ImageSizeType.Original)]
+        [InlineData(ImageSizeType.Thumbnail)]
+        public async Task DownloadImage_TestImage_ReturnsCorrectStream(ImageSizeType imageType)
         {
-            var imageType = ImageSizeType.Original;
-
-            await using var fileStream = OpenImageForReading(Image2Path);
+            await using var fileStream = OpenTestImageForReading();
             await using MemoryStream imageStream = new MemoryStream();
             await fileStream.CopyToAsync(imageStream);
             imageStream.Position = 0;
-            string imageName = Guid.NewGuid().ToString();
-
+            string imageName = GenerateUniqueImageName();
             await _imageBlobAzureStorage.UploadImage(imageName, imageStream, imageType, JpegType, CancellationToken.None);
+            
             await using var downloadedImageStream = await _imageBlobAzureStorage.DownloadImage(imageName, imageType, CancellationToken.None);
 
             Assert.True(CompareMemoryStreams(imageStream, downloadedImageStream));
         }
 
-        [Fact]
-        public async Task ImageDeleteTest()
+        [Theory]
+        [InlineData(ImageSizeType.Original)]
+        [InlineData(ImageSizeType.Thumbnail)]
+        public async Task ImageDeleteTest(ImageSizeType imageType)
         {
-            var imageType = ImageSizeType.Original;
-            await using var fileStream = OpenImageForReading(Image2Path);
-            string imageName = Guid.NewGuid().ToString();
+            await using var fileStream = OpenTestImageForReading();
+            string imageName = GenerateUniqueImageName();
             await _imageBlobAzureStorage.UploadImage(imageName, fileStream, imageType, JpegType, CancellationToken.None);
 
             Assert.True(await _imageBlobAzureStorage.TryDeleteImage(imageName, imageType, CancellationToken.None));
+            
             Assert.False(await _imageBlobAzureStorage.ImageExists(imageName, imageType, CancellationToken.None));
-
             Assert.False(await _imageBlobAzureStorage.TryDeleteImage(imageName, imageType, CancellationToken.None));
         }
 
-        [Fact]
-        public async Task GetImageUriTest()
+        [Theory]
+        [InlineData(ImageSizeType.Original)]
+        [InlineData(ImageSizeType.Thumbnail)]
+        public async Task GetImageUriTest(ImageSizeType imageType)
         {
-            var imageType = ImageSizeType.Original;
-            await using var fileStream = OpenImageForReading(Image2Path);
-            string imageName = Guid.NewGuid().ToString();
+            await using var fileStream = OpenTestImageForReading();
+            string imageName = GenerateUniqueImageName();
             await _imageBlobAzureStorage.UploadImage(imageName, fileStream, imageType, JpegType, CancellationToken.None);
 
             var imageUri = _imageBlobAzureStorage.GetImageUri(imageName, imageType);
@@ -96,9 +102,13 @@ namespace IK.Imager.ImageStorage.AzureFiles.Tests
             Assert.True(CompareMemoryStreams(memoryStreamByUri, downloadedImageStream));
         }
 
-        private FileStream OpenImageForReading(string filePath)
+        private string GenerateUniqueImageName() => Guid.NewGuid().ToString();
+        
+        private FileStream OpenTestImageForReading()
         {
-            return File.Open(filePath, FileMode.Open, FileAccess.Read);
+            var testImages = Directory.GetFiles(TestImagesFolder);
+            var randomImage = testImages[_random.Next(0, testImages.Length - 1)];
+            return File.Open(randomImage, FileMode.Open, FileAccess.Read);
         }
 
         /// <summary>
