@@ -12,7 +12,7 @@ namespace IK.Imager.ImageMetadataStorage.CosmosDB.Tests
 {
     public class ImageMetadataCosmosDbStorageTests
     {
-        private readonly ImageMetadataCosmosDbStorage _imageMetadataCosmosDbStorage;
+        private readonly ImageMetadataCosmosDbRepository _imageMetadataCosmosDbRepository;
         private readonly Random _random = new Random();
         
         public ImageMetadataCosmosDbStorageTests()
@@ -25,14 +25,14 @@ namespace IK.Imager.ImageMetadataStorage.CosmosDB.Tests
                 DatabaseId = Constants.CosmosDb.DatabaseId
             };
    
-            _imageMetadataCosmosDbStorage = new ImageMetadataCosmosDbStorage(new OptionsWrapper<ImageMetadataCosmosDbStorageSettings>(settings));
+            _imageMetadataCosmosDbRepository = new ImageMetadataCosmosDbRepository(new OptionsWrapper<ImageMetadataCosmosDbStorageSettings>(settings));
         }
         
         [Fact]  
         public async Task AddImageMetadataTest()
         {
             ImageMetadata imageMetadata = GenerateItem();
-            await _imageMetadataCosmosDbStorage.SetMetadata(imageMetadata, CancellationToken.None);
+            await _imageMetadataCosmosDbRepository.SetMetadata(imageMetadata, CancellationToken.None);
         }
         
         [Fact]  
@@ -43,12 +43,12 @@ namespace IK.Imager.ImageMetadataStorage.CosmosDB.Tests
             for (int i = 0; i < _random.Next(6, 10); i++)
             {
                 ImageMetadata imageMetadata = GenerateItem("group_" + i);
-                await _imageMetadataCosmosDbStorage.SetMetadata(imageMetadata, CancellationToken.None);
+                await _imageMetadataCosmosDbRepository.SetMetadata(imageMetadata, CancellationToken.None);
                 ids.Add(imageMetadata.Id);
                 imagesMetadata.Add(imageMetadata);
             }
             
-            var receivedItems = await _imageMetadataCosmosDbStorage.GetMetadata(ids, CancellationToken.None);
+            var receivedItems = await _imageMetadataCosmosDbRepository.GetMetadata(ids, CancellationToken.None);
             Assert.True(receivedItems.SequenceEqual(imagesMetadata));
         }
         
@@ -61,13 +61,13 @@ namespace IK.Imager.ImageMetadataStorage.CosmosDB.Tests
             for (int i = 0; i < _random.Next(10, 15); i++)
             {
                 ImageMetadata imageMetadata = GenerateItem(partitions[_random.Next(0, 2)]);
-                await _imageMetadataCosmosDbStorage.SetMetadata(imageMetadata, CancellationToken.None);
+                await _imageMetadataCosmosDbRepository.SetMetadata(imageMetadata, CancellationToken.None);
                 ids.Add(imageMetadata.Id);
                 imagesMetadata.Add(imageMetadata);
             }
  
             var firstPartitionItems = imagesMetadata.Where(x => x.ImageGroup == partitions[0]);
-            var receivedItemsFirstPartition = await _imageMetadataCosmosDbStorage.GetMetadata(ids, partitions[0], CancellationToken.None);
+            var receivedItemsFirstPartition = await _imageMetadataCosmosDbRepository.GetMetadata(ids, partitions[0], CancellationToken.None);
             Assert.True(receivedItemsFirstPartition.SequenceEqual(firstPartitionItems));
         }
 
@@ -75,12 +75,12 @@ namespace IK.Imager.ImageMetadataStorage.CosmosDB.Tests
         public async Task RemoveImageMetadataTest()
         {
             ImageMetadata imageMetadata = GenerateItem();
-            await _imageMetadataCosmosDbStorage.SetMetadata(imageMetadata, CancellationToken.None);
+            await _imageMetadataCosmosDbRepository.SetMetadata(imageMetadata, CancellationToken.None);
   
-            var removed = await _imageMetadataCosmosDbStorage.RemoveMetadata(imageMetadata.Id, imageMetadata.ImageGroup, CancellationToken.None);
+            var removed = await _imageMetadataCosmosDbRepository.RemoveMetadata(imageMetadata.Id, imageMetadata.ImageGroup, CancellationToken.None);
             Assert.True(removed);
             
-            removed = await _imageMetadataCosmosDbStorage.RemoveMetadata(imageMetadata.Id, imageMetadata.ImageGroup, CancellationToken.None);
+            removed = await _imageMetadataCosmosDbRepository.RemoveMetadata(imageMetadata.Id, imageMetadata.ImageGroup, CancellationToken.None);
             Assert.False(removed);
         } 
 

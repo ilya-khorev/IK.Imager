@@ -7,7 +7,7 @@ using IK.Imager.Core.Abstractions.Models;
 using IK.Imager.Core.Abstractions.Services;
 using IK.Imager.Core.Settings;
 using IK.Imager.Storage.Abstractions.Models;
-using IK.Imager.Storage.Abstractions.Storage;
+using IK.Imager.Storage.Abstractions.Repositories;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using ImageType = IK.Imager.Core.Abstractions.Models.ImageType;
@@ -19,8 +19,8 @@ namespace IK.Imager.Core.Services
     {
         private readonly ILogger<ImageThumbnailService> _logger;
         private readonly IImageResizing _imageResizing;
-        private readonly IImageBlobStorage _blobStorage;
-        private readonly IImageMetadataStorage _metadataStorage;
+        private readonly IImageBlobRepository _blobRepository;
+        private readonly IImageMetadataRepository _metadataRepository;
         private readonly IImageIdentifierProvider _imageIdentifierProvider;
         private readonly List<int> _thumbnailTargetWidth;
 
@@ -35,13 +35,13 @@ namespace IK.Imager.Core.Services
         private const string PngFileExtension = ".png";
         
         public ImageThumbnailService(ILogger<ImageThumbnailService> logger, IImageResizing imageResizing,
-            IImageBlobStorage blobStorage, IImageMetadataStorage metadataStorage, IImageIdentifierProvider imageIdentifierProvider,
+            IImageBlobRepository blobRepository, IImageMetadataRepository metadataRepository, IImageIdentifierProvider imageIdentifierProvider,
             IOptions<ImageThumbnailsSettings> imageThumbnailsSettings)
         {
             _logger = logger;
             _imageResizing = imageResizing;
-            _blobStorage = blobStorage;
-            _metadataStorage = metadataStorage;
+            _blobRepository = blobRepository;
+            _metadataRepository = metadataRepository;
             _imageIdentifierProvider = imageIdentifierProvider;
             _thumbnailTargetWidth = imageThumbnailsSettings.Value.TargetWidth.OrderByDescending(x => x).ToList();
         }
@@ -49,7 +49,7 @@ namespace IK.Imager.Core.Services
         /// <inheritdoc />
         public async Task<List<ImageThumbnailGeneratingResult>> GenerateThumbnails(string imageId, string imageGroup)
         {
-            var imageMetadataList = await _metadataStorage.GetMetadata(new List<string> {imageId}, imageGroup, CancellationToken.None);
+            var imageMetadataList = await _metadataRepository.GetMetadata(new List<string> {imageId}, imageGroup, CancellationToken.None);
             if (imageMetadataList == null || !imageMetadataList.Any())
             {
                 _logger.LogInformation(ImageNotFound, imageId);
@@ -65,7 +65,7 @@ namespace IK.Imager.Core.Services
                 return new List<ImageThumbnailGeneratingResult>(0);
             }
             
-            using var originalImageStream = await _blobStorage.DownloadImage(imageMetadata.Name, ImageSizeType.Original, CancellationToken.None);
+            using var originalImageStream = await _blobRepository.DownloadImage(imageMetadata.Name, ImageSizeType.Original, CancellationToken.None);
             _logger.LogDebug(ImageDownloaded, imageMetadata.Id);
 
             StorageImageType imageType = imageMetadata.ImageType;
@@ -90,7 +90,7 @@ namespace IK.Imager.Core.Services
                 var thumbnailImageId = _imageIdentifierProvider.GenerateUniqueId();
                 var thumbnailImageName = _imageIdentifierProvider.GetImageName(thumbnailImageId, fileExtension);
                 
-                var uploadedBlob = await _blobStorage.UploadImage(thumbnailImageName, resizingResult.Image, ImageSizeType.Thumbnail, mimeType, CancellationToken.None);
+                var uploadedBlob = await _blobRepository.UploadImage(thumbnailImageName, resizingResult.Image, ImageSizeType.Thumbnail, mimeType, CancellationToken.None);
                 imageMetadata.Thumbnails.Add(new ImageThumbnail
                 {
                     Id = thumbnailImageId,
@@ -109,7 +109,7 @@ namespace IK.Imager.Core.Services
             imageStream.Dispose();
             
             imageMetadata.Thumbnails.Reverse();
-            await _metadataStorage.SetMetadata(imageMetadata, CancellationToken.None);
+            await _metadataRepository.SetMetadata(imageMetadata, CancellationToken.None);
             _logger.LogInformation(ThumbnailsGenerated, imageMetadata.Thumbnails.Count, imageId);
             
             return imageMetadata.Thumbnails.Select(x => new ImageThumbnailGeneratingResult

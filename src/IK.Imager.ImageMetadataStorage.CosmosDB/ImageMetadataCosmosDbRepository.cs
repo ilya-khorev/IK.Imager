@@ -5,7 +5,7 @@ using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using IK.Imager.Storage.Abstractions.Models;
-using IK.Imager.Storage.Abstractions.Storage;
+using IK.Imager.Storage.Abstractions.Repositories;
 using IK.Imager.Utils;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Azure.Cosmos.Linq;
@@ -13,11 +13,11 @@ using Microsoft.Extensions.Options;
 
 namespace IK.Imager.ImageMetadataStorage.CosmosDB
 {
-    public class ImageMetadataCosmosDbStorage : IImageMetadataStorage
+    public class ImageMetadataCosmosDbRepository : IImageMetadataRepository
     {
         private readonly IOptions<ImageMetadataCosmosDbStorageSettings> _settings;
 
-        public ImageMetadataCosmosDbStorage(IOptions<ImageMetadataCosmosDbStorageSettings> settings)
+        public ImageMetadataCosmosDbRepository(IOptions<ImageMetadataCosmosDbStorageSettings> settings)
         {
             _settings = settings;
         }

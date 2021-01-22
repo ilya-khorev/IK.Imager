@@ -64,7 +64,7 @@ namespace IK.Imager.Api.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [Consumes("multipart/form-data")]
         //todo probably worth uploading using stream https://docs.microsoft.com/en-us/aspnet/core/mvc/models/file-uploads?view=aspnetcore-3.1#upload-large-files-with-streaming
-        public async Task<ActionResult<ImageInfo>> PostWithStream([FromForm]UploadImageFileRequest imageFileRequest)
+        public async Task<ActionResult<ImageInfo>> Post([FromForm]UploadImageFileRequest imageFileRequest)
         {
             return await UploadImage(imageFileRequest.File.OpenReadStream(), imageFileRequest.ImageGroup, imageFileRequest.LimitationSettings);
         }
@@ -85,10 +85,10 @@ namespace IK.Imager.Api.Controllers
         /// Or if the image size is greater or smaller then the system threshold values.
         /// Or if the image type is different from what the system supports.</response> 
         [HttpPost]
-        [Route("WithUrl")]
+        [Route("ByUrl")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<ActionResult<ImageInfo>> Post(UploadImageRequest uploadImageRequest)
+        public async Task<ActionResult<ImageInfo>> PostByUrl(UploadImageRequest uploadImageRequest)
         {
             if (!Uri.IsWellFormedUriString(uploadImageRequest.ImageUrl, UriKind.Absolute))
                 return BadRequest(IncorrectUrlFormat);

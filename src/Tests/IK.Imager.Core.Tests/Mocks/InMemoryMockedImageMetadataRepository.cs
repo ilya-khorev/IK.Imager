@@ -2,11 +2,11 @@
 using System.Threading;
 using System.Threading.Tasks;
 using IK.Imager.Storage.Abstractions.Models;
-using IK.Imager.Storage.Abstractions.Storage;
+using IK.Imager.Storage.Abstractions.Repositories;
 
 namespace IK.Imager.Core.Tests.Mocks
 {
-    public class InMemoryMockedImageMetadataStorage: IImageMetadataStorage
+    public class InMemoryMockedImageMetadataRepository: IImageMetadataRepository
     {
         readonly Dictionary<string, ImageMetadata> _dictionary = new Dictionary<string, ImageMetadata>();
         

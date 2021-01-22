@@ -5,7 +5,7 @@ using IK.Imager.Core.Abstractions;
 using IK.Imager.Core.Abstractions.Models;
 using IK.Imager.Core.Abstractions.Services;
 using IK.Imager.Storage.Abstractions.Models;
-using IK.Imager.Storage.Abstractions.Storage;
+using IK.Imager.Storage.Abstractions.Repositories;
 using Microsoft.Extensions.Logging;
 
 namespace IK.Imager.Core.Services
@@ -14,8 +14,8 @@ namespace IK.Imager.Core.Services
     {
         private readonly ILogger<ImageUploadService> _logger;
         private readonly IImageMetadataReader _metadataReader;
-        private readonly IImageBlobStorage _blobStorage;
-        private readonly IImageMetadataStorage _metadataStorage;
+        private readonly IImageBlobRepository _blobRepository;
+        private readonly IImageMetadataRepository _metadataRepository;
         private readonly IImageValidator _imageValidator;
         private readonly IImageIdentifierProvider _imageIdentifierProvider;
         private readonly ICdnService _cdnService;
@@ -24,13 +24,13 @@ namespace IK.Imager.Core.Services
         private const string UploadedToBlobStorage = "Uploaded the image to the blob storage, imageId={0}.";
         private const string UploadingFinished = "Image with id={0} and its metadata have been saved.";
         
-        public ImageUploadService(ILogger<ImageUploadService> logger, IImageMetadataReader metadataReader, IImageBlobStorage blobStorage, 
-            IImageMetadataStorage metadataStorage, IImageValidator imageValidator, IImageIdentifierProvider imageIdentifierProvider, ICdnService cdnService)
+        public ImageUploadService(ILogger<ImageUploadService> logger, IImageMetadataReader metadataReader, IImageBlobRepository blobRepository, 
+            IImageMetadataRepository metadataRepository, IImageValidator imageValidator, IImageIdentifierProvider imageIdentifierProvider, ICdnService cdnService)
         {
             _logger = logger;
             _metadataReader = metadataReader;
-            _blobStorage = blobStorage;
-            _metadataStorage = metadataStorage;
+            _blobRepository = blobRepository;
+            _metadataRepository = metadataRepository;
             _imageValidator = imageValidator;
             _imageIdentifierProvider = imageIdentifierProvider;
             _cdnService = cdnService;
@@ -53,7 +53,7 @@ namespace IK.Imager.Core.Services
             
             //todo check if such name already exist (it's unlikely, but worth checking)
             
-            var uploadImageResult = await _blobStorage.UploadImage(imageName, imageStream, ImageSizeType.Original, imageFormat.MimeType, CancellationToken.None);
+            var uploadImageResult = await _blobRepository.UploadImage(imageName, imageStream, ImageSizeType.Original, imageFormat.MimeType, CancellationToken.None);
             _logger.LogDebug(UploadedToBlobStorage, imageId);
             
             //Image stream is no longer needed at this stage
@@ -65,7 +65,7 @@ namespace IK.Imager.Core.Services
              If the program unexpectedly fails at this stage, there will be just a blob file, not connected to any metadata object. In this case,
              the image itself will be unavailable to the clients. And in most cases it is just fine, so an additional handling is not needed here.
             */
-            await _metadataStorage.SetMetadata(new ImageMetadata
+            await _metadataRepository.SetMetadata(new ImageMetadata
             {
                 Id = imageId,
                 Name = imageName,

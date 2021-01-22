@@ -14,7 +14,7 @@ using IK.Imager.EventBus.AzureServiceBus;
 using IK.Imager.ImageMetadataStorage.CosmosDB;
 using IK.Imager.ImageBlobStorage.AzureFiles;
 using IK.Imager.IntegrationEvents;
-using IK.Imager.Storage.Abstractions.Storage;
+using IK.Imager.Storage.Abstractions.Repositories;
 using Microsoft.ApplicationInsights.AspNetCore.Extensions;
 using Microsoft.ApplicationInsights.Extensibility.PerfCounterCollector.QuickPulse;
 using Microsoft.AspNetCore.Builder;
@@ -59,8 +59,14 @@ namespace IK.Imager.Api
             RegisterConfigurations(services);
 
             services.AddSingleton<IEventBus, ServiceBus>();
-            services.AddSingleton<IImageMetadataStorage, ImageMetadataCosmosDbStorage>();
-            services.AddSingleton<IImageBlobStorage, ImageBlobAzureStorage>();
+            services.AddSingleton<IImageMetadataRepository, ImageMetadataCosmosDbRepository>();
+            services.AddSingleton<IAzureBlobClient, AzureBlobClient>(s =>
+            {
+                var settings = s.GetRequiredService<ImageAzureStorageSettings>();
+                return new AzureBlobClient(settings.ConnectionString);
+            });
+                
+            services.AddSingleton<IImageBlobRepository, ImageBlobAzureRepository>();
             services.AddSingleton<IImageMetadataReader, ImageMetadataReader>();
             services.AddSingleton<IImageIdentifierProvider, ImageIdentifierProvider>();
             services.AddScoped<IImageUploadService, ImageUploadService>();

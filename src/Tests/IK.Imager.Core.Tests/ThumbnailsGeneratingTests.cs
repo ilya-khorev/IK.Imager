@@ -5,7 +5,7 @@ using IK.Imager.Core.Abstractions;
 using IK.Imager.Core.Services;
 using IK.Imager.Core.Settings;
 using IK.Imager.Core.Tests.Mocks;
-using IK.Imager.Storage.Abstractions.Storage;
+using IK.Imager.Storage.Abstractions.Repositories;
 using Microsoft.Extensions.Options;
 using Xunit;
 using Xunit.Abstractions;
@@ -16,21 +16,21 @@ namespace IK.Imager.Core.Tests
     public class ThumbnailsGeneratingTests
     {
         private readonly ImageThumbnailService _thumbnailsService;
-        private readonly IImageBlobStorage _blobStorage;
-        private readonly IImageMetadataStorage _metadataStorage;
+        private readonly IImageBlobRepository _blobRepository;
+        private readonly IImageMetadataRepository _metadataRepository;
         private readonly IOptions<ImageThumbnailsSettings> _imageThumbnailSettings;
         
         public ThumbnailsGeneratingTests(ITestOutputHelper output)
         {
             IImageResizing imageResizing = new ImageResizing();
 
-            _blobStorage = new InMemoryMockedImageBlobStorage();
-            _metadataStorage = new InMemoryMockedImageMetadataStorage();
+            _blobRepository = new InMemoryMockedImageBlobRepository();
+            _metadataRepository = new InMemoryMockedImageMetadataRepository();
 
             _imageThumbnailSettings = new MockImageThumbnailsSettings();
             
             IImageIdentifierProvider imageIdentifierProvider = new ImageIdentifierProvider();
-            _thumbnailsService = new ImageThumbnailService(output.BuildLoggerFor<ImageThumbnailService>(), imageResizing, _blobStorage, _metadataStorage, imageIdentifierProvider, _imageThumbnailSettings);
+            _thumbnailsService = new ImageThumbnailService(output.BuildLoggerFor<ImageThumbnailService>(), imageResizing, _blobRepository, _metadataRepository, imageIdentifierProvider, _imageThumbnailSettings);
         }
         
         [Fact]
@@ -41,7 +41,7 @@ namespace IK.Imager.Core.Tests
             int width = 800;
             int height = 600;
             double aspectRatio = width / (double)height; 
-            var uploadImageResult = await ImageTestsHelper.UploadImage(_blobStorage, _metadataStorage,"Images\\jpeg\\1043-800x600.jpg", width, height, contentType, ImageType.JPEG, imageGroup);
+            var uploadImageResult = await ImageTestsHelper.UploadImage(_blobRepository, _metadataRepository,"Images\\jpeg\\1043-800x600.jpg", width, height, contentType, ImageType.JPEG, imageGroup);
 
             var imageWithGeneratedThumbnails = await _thumbnailsService.GenerateThumbnails(uploadImageResult.Id, imageGroup);
             Assert.Equal(_imageThumbnailSettings.Value.TargetWidth.Length, imageWithGeneratedThumbnails.Count);
@@ -70,7 +70,7 @@ namespace IK.Imager.Core.Tests
         {
             string imageGroup = Guid.NewGuid().ToString();
             string contentType = "image/gif";
-            var uploadImageResult = await ImageTestsHelper.UploadImage(_blobStorage, _metadataStorage, "Images\\gif\\giphy_200x200.gif", 200, 200, contentType, ImageType.GIF, imageGroup);
+            var uploadImageResult = await ImageTestsHelper.UploadImage(_blobRepository, _metadataRepository, "Images\\gif\\giphy_200x200.gif", 200, 200, contentType, ImageType.GIF, imageGroup);
             var imageWithGeneratedThumbnails = await _thumbnailsService.GenerateThumbnails(uploadImageResult.Id, imageGroup);
             Assert.False(imageWithGeneratedThumbnails.Any());
         }
@@ -80,7 +80,7 @@ namespace IK.Imager.Core.Tests
         {
             string imageGroup = Guid.NewGuid().ToString();
             string contentType = "image/bmp";
-            var uploadImageResult = await ImageTestsHelper.UploadImage(_blobStorage, _metadataStorage,"Images\\bmp\\1068-800x1600.bmp", 800, 1200, contentType, ImageType.BMP, imageGroup);
+            var uploadImageResult = await ImageTestsHelper.UploadImage(_blobRepository, _metadataRepository,"Images\\bmp\\1068-800x1600.bmp", 800, 1200, contentType, ImageType.BMP, imageGroup);
             var imageWithGeneratedThumbnails = await _thumbnailsService.GenerateThumbnails(uploadImageResult.Id, imageGroup);
 
             foreach (var imageThumbnail in imageWithGeneratedThumbnails)

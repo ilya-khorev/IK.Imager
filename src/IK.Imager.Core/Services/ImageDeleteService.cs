@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using IK.Imager.Core.Abstractions.Models;
 using IK.Imager.Core.Abstractions.Services;
 using IK.Imager.Storage.Abstractions.Models;
-using IK.Imager.Storage.Abstractions.Storage;
+using IK.Imager.Storage.Abstractions.Repositories;
 using Microsoft.Extensions.Logging;
 
 namespace IK.Imager.Core.Services
@@ -14,8 +14,8 @@ namespace IK.Imager.Core.Services
     public class ImageDeleteService: IImageDeleteService
     {
         private readonly ILogger<ImageDeleteService> _logger;
-        private readonly IImageMetadataStorage _metadataStorage;
-        private readonly IImageBlobStorage _blobStorage;
+        private readonly IImageMetadataRepository _metadataRepository;
+        private readonly IImageBlobRepository _blobRepository;
 
         private const string MetadataRemoving = "Removing metadata of imageId = {0}, imageGroup = {1}";
         private const string MetadataRemoved = "Metadata removed for imageId = {0}";
@@ -23,11 +23,11 @@ namespace IK.Imager.Core.Services
         private const string OriginalImageDeleted = "Original image {0} has been deleted. ";
         private const string ThumbnailsDeleted = "{0} / {1} thumbnails were deleted.";
         
-        public ImageDeleteService(ILogger<ImageDeleteService> logger, IImageMetadataStorage metadataStorage, IImageBlobStorage blobStorage)
+        public ImageDeleteService(ILogger<ImageDeleteService> logger, IImageMetadataRepository metadataRepository, IImageBlobRepository blobRepository)
         {
             _logger = logger;
-            _metadataStorage = metadataStorage;
-            _blobStorage = blobStorage;
+            _metadataRepository = metadataRepository;
+            _blobRepository = blobRepository;
         }
         
         /// <inheritdoc />
@@ -35,14 +35,14 @@ namespace IK.Imager.Core.Services
         {
             _logger.LogDebug(MetadataRemoving, imageId, imageGroup);
             
-            var metadata = await _metadataStorage.GetMetadata(new List<string> {imageId}, imageGroup, CancellationToken.None);
+            var metadata = await _metadataRepository.GetMetadata(new List<string> {imageId}, imageGroup, CancellationToken.None);
             if (metadata == null || !metadata.Any())
                 return null;
             
             _logger.LogInformation(MetadataRemoved, imageId);
             var imageMetadata = metadata[0];
             
-            var deletedMetadata = await _metadataStorage.RemoveMetadata(imageMetadata.Id, imageMetadata.ImageGroup, CancellationToken.None);
+            var deletedMetadata = await _metadataRepository.RemoveMetadata(imageMetadata.Id, imageMetadata.ImageGroup, CancellationToken.None);
             if (!deletedMetadata)
                 return null;
 
@@ -61,11 +61,11 @@ namespace IK.Imager.Core.Services
         {
             _logger.LogDebug(Removing, imageShortInfo);
             
-            bool originalImageDeleted = await _blobStorage.TryDeleteImage(imageShortInfo.ImageName, ImageSizeType.Original, CancellationToken.None);
+            bool originalImageDeleted = await _blobRepository.TryDeleteImage(imageShortInfo.ImageName, ImageSizeType.Original, CancellationToken.None);
             int deletedThumbnails = 0; 
             foreach (var thumbnailName in imageShortInfo.ThumbnailNames)
             {
-                if (await _blobStorage.TryDeleteImage(thumbnailName, ImageSizeType.Thumbnail, CancellationToken.None))
+                if (await _blobRepository.TryDeleteImage(thumbnailName, ImageSizeType.Thumbnail, CancellationToken.None))
                     deletedThumbnails++;
             }
             

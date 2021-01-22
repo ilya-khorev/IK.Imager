@@ -7,7 +7,7 @@ using IK.Imager.Core.Abstractions;
 using IK.Imager.Core.Services;
 using IK.Imager.Core.Tests.Mocks;
 using IK.Imager.Storage.Abstractions.Models;
-using IK.Imager.Storage.Abstractions.Storage;
+using IK.Imager.Storage.Abstractions.Repositories;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -16,19 +16,19 @@ namespace IK.Imager.Core.Tests
     public class ImageUploadingTests
     {
         private readonly ImageUploadService _imageUploadService;
-        private readonly IImageBlobStorage _blobStorage;
-        private readonly IImageMetadataStorage _metadataStorage;
+        private readonly IImageBlobRepository _blobRepository;
+        private readonly IImageMetadataRepository _metadataRepository;
         public ImageUploadingTests(ITestOutputHelper output)
         {
-            _blobStorage = new InMemoryMockedImageBlobStorage();
-            _metadataStorage = new InMemoryMockedImageMetadataStorage();
+            _blobRepository = new InMemoryMockedImageBlobRepository();
+            _metadataRepository = new InMemoryMockedImageMetadataRepository();
             
             var imageIdentifierProvider = new ImageIdentifierProvider();
             IImageMetadataReader imageMetadataReader = new ImageMetadataReader();
             IImageValidator imageValidator = new MockImageValidator();
 
-            _imageUploadService = new ImageUploadService(output.BuildLoggerFor<ImageUploadService>(), imageMetadataReader, _blobStorage,
-                _metadataStorage, imageValidator, imageIdentifierProvider, new MockCdnService());
+            _imageUploadService = new ImageUploadService(output.BuildLoggerFor<ImageUploadService>(), imageMetadataReader, _blobRepository,
+                _metadataRepository, imageValidator, imageIdentifierProvider, new MockCdnService());
         }
 
         [Fact]
@@ -37,7 +37,7 @@ namespace IK.Imager.Core.Tests
             string imageGroup = Guid.NewGuid().ToString();
             var uploadedImage = await ImageTestsHelper.UploadRandomlySelectedImage(imageGroup, _imageUploadService);
             
-            var metadataResult = await _metadataStorage.GetMetadata(new List<string> { uploadedImage.Id }, imageGroup, CancellationToken.None);
+            var metadataResult = await _metadataRepository.GetMetadata(new List<string> { uploadedImage.Id }, imageGroup, CancellationToken.None);
             Assert.True(metadataResult.Any());
             var metadata = metadataResult[0];
             Assert.Equal(uploadedImage.Bytes, metadata.SizeBytes);
@@ -52,7 +52,7 @@ namespace IK.Imager.Core.Tests
         {
             string imageGroup = Guid.NewGuid().ToString();
             var uploadedImage = await ImageTestsHelper.UploadRandomlySelectedImage(imageGroup, _imageUploadService);
-            var stream = await _blobStorage.DownloadImage(uploadedImage.Name, ImageSizeType.Original, CancellationToken.None);
+            var stream = await _blobRepository.DownloadImage(uploadedImage.Name, ImageSizeType.Original, CancellationToken.None);
             Assert.True(stream.Length > 0);
         }
     }

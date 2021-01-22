@@ -3,43 +3,24 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using IK.Imager.Storage.Abstractions.Models;
-using IK.Imager.Storage.Abstractions.Storage;
+using IK.Imager.Storage.Abstractions.Repositories;
 using IK.Imager.Utils;
-using Microsoft.Azure.Storage;
 using Microsoft.Azure.Storage.Blob;
 using Microsoft.Extensions.Options;
 
 namespace IK.Imager.ImageBlobStorage.AzureFiles
 {
-    public class ImageBlobAzureStorage : IImageBlobStorage
+    public class ImageBlobAzureRepository : IImageBlobRepository
     {
-        private readonly CloudBlobClient _cloudBlobClient;
-
         private readonly Lazy<CloudBlobContainer> _imagesContainer;
         private readonly Lazy<CloudBlobContainer> _thumbnailsContainer;
 
-        public ImageBlobAzureStorage(IOptions<ImageAzureStorageSettings> settings)
+        public ImageBlobAzureRepository(IOptions<ImageAzureStorageSettings> settings, IAzureBlobClient blobClient)
         {
             ArgumentHelper.AssertNotNull(nameof(settings), settings);
-
-            var storageAccount = CloudStorageAccount.Parse(settings.Value.ConnectionString);
-
-            _cloudBlobClient = storageAccount.CreateCloudBlobClient();
-
-            _imagesContainer = new Lazy<CloudBlobContainer>(() => CreateCloudBlobContainer(settings.Value.ImagesContainerName.ToLowerInvariant()));
-            _thumbnailsContainer = new Lazy<CloudBlobContainer>(() => CreateCloudBlobContainer(settings.Value.ThumbnailsContainerName.ToLowerInvariant()));
-        }
-
-        private CloudBlobContainer CreateCloudBlobContainer(string containerName)
-        {
-            var container = _cloudBlobClient.GetContainerReference(containerName);
-            container.CreateIfNotExists();
-            //setting up public access for this container so that it will be available by url
-            container.SetPermissions(new BlobContainerPermissions
-            {
-                PublicAccess = BlobContainerPublicAccessType.Blob
-            });
-            return container;
+            
+            _imagesContainer = new Lazy<CloudBlobContainer>(() => blobClient.CreateContainerIfNotExist(settings.Value.ImagesContainerName.ToLowerInvariant()));
+            _thumbnailsContainer = new Lazy<CloudBlobContainer>(() => blobClient.CreateContainerIfNotExist(settings.Value.ThumbnailsContainerName.ToLowerInvariant()));
         }
         
         /// <inheritdoc />

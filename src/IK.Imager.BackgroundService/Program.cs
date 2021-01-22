@@ -10,7 +10,7 @@ using IK.Imager.EventBus.AzureServiceBus;
 using IK.Imager.ImageBlobStorage.AzureFiles;
 using IK.Imager.ImageMetadataStorage.CosmosDB;
 using IK.Imager.IntegrationEvents;
-using IK.Imager.Storage.Abstractions.Storage;
+using IK.Imager.Storage.Abstractions.Repositories;
 using Microsoft.ApplicationInsights.Extensibility.PerfCounterCollector.QuickPulse;
 using Microsoft.ApplicationInsights.WorkerService;
 using Microsoft.Extensions.Configuration;
@@ -48,8 +48,14 @@ namespace IK.Imager.BackgroundService
                     RegisterConfigurations(hostContext.Configuration, services);
                     SetupAppInsights(hostContext.Configuration, services);
                     services.AddSingleton<IEventBus, ServiceBus>();
-                    services.AddSingleton<IImageMetadataStorage, ImageMetadataCosmosDbStorage>();
-                    services.AddSingleton<IImageBlobStorage, ImageBlobAzureStorage>();
+                    services.AddSingleton<IImageMetadataRepository, ImageMetadataCosmosDbRepository>();
+                    services.AddSingleton<IImageBlobRepository, ImageBlobAzureRepository>();
+                    services.AddSingleton<IAzureBlobClient, AzureBlobClient>(s =>
+                    {
+                        var settings = s.GetRequiredService<ImageAzureStorageSettings>();
+                        return new AzureBlobClient(settings.ConnectionString);
+                    });
+                    
                     services.AddSingleton<IImageMetadataReader, ImageMetadataReader>();
                     services.AddSingleton<IImageResizing, ImageResizing>();
                     services.AddSingleton<IImageIdentifierProvider, ImageIdentifierProvider>();

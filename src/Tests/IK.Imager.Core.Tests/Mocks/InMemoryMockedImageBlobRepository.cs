@@ -5,11 +5,11 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
 using IK.Imager.Storage.Abstractions.Models;
-using IK.Imager.Storage.Abstractions.Storage;
+using IK.Imager.Storage.Abstractions.Repositories;
 
 namespace IK.Imager.Core.Tests.Mocks
 {
-    public class InMemoryMockedImageBlobStorage: IImageBlobStorage
+    public class InMemoryMockedImageBlobRepository: IImageBlobRepository
     {
         private readonly Dictionary<string, MemoryStream> _imagesDictionary = new Dictionary<string, MemoryStream>();
         

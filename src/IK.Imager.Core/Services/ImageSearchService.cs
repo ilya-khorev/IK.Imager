@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using IK.Imager.Core.Abstractions.Models;
 using IK.Imager.Core.Abstractions.Services;
 using IK.Imager.Storage.Abstractions.Models;
-using IK.Imager.Storage.Abstractions.Storage;
+using IK.Imager.Storage.Abstractions.Repositories;
 using Microsoft.Extensions.Logging;
 
 namespace IK.Imager.Core.Services
@@ -12,23 +12,23 @@ namespace IK.Imager.Core.Services
     public class ImageSearchService: IImageSearchService
     {
         private readonly ILogger<ImageSearchService> _logger;
-        private readonly IImageMetadataStorage _metadataStorage;
-        private readonly IImageBlobStorage _blobStorage;
+        private readonly IImageMetadataRepository _metadataRepository;
+        private readonly IImageBlobRepository _blobRepository;
         private readonly ICdnService _cdnService;
         private const string FoundImages = "Found {0} image(s) for requested {1} image id(s)";
         
-        public ImageSearchService(ILogger<ImageSearchService> logger, IImageMetadataStorage metadataStorage, IImageBlobStorage blobStorage, ICdnService cdnService)
+        public ImageSearchService(ILogger<ImageSearchService> logger, IImageMetadataRepository metadataRepository, IImageBlobRepository blobRepository, ICdnService cdnService)
         {
             _logger = logger;
-            _metadataStorage = metadataStorage;
-            _blobStorage = blobStorage;
+            _metadataRepository = metadataRepository;
+            _blobRepository = blobRepository;
             _cdnService = cdnService;
         }
         
         /// <inheritdoc />
         public async Task<ImagesSearchResult> Search(string[] imageIds, string imageGroup)
         {
-            var imagesMetadata = await _metadataStorage.GetMetadata(imageIds, imageGroup, CancellationToken.None);
+            var imagesMetadata = await _metadataRepository.GetMetadata(imageIds, imageGroup, CancellationToken.None);
 
             ImagesSearchResult result = new ImagesSearchResult
             {
@@ -45,7 +45,7 @@ namespace IK.Imager.Core.Services
                     Height = imageMetadata.Height,
                     Width = imageMetadata.Width,
                     Tags = imageMetadata.Tags ?? new Dictionary<string, string>(),
-                    Url = _cdnService.TryTransformToCdnUri(_blobStorage.GetImageUri(imageMetadata.Name, ImageSizeType.Original)).ToString(),
+                    Url = _cdnService.TryTransformToCdnUri(_blobRepository.GetImageUri(imageMetadata.Name, ImageSizeType.Original)).ToString(),
                     DateAdded = imageMetadata.DateAddedUtc,
                     MimeType = imageMetadata.MimeType,
                     Thumbnails = new List<ImageInfo>()
@@ -65,7 +65,7 @@ namespace IK.Imager.Core.Services
                             Width = thumbnail.Width,
                             DateAdded = thumbnail.DateAddedUtc,
                             MimeType = thumbnail.MimeType,
-                            Url = _cdnService.TryTransformToCdnUri(_blobStorage.GetImageUri(thumbnail.Name, ImageSizeType.Thumbnail)).ToString()
+                            Url = _cdnService.TryTransformToCdnUri(_blobRepository.GetImageUri(thumbnail.Name, ImageSizeType.Thumbnail)).ToString()
                         });
                     }
                     

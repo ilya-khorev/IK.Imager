@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using IK.Imager.Core.Abstractions.Models;
 using IK.Imager.Core.Services;
 using IK.Imager.Storage.Abstractions.Models;
-using IK.Imager.Storage.Abstractions.Storage;
+using IK.Imager.Storage.Abstractions.Repositories;
 using ImageType = IK.Imager.Storage.Abstractions.Models.ImageType;
 
 namespace IK.Imager.Core.Tests
@@ -29,7 +29,7 @@ namespace IK.Imager.Core.Tests
             return File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
         }
         
-        public static async Task<ImageMetadata> UploadImage(IImageBlobStorage blobStorage, IImageMetadataStorage metadataStorage, string imagePath, int width, int height, 
+        public static async Task<ImageMetadata> UploadImage(IImageBlobRepository blobRepository, IImageMetadataRepository metadataRepository, string imagePath, int width, int height, 
             string contentType, ImageType imageType, string imageGroup)
         {
             string extension = "";
@@ -55,7 +55,7 @@ namespace IK.Imager.Core.Tests
             await using FileStream file = OpenFileForReading(imagePath);
             string imageId = Guid.NewGuid().ToString();
             string imageName = imageId + extension;
-            var uploadImageResult = await blobStorage.UploadImage(imageName, file, ImageSizeType.Original, contentType, CancellationToken.None);
+            var uploadImageResult = await blobRepository.UploadImage(imageName, file, ImageSizeType.Original, contentType, CancellationToken.None);
 
             var imageMetadata = new ImageMetadata
             {
@@ -71,7 +71,7 @@ namespace IK.Imager.Core.Tests
                 ImageGroup = imageGroup 
             };
 
-            await metadataStorage.SetMetadata(imageMetadata, CancellationToken.None);
+            await metadataRepository.SetMetadata(imageMetadata, CancellationToken.None);
             return imageMetadata;
         }
         

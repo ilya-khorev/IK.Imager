@@ -3,9 +3,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using IK.Imager.Storage.Abstractions.Models;
 
-namespace IK.Imager.Storage.Abstractions.Storage
+namespace IK.Imager.Storage.Abstractions.Repositories
 {
-    public interface IImageMetadataStorage
+    public interface IImageMetadataRepository
     {
         /// <summary>
         /// Inserts or updates an image metadata object

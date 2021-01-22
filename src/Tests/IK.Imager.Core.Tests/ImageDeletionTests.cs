@@ -9,7 +9,7 @@ using IK.Imager.Core.Abstractions.Services;
 using IK.Imager.Core.Services;
 using IK.Imager.Core.Tests.Mocks;
 using IK.Imager.Storage.Abstractions.Models;
-using IK.Imager.Storage.Abstractions.Storage;
+using IK.Imager.Storage.Abstractions.Repositories;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -17,22 +17,22 @@ namespace IK.Imager.Core.Tests
 {
     public class ImageDeletionTests
     {
-        private readonly IImageBlobStorage _blobStorage;
-        private readonly IImageMetadataStorage _metadataStorage;
+        private readonly IImageBlobRepository _blobRepository;
+        private readonly IImageMetadataRepository _metadataRepository;
         private readonly IImageDeleteService _imageDeleteService;
         private readonly ImageUploadService _imageUploadService;
 
         public ImageDeletionTests(ITestOutputHelper output)
         {
-            _blobStorage = new InMemoryMockedImageBlobStorage();
-            _metadataStorage = new InMemoryMockedImageMetadataStorage();
-            _imageDeleteService = new ImageDeleteService(output.BuildLoggerFor<ImageDeleteService>(), _metadataStorage, _blobStorage);
+            _blobRepository = new InMemoryMockedImageBlobRepository();
+            _metadataRepository = new InMemoryMockedImageMetadataRepository();
+            _imageDeleteService = new ImageDeleteService(output.BuildLoggerFor<ImageDeleteService>(), _metadataRepository, _blobRepository);
             
             var imageIdentifierProvider = new ImageIdentifierProvider();
             IImageMetadataReader imageMetadataReader = new ImageMetadataReader();
             IImageValidator imageValidator = new MockImageValidator();
-            _imageUploadService = new ImageUploadService(output.BuildLoggerFor<ImageUploadService>(), imageMetadataReader, _blobStorage,
-                _metadataStorage, imageValidator, imageIdentifierProvider, new MockCdnService());
+            _imageUploadService = new ImageUploadService(output.BuildLoggerFor<ImageUploadService>(), imageMetadataReader, _blobRepository,
+                _metadataRepository, imageValidator, imageIdentifierProvider, new MockCdnService());
         }
         
         [Fact]
@@ -44,10 +44,10 @@ namespace IK.Imager.Core.Tests
             
             Assert.Equal(uploadedImage.Id, deletionResult.ImageId);
 
-            var metadata = await _metadataStorage.GetMetadata(new List<string>() {uploadedImage.Id}, imageGroup, CancellationToken.None);
+            var metadata = await _metadataRepository.GetMetadata(new List<string>() {uploadedImage.Id}, imageGroup, CancellationToken.None);
             Assert.False(metadata.Any());
 
-            var imageExists = await _blobStorage.ImageExists(deletionResult.ImageName, ImageSizeType.Original,
+            var imageExists = await _blobRepository.ImageExists(deletionResult.ImageName, ImageSizeType.Original,
                 CancellationToken.None);
             Assert.True(imageExists);
         }
@@ -64,7 +64,7 @@ namespace IK.Imager.Core.Tests
                 ThumbnailNames = new string[0]
             });
             
-            var imageExists = await _blobStorage.ImageExists(uploadedImage.Name, ImageSizeType.Original, CancellationToken.None);
+            var imageExists = await _blobRepository.ImageExists(uploadedImage.Name, ImageSizeType.Original, CancellationToken.None);
             Assert.False(imageExists);
         }
     }

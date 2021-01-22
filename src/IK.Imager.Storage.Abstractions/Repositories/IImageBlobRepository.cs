@@ -4,7 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using IK.Imager.Storage.Abstractions.Models;
 
-namespace IK.Imager.Storage.Abstractions.Storage
+namespace IK.Imager.Storage.Abstractions.Repositories
 {
     /// <summary>
     /// Represents a set of methods for
@@ -15,7 +15,7 @@ namespace IK.Imager.Storage.Abstractions.Storage
     /// ImageSizeType is required for most of operations.
     /// So, it's recommended to store different image types (e.g. original, or thumbnails) in different places (e.g. folders, or containers)
     /// </summary>
-    public interface IImageBlobStorage
+    public interface IImageBlobRepository
     {
         /// <summary>
         /// Uploads and saves a new image in the storage
