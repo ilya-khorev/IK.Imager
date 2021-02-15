@@ -7,13 +7,13 @@ using Microsoft.Extensions.Options;
 
 namespace IK.Imager.ImageStorage.AzureFiles.Tests
 {
-    public class StorageFixture : IDisposable
+    public class ImageBlobsStorageFixture : IDisposable
     {
         public ImageBlobAzureRepository BlobImageRepository { get; }
         
         private readonly CloudBlobClient _cloudBlobClient;
 
-        public StorageFixture()
+        public ImageBlobsStorageFixture()
         {
             ImageAzureStorageSettings settings =
                 new ImageAzureStorageSettings

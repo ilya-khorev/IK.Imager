@@ -59,6 +59,8 @@ namespace IK.Imager.Api
             RegisterConfigurations(services);
 
             services.AddSingleton<IEventBus, ServiceBus>();
+
+            services.AddSingleton<ICosmosDbClient, CosmosDbClient>();
             services.AddSingleton<IImageMetadataRepository, ImageMetadataCosmosDbRepository>();
             services.AddSingleton<IAzureBlobClient, AzureBlobClient>(s =>
             {
@@ -69,10 +71,12 @@ namespace IK.Imager.Api
             services.AddSingleton<IImageBlobRepository, ImageBlobAzureRepository>();
             services.AddSingleton<IImageMetadataReader, ImageMetadataReader>();
             services.AddSingleton<IImageIdentifierProvider, ImageIdentifierProvider>();
+            
             services.AddScoped<IImageUploadService, ImageUploadService>();
             services.AddScoped<IImageSearchService, ImageSearchService>();
             services.AddScoped<IImageDeleteService, ImageDeleteService>();
             services.AddScoped<IImageValidator, ImageValidator>();
+            
             services.AddSingleton<ICdnService, CdnService>();
             
             services.AddHttpClient<ImageDownloadClient>()

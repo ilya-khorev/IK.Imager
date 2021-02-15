@@ -9,17 +9,16 @@ using IK.Imager.Storage.Abstractions.Repositories;
 using IK.Imager.Utils;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Azure.Cosmos.Linq;
-using Microsoft.Extensions.Options;
 
 namespace IK.Imager.ImageMetadataStorage.CosmosDB
 {
     public class ImageMetadataCosmosDbRepository : IImageMetadataRepository
     {
-        private readonly IOptions<ImageMetadataCosmosDbStorageSettings> _settings;
+        private readonly ICosmosDbClient _cosmosDbClient;
 
-        public ImageMetadataCosmosDbRepository(IOptions<ImageMetadataCosmosDbStorageSettings> settings)
+        public ImageMetadataCosmosDbRepository(ICosmosDbClient cosmosDbClient)
         {
-            _settings = settings;
+            _cosmosDbClient = cosmosDbClient;
         }
 
         /// <inheritdoc />
@@ -37,7 +36,7 @@ namespace IK.Imager.ImageMetadataStorage.CosmosDB
             if (metadata.Height <= 0)
                 throw new ArgumentOutOfRangeException(nameof(metadata.Height));
 
-            var container = await GetContainer();
+            var container = await _cosmosDbClient.CreateImagesContainerIfNotExists();
 
             await container.UpsertItemAsync(metadata, new PartitionKey(metadata.ImageGroup), cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
@@ -56,7 +55,7 @@ namespace IK.Imager.ImageMetadataStorage.CosmosDB
             if (imageIds.Count < 1)
                 throw new ArgumentException("Please provide at least one image id");
 
-            var container = await GetContainer();
+            var container = await _cosmosDbClient.CreateImagesContainerIfNotExists();
 
             QueryRequestOptions queryRequestOptions = null;
             if (!string.IsNullOrEmpty(imageGroup))
@@ -92,7 +91,7 @@ namespace IK.Imager.ImageMetadataStorage.CosmosDB
             ArgumentHelper.AssertNotNullOrEmpty(nameof(imageId), imageId);
             ArgumentHelper.AssertNotNullOrEmpty(nameof(imageGroup), imageGroup);
 
-            var container = await GetContainer();
+            var container = await _cosmosDbClient.CreateImagesContainerIfNotExists();
             ItemResponse<ImageMetadata> response;
             try
             {
@@ -111,42 +110,5 @@ namespace IK.Imager.ImageMetadataStorage.CosmosDB
         }
 
         //todo add operation to search by tags
-
-        /// <summary>
-        /// Use GetContainer method instead
-        /// </summary>
-        private Container _containerInternal;
-
-        private async Task<Container> GetContainer()
-        {
-            if (_containerInternal != null)
-                return _containerInternal;
-
-            CosmosClient client = new CosmosClient(_settings.Value.ConnectionString);
-            var databaseResponse = await client.CreateDatabaseIfNotExistsAsync(_settings.Value.DatabaseId);
-
-            ContainerProperties containerProperties = new ContainerProperties(_settings.Value.ContainerId, "/" + nameof(ImageMetadata.ImageGroup));
-           
-            var indexingPolicy = new IndexingPolicy();
-            indexingPolicy.IncludedPaths.Add(new IncludedPath { Path = "/*" });
-            //It's unlikely that we will ever request by the following properties, so stop indexing them to save some money
-            IgnoreIndexing(indexingPolicy,nameof(ImageMetadata.Thumbnails));
-            IgnoreIndexing(indexingPolicy,nameof(ImageMetadata.SizeBytes));
-            IgnoreIndexing(indexingPolicy,nameof(ImageMetadata.MD5Hash));
-            IgnoreIndexing(indexingPolicy,nameof(ImageMetadata.Width));
-            IgnoreIndexing(indexingPolicy,nameof(ImageMetadata.Height));
-            IgnoreIndexing(indexingPolicy,nameof(ImageMetadata.MimeType));
-            containerProperties.IndexingPolicy = indexingPolicy;
-            
-            _containerInternal = (await databaseResponse.Database.CreateContainerIfNotExistsAsync(containerProperties,
-                throughput: _settings.Value.ContainerThroughPutOnCreation)).Container;
-
-            return _containerInternal;
-        }
-
-        private void IgnoreIndexing(IndexingPolicy indexingPolicy, string param)
-        {
-            indexingPolicy.ExcludedPaths.Add(new ExcludedPath { Path = "/" + param + "/*" });
-        }
     }
 }

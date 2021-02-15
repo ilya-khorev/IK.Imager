@@ -19,8 +19,8 @@ namespace IK.Imager.ImageBlobStorage.AzureFiles
         {
             ArgumentHelper.AssertNotNull(nameof(settings), settings);
             
-            _imagesContainer = new Lazy<CloudBlobContainer>(() => blobClient.CreateContainerIfNotExist(settings.Value.ImagesContainerName.ToLowerInvariant()));
-            _thumbnailsContainer = new Lazy<CloudBlobContainer>(() => blobClient.CreateContainerIfNotExist(settings.Value.ThumbnailsContainerName.ToLowerInvariant()));
+            _imagesContainer = new Lazy<CloudBlobContainer>(() => blobClient.CreateContainerIfNotExists(settings.Value.ImagesContainerName.ToLowerInvariant()));
+            _thumbnailsContainer = new Lazy<CloudBlobContainer>(() => blobClient.CreateContainerIfNotExists(settings.Value.ThumbnailsContainerName.ToLowerInvariant()));
         }
         
         /// <inheritdoc />

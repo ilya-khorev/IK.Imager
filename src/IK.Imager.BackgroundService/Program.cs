@@ -21,7 +21,7 @@ using Microsoft.Extensions.Options;
 
 namespace IK.Imager.BackgroundService
 {
-   public class Program
+    public class Program
     {
         public static async Task Main(string[] args)
         {
@@ -48,6 +48,7 @@ namespace IK.Imager.BackgroundService
                     RegisterConfigurations(hostContext.Configuration, services);
                     SetupAppInsights(hostContext.Configuration, services);
                     services.AddSingleton<IEventBus, ServiceBus>();
+                    services.AddSingleton<ICosmosDbClient, CosmosDbClient>();
                     services.AddSingleton<IImageMetadataRepository, ImageMetadataCosmosDbRepository>();
                     services.AddSingleton<IImageBlobRepository, ImageBlobAzureRepository>();
                     services.AddSingleton<IAzureBlobClient, AzureBlobClient>(s =>
@@ -55,24 +56,29 @@ namespace IK.Imager.BackgroundService
                         var settings = s.GetRequiredService<ImageAzureStorageSettings>();
                         return new AzureBlobClient(settings.ConnectionString);
                     });
-                    
-                    services.AddSingleton<IImageMetadataReader, ImageMetadataReader>();
-                    services.AddSingleton<IImageResizing, ImageResizing>();
-                    services.AddSingleton<IImageIdentifierProvider, ImageIdentifierProvider>();
-                    
-                    services.AddSingleton<IImageDeleteService, ImageDeleteService>();
-                    services.AddSingleton<IImageThumbnailService, ImageThumbnailService>();
 
-                    services.AddSingleton<IIntegrationEventHandler<OriginalImageUploadedIntegrationEvent>, GenerateThumbnailsHandler>();
-                    services.AddSingleton<IIntegrationEventHandler<ImageDeletedIntegrationEvent>, RemoveImageFilesHandler>();
+                    services.AddSingleton<IImageIdentifierProvider, ImageIdentifierProvider>();
+
+                    services.AddScoped<IImageMetadataReader, ImageMetadataReader>();
+                    services.AddScoped<IImageResizing, ImageResizing>();
+                    services.AddScoped<IImageDeleteService, ImageDeleteService>();
+                    services.AddScoped<IImageThumbnailService, ImageThumbnailService>();
+
+                    services
+                        .AddSingleton<IIntegrationEventHandler<OriginalImageUploadedIntegrationEvent>,
+                            GenerateThumbnailsHandler>();
+                    services
+                        .AddSingleton<IIntegrationEventHandler<ImageDeletedIntegrationEvent>, RemoveImageFilesHandler
+                        >();
                     services.AddHostedService<BackgroundTasks>();
                 })
                 .UseConsoleLifetime();
-        
+
         private static void SetupAppInsights(IConfiguration configuration, IServiceCollection services)
         {
             ApplicationInsightsServiceOptions aiOptions = new ApplicationInsightsServiceOptions();
-            var appInsightsDependencyConfigValue = configuration.GetValue<bool>("ApplicationInsights:EnableDependencyTrackingTelemetryModule");
+            var appInsightsDependencyConfigValue =
+                configuration.GetValue<bool>("ApplicationInsights:EnableDependencyTrackingTelemetryModule");
             //dependency tracking is disabled by default as it is quite expensive
             aiOptions.EnableDependencyTrackingTelemetryModule = appInsightsDependencyConfigValue;
 
@@ -83,24 +89,25 @@ namespace IK.Imager.BackgroundService
 
             var appInsightsAuthApiKey = configuration.GetValue<string>("ApplicationInsights:AuthenticationApiKey");
             if (!string.IsNullOrWhiteSpace(appInsightsAuthApiKey))
-                services.ConfigureTelemetryModule<QuickPulseTelemetryModule> ((module, o) => 
+                services.ConfigureTelemetryModule<QuickPulseTelemetryModule>((module, o) =>
                     module.AuthenticationApiKey = appInsightsAuthApiKey);
         }
-        
+
         private static void RegisterConfigurations(IConfiguration configuration, IServiceCollection services)
         {
             services.Configure<ServiceBusSettings>(configuration.GetSection("ServiceBus"));
             services.AddSingleton(resolver => resolver.GetRequiredService<IOptions<ServiceBusSettings>>().Value);
-            
+
             services.Configure<ImageAzureStorageSettings>(configuration.GetSection("AzureStorage"));
             services.AddSingleton(resolver => resolver.GetRequiredService<IOptions<ImageAzureStorageSettings>>().Value);
-            
+
             services.Configure<ImageMetadataCosmosDbStorageSettings>(configuration.GetSection("CosmosDb"));
-            services.AddSingleton(resolver => resolver.GetRequiredService<IOptions<ImageMetadataCosmosDbStorageSettings>>().Value);
-            
+            services.AddSingleton(resolver =>
+                resolver.GetRequiredService<IOptions<ImageMetadataCosmosDbStorageSettings>>().Value);
+
             services.Configure<TopicsConfiguration>(configuration.GetSection("Topics"));
             services.AddSingleton(resolver => resolver.GetRequiredService<IOptions<TopicsConfiguration>>().Value);
-            
+
             services.Configure<ImageThumbnailsSettings>(configuration.GetSection("Thumbnails"));
             services.AddSingleton(resolver => resolver.GetRequiredService<IOptions<ImageThumbnailsSettings>>().Value);
         }

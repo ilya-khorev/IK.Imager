@@ -16,7 +16,7 @@ namespace IK.Imager.ImageBlobStorage.AzureFiles
             _cloudBlobClient = storageAccount.CreateCloudBlobClient();
         }
         
-        public CloudBlobContainer CreateContainerIfNotExist(string containerName)
+        public CloudBlobContainer CreateContainerIfNotExists(string containerName)
         {
             var container = _cloudBlobClient.GetContainerReference(containerName);
             container.CreateIfNotExists();

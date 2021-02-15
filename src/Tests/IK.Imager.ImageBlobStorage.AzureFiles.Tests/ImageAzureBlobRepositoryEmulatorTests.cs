@@ -17,7 +17,7 @@ namespace IK.Imager.ImageStorage.AzureFiles.Tests
     // - The name of the method being tested
     // - The scenario under which it's being tested (optional)
     // - The expected behavior when the scenario is invoked
-    public class ImageAzureBlobRepositoryEmulatorTests : IClassFixture<StorageFixture>
+    public class ImageAzureBlobRepositoryEmulatorTests : IClassFixture<ImageBlobsStorageFixture>
     {
         private readonly ImageBlobAzureRepository _imageBlobAzureRepository;
         private readonly Random _random;
@@ -25,7 +25,7 @@ namespace IK.Imager.ImageStorage.AzureFiles.Tests
         private const string TestImagesFolder = "Images";
         private const string JpegType = "image/jpeg";
         
-        public ImageAzureBlobRepositoryEmulatorTests(StorageFixture fixture)
+        public ImageAzureBlobRepositoryEmulatorTests(ImageBlobsStorageFixture fixture)
         {
             _imageBlobAzureRepository = fixture.BlobImageRepository;
             _random = new Random();

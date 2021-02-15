@@ -4,6 +4,6 @@ namespace IK.Imager.ImageBlobStorage.AzureFiles
 {
     public interface IAzureBlobClient
     {
-        CloudBlobContainer CreateContainerIfNotExist(string containerName);
+        CloudBlobContainer CreateContainerIfNotExists(string containerName);
     }
 }
