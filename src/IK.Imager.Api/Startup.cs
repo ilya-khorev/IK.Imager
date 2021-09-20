@@ -3,6 +3,7 @@ using System.IO;
 using System.Reflection;
 using AutoMapper;
 using IK.Imager.Api.Filters;
+using IK.Imager.Api.Handlers;
 using IK.Imager.Api.Services;
 using IK.Imager.Core;
 using IK.Imager.Core.Abstractions;
@@ -22,6 +23,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
 using Polly;
 
@@ -64,20 +66,24 @@ namespace IK.Imager.Api
             services.AddSingleton<IImageMetadataRepository, ImageMetadataCosmosDbRepository>();
             services.AddSingleton<IAzureBlobClient, AzureBlobClient>(s =>
             {
-                var settings = s.GetRequiredService<ImageAzureStorageSettings>();
-                return new AzureBlobClient(settings.ConnectionString);
+                var settings = s.GetRequiredService<IOptions<ImageAzureStorageSettings>>();
+                return new AzureBlobClient(settings.Value.ConnectionString);
             });
                 
             services.AddSingleton<IImageBlobRepository, ImageBlobAzureRepository>();
             services.AddSingleton<IImageMetadataReader, ImageMetadataReader>();
             services.AddSingleton<IImageIdentifierProvider, ImageIdentifierProvider>();
-            
+            services.AddSingleton<ICdnService, CdnService>();
+            services.AddSingleton<IImageResizing, ImageResizing>();
+
+            services.AddScoped<IImageValidator, ImageValidator>();
             services.AddScoped<IImageUploadService, ImageUploadService>();
             services.AddScoped<IImageSearchService, ImageSearchService>();
-            services.AddScoped<IImageDeleteService, ImageDeleteService>();
-            services.AddScoped<IImageValidator, ImageValidator>();
             
-            services.AddSingleton<ICdnService, CdnService>();
+            services.AddTransient<IImageDeleteService, ImageDeleteService>();
+            services.AddTransient<IImageThumbnailService, ImageThumbnailService>();
+            services.AddTransient<IIntegrationEventHandler<OriginalImageUploadedIntegrationEvent>, GenerateThumbnailsHandler>();
+            services.AddTransient<IIntegrationEventHandler<ImageDeletedIntegrationEvent>, RemoveImageFilesHandler>();
             
             services.AddHttpClient<ImageDownloadClient>()
                 .AddTransientHttpErrorPolicy(p =>
@@ -95,6 +101,7 @@ namespace IK.Imager.Api
             services.Configure<ImageMetadataCosmosDbStorageSettings>(Configuration.GetSection("CosmosDb"));
             services.Configure<TopicsConfiguration>(Configuration.GetSection("Topics"));
             services.Configure<CdnSettings>(Configuration.GetSection("Cdn"));
+            services.Configure<ImageThumbnailsSettings>(Configuration.GetSection("Thumbnails"));
         }
 
         private void SetupAppInsights(IServiceCollection services)

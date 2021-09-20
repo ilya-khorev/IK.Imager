@@ -3,8 +3,9 @@ using IK.Imager.Core.Abstractions.Models;
 using IK.Imager.Core.Abstractions.Services;
 using IK.Imager.EventBus.Abstractions;
 using IK.Imager.IntegrationEvents;
+#pragma warning disable 1591
 
-namespace IK.Imager.BackgroundService.Handlers
+namespace IK.Imager.Api.Handlers
 {
     /// <summary>
     /// Removing files of the original image and its thumbnails.

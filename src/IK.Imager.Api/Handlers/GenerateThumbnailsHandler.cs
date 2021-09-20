@@ -3,7 +3,9 @@ using IK.Imager.Core.Abstractions.Services;
 using IK.Imager.EventBus.Abstractions;
 using IK.Imager.IntegrationEvents;
 
-namespace IK.Imager.BackgroundService.Handlers
+#pragma warning disable 1591
+
+namespace IK.Imager.Api.Handlers
 {
     public class GenerateThumbnailsHandler : IIntegrationEventHandler<OriginalImageUploadedIntegrationEvent>
     {
