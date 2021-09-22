@@ -1,8 +1,7 @@
 ﻿using System;
+using Azure.Storage.Blobs;
 using IK.Imager.ImageBlobStorage.AzureFiles;
 using IK.Imager.TestsBase;
-using Microsoft.Azure.Storage;
-using Microsoft.Azure.Storage.Blob;
 using Microsoft.Extensions.Options;
 
 namespace IK.Imager.ImageStorage.AzureFiles.Tests
@@ -10,32 +9,30 @@ namespace IK.Imager.ImageStorage.AzureFiles.Tests
     public class ImageBlobsStorageFixture : IDisposable
     {
         public ImageBlobAzureRepository BlobImageRepository { get; }
-        
-        private readonly CloudBlobClient _cloudBlobClient;
+
+        private readonly ImageAzureStorageSettings _settings;
+        private readonly BlobServiceClient _cloudBlobClient;
 
         public ImageBlobsStorageFixture()
-        {
-            ImageAzureStorageSettings settings =
-                new ImageAzureStorageSettings
+        { 
+            _settings = new ImageAzureStorageSettings
                 {
                     ConnectionString = Constants.AzureBlobStorage.ConnectionString,
                     ImagesContainerName = Constants.AzureBlobStorage.ImagesContainerName,
                     ThumbnailsContainerName = Constants.AzureBlobStorage.ThumbnailsContainerName
                 };
 
-            var blobClient = new AzureBlobClient(settings.ConnectionString);
-            BlobImageRepository = new ImageBlobAzureRepository(new OptionsWrapper<ImageAzureStorageSettings>(settings), blobClient);
-            
-            var storageAccount = CloudStorageAccount.Parse(settings.ConnectionString);
-            _cloudBlobClient = storageAccount.CreateCloudBlobClient();
+            var blobClient = new AzureBlobClient(_settings.ConnectionString);
+            BlobImageRepository =
+                new ImageBlobAzureRepository(new OptionsWrapper<ImageAzureStorageSettings>(_settings), blobClient);
+
+            _cloudBlobClient = new BlobServiceClient(_settings.ConnectionString);
         }
 
         public void Dispose()
         {
-            foreach (var container in _cloudBlobClient.ListContainers())
-            {
-                container.DeleteIfExists();
-            }
+            _cloudBlobClient.DeleteBlobContainer(_settings.ImagesContainerName);
+            _cloudBlobClient.DeleteBlobContainer(_settings.ThumbnailsContainerName);
         }
     }
 }

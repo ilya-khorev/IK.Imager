@@ -1,31 +1,25 @@
-﻿using IK.Imager.Utils;
-using Microsoft.Azure.Storage;
-using Microsoft.Azure.Storage.Blob;
+﻿using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Models;
+using IK.Imager.Utils;
 
 namespace IK.Imager.ImageBlobStorage.AzureFiles
 {
     public class AzureBlobClient : IAzureBlobClient
     {
-        private readonly CloudBlobClient _cloudBlobClient;
+        private readonly BlobServiceClient _cloudBlobClient;
         
         public AzureBlobClient(string connectionString)
         {
             ArgumentHelper.AssertNotNullOrEmpty(nameof(connectionString), connectionString);
-            
-            var storageAccount = CloudStorageAccount.Parse(connectionString);
-            _cloudBlobClient = storageAccount.CreateCloudBlobClient();
+            _cloudBlobClient = new BlobServiceClient(connectionString);
         }
         
-        public CloudBlobContainer CreateContainerIfNotExists(string containerName)
+        public BlobContainerClient CreateContainerIfNotExists(string containerName)
         {
-            var container = _cloudBlobClient.GetContainerReference(containerName);
-            container.CreateIfNotExists();
+            var blobContainerClient = _cloudBlobClient.GetBlobContainerClient(containerName);
             //setting up public access for this container so that it will be available by url
-            container.SetPermissions(new BlobContainerPermissions
-            {
-                PublicAccess = BlobContainerPublicAccessType.Blob
-            });
-            return container;
+            blobContainerClient.CreateIfNotExists(PublicAccessType.Blob);
+            return blobContainerClient;
         }
     }
 }

@@ -2,25 +2,25 @@
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Azure.Storage.Blobs;
 using IK.Imager.Storage.Abstractions.Models;
 using IK.Imager.Storage.Abstractions.Repositories;
 using IK.Imager.Utils;
-using Microsoft.Azure.Storage.Blob;
 using Microsoft.Extensions.Options;
 
 namespace IK.Imager.ImageBlobStorage.AzureFiles
 {
     public class ImageBlobAzureRepository : IImageBlobRepository
     {
-        private readonly Lazy<CloudBlobContainer> _imagesContainer;
-        private readonly Lazy<CloudBlobContainer> _thumbnailsContainer;
+        private readonly Lazy<BlobContainerClient> _imagesContainer;
+        private readonly Lazy<BlobContainerClient> _thumbnailsContainer;
 
         public ImageBlobAzureRepository(IOptions<ImageAzureStorageSettings> settings, IAzureBlobClient blobClient)
         {
             ArgumentHelper.AssertNotNull(nameof(settings), settings);
             
-            _imagesContainer = new Lazy<CloudBlobContainer>(() => blobClient.CreateContainerIfNotExists(settings.Value.ImagesContainerName.ToLowerInvariant()));
-            _thumbnailsContainer = new Lazy<CloudBlobContainer>(() => blobClient.CreateContainerIfNotExists(settings.Value.ThumbnailsContainerName.ToLowerInvariant()));
+            _imagesContainer = new Lazy<BlobContainerClient>(() => blobClient.CreateContainerIfNotExists(settings.Value.ImagesContainerName.ToLowerInvariant()));
+            _thumbnailsContainer = new Lazy<BlobContainerClient>(() => blobClient.CreateContainerIfNotExists(settings.Value.ThumbnailsContainerName.ToLowerInvariant()));
         }
         
         /// <inheritdoc />
@@ -30,17 +30,17 @@ namespace IK.Imager.ImageBlobStorage.AzureFiles
             ArgumentHelper.AssertNotNullOrEmpty(nameof(imageName), imageName);
             ArgumentHelper.AssertNotNull(nameof(imageStream), imageStream);
 
-            var blockBlob = GetBlockBlob(imageName, imageSizeType);
-            blockBlob.Properties.ContentType = imageContentType;
+            var blobClient = GetBlobClient(imageName, imageSizeType);
+            //blobClient.Properties.ContentType = imageContentType;
              
             imageStream.Position = 0;
-            await blockBlob.UploadFromStreamAsync(imageStream, cancellationToken).ConfigureAwait(false);
+            var uploadResult = await blobClient.UploadAsync(imageStream, cancellationToken).ConfigureAwait(false);
 
             return new UploadImageResult
             {
-                MD5Hash = blockBlob.Properties.ContentMD5,
-                DateAdded = blockBlob.Properties.Created ?? DateTimeOffset.Now,
-                Url = blockBlob.Uri
+                MD5Hash = System.Text.Encoding.UTF8.GetString(uploadResult.Value.ContentHash),
+                DateAdded = uploadResult.Value.LastModified,
+                Url = blobClient.Uri
             };
         }
 
@@ -50,12 +50,12 @@ namespace IK.Imager.ImageBlobStorage.AzureFiles
         {
             ArgumentHelper.AssertNotNullOrEmpty(nameof(imageName), imageName);
 
-            var blockBlob = GetBlockBlob(imageName, imageSizeType);
+            var blockBlob = GetBlobClient(imageName, imageSizeType);
             if (blockBlob == null)
                 return null;
 
             MemoryStream memoryStream = new MemoryStream();
-            await blockBlob.DownloadToStreamAsync(memoryStream, cancellationToken).ConfigureAwait(false);
+            await blockBlob.DownloadToAsync(memoryStream, cancellationToken).ConfigureAwait(false);
             memoryStream.Position = 0;
             return memoryStream;
         }
@@ -65,8 +65,8 @@ namespace IK.Imager.ImageBlobStorage.AzureFiles
         {
             ArgumentHelper.AssertNotNullOrEmpty(nameof(imageName), imageName);
 
-            var blockBlob = GetBlockBlob(imageName, imageSizeType);
-            return await blockBlob.DeleteIfExistsAsync(cancellationToken).ConfigureAwait(false);
+            var blockBlob = GetBlobClient(imageName, imageSizeType);
+            return await blockBlob.DeleteIfExistsAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
         }
 
         /// <inheritdoc />
@@ -74,7 +74,7 @@ namespace IK.Imager.ImageBlobStorage.AzureFiles
         {
             ArgumentHelper.AssertNotNullOrEmpty(nameof(imageName), imageName);
 
-            var blockBlob = GetBlockBlob(imageName, imageSizeType);
+            var blockBlob = GetBlobClient(imageName, imageSizeType);
             return blockBlob.Uri;
         }
 
@@ -83,16 +83,16 @@ namespace IK.Imager.ImageBlobStorage.AzureFiles
         {
             ArgumentHelper.AssertNotNullOrEmpty(nameof(imageName), imageName);
 
-            var blockBlob = GetBlockBlob(imageName, imageSizeType);
+            var blockBlob = GetBlobClient(imageName, imageSizeType);
             return await blockBlob.ExistsAsync(cancellationToken).ConfigureAwait(false);
         }
 
-        private CloudBlockBlob GetBlockBlob(string name, ImageSizeType imageSizeType)
+        private BlobClient GetBlobClient(string name, ImageSizeType imageSizeType)
         {
             if (imageSizeType == ImageSizeType.Original)
-                return _imagesContainer.Value.GetBlockBlobReference(name);
+                return _imagesContainer.Value.GetBlobClient(name);
 
-            return _thumbnailsContainer.Value.GetBlockBlobReference(name);
+            return _thumbnailsContainer.Value.GetBlobClient(name);
         }
     }
 }

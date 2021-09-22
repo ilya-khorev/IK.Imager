@@ -1,9 +1,9 @@
-﻿using Microsoft.Azure.Storage.Blob;
+﻿using Azure.Storage.Blobs;
 
 namespace IK.Imager.ImageBlobStorage.AzureFiles
 {
     public interface IAzureBlobClient
     {
-        CloudBlobContainer CreateContainerIfNotExists(string containerName);
+        BlobContainerClient CreateContainerIfNotExists(string containerName);
     }
 }
