@@ -1,6 +1,6 @@
 ﻿using System;
-using IK.Imager.Core.Abstractions.Services;
-using IK.Imager.Core.Services;
+using IK.Imager.Core.Abstractions.Cdn;
+using IK.Imager.Core.Cdn;
 using IK.Imager.Core.Settings;
 using Microsoft.Extensions.Options;
 using Moq;

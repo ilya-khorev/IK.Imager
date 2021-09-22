@@ -1,4 +1,4 @@
-﻿namespace IK.Imager.Core.Abstractions.Models
+﻿namespace IK.Imager.Core.Abstractions.Thumbnails
 {
     public class ImageThumbnailGeneratingResult
     {

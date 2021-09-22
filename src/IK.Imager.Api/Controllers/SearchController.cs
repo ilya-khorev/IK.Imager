@@ -1,7 +1,7 @@
 ﻿using System.Threading.Tasks;
 using AutoMapper;
 using IK.Imager.Api.Contract;
-using IK.Imager.Core.Abstractions.Services;
+using IK.Imager.Core.Abstractions.ImagesCrud;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;

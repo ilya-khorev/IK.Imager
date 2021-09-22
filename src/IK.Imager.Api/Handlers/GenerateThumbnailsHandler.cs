@@ -1,5 +1,5 @@
 ﻿using System.Threading.Tasks;
-using IK.Imager.Core.Abstractions.Services;
+using IK.Imager.Core.Abstractions.Thumbnails;
 using IK.Imager.EventBus.Abstractions;
 using IK.Imager.IntegrationEvents;
 

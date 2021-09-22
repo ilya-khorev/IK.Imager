@@ -17,6 +17,8 @@ namespace IK.Imager.Api.Contract
         /// </summary>
         public string Url { get; set; }
         
+        //todo image name
+        
         /// <summary>
         /// Image hashcode
         /// </summary>

@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using IK.Imager.Core.Abstractions.Models;
+using IK.Imager.Core.Thumbnails;
 using Xunit;
 
 namespace IK.Imager.Core.Tests

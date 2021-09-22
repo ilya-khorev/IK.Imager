@@ -18,6 +18,8 @@ namespace IK.Imager.Api.Contract
         [StringLength(30, MinimumLength = 3)]
         public string ImageGroup { get; set; }
         
+        //todo optional image name
+        
         /// <summary>
         /// Limitations, which prevent to upload a new image if the actual image parameters do not meet these values.
         /// Setting specified here override the default system limitations.

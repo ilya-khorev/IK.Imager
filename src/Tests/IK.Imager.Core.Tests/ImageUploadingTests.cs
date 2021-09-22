@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using IK.Imager.Core.Abstractions;
-using IK.Imager.Core.Services;
+using IK.Imager.Core.ImagesCrud;
 using IK.Imager.Core.Tests.Mocks;
 using IK.Imager.Storage.Abstractions.Models;
 using IK.Imager.Storage.Abstractions.Repositories;

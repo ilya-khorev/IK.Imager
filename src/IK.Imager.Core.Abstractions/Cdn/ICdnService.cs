@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace IK.Imager.Core.Abstractions.Services
+namespace IK.Imager.Core.Abstractions.Cdn
 {
     public interface ICdnService
     {

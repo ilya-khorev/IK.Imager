@@ -1,9 +1,9 @@
 ﻿using System;
-using IK.Imager.Core.Abstractions.Services;
+using IK.Imager.Core.Abstractions.Cdn;
 using IK.Imager.Core.Settings;
 using Microsoft.Extensions.Options;
 
-namespace IK.Imager.Core.Services
+namespace IK.Imager.Core.Cdn
 {
     public class CdnService: ICdnService
     {

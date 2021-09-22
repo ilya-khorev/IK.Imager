@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
 using IK.Imager.Api.Contract;
-using IK.Imager.Core.Abstractions.Services;
+using IK.Imager.Core.Abstractions.ImagesCrud;
 using IK.Imager.EventBus.Abstractions;
 using IK.Imager.IntegrationEvents;
 using Microsoft.AspNetCore.Http;
@@ -61,5 +61,7 @@ namespace IK.Imager.Api.Controllers
 
             return NoContent();
         }
+        
+        //todo remove all files by the image group
     }
 }

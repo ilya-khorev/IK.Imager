@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
-using IK.Imager.Core.Abstractions;
 using IK.Imager.Core.Abstractions.Models;
+using IK.Imager.Core.Abstractions.Thumbnails;
 using IK.Imager.Utils;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats;
@@ -11,7 +11,7 @@ using SixLabors.ImageSharp.Formats.Jpeg;
 using SixLabors.ImageSharp.Formats.Png;
 using SixLabors.ImageSharp.Processing;
 
-namespace IK.Imager.Core
+namespace IK.Imager.Core.Thumbnails
 {
     public class ImageResizing: IImageResizing
     {

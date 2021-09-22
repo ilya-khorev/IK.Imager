@@ -3,8 +3,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using IK.Imager.Core.Abstractions;
-using IK.Imager.Core.Abstractions.Models;
-using IK.Imager.Core.Abstractions.Services;
+using IK.Imager.Core.Abstractions.Thumbnails;
 using IK.Imager.Core.Settings;
 using IK.Imager.Storage.Abstractions.Models;
 using IK.Imager.Storage.Abstractions.Repositories;
@@ -13,7 +12,7 @@ using Microsoft.Extensions.Options;
 using ImageType = IK.Imager.Core.Abstractions.Models.ImageType;
 using StorageImageType = IK.Imager.Storage.Abstractions.Models.ImageType;
 
-namespace IK.Imager.Core.Services
+namespace IK.Imager.Core.Thumbnails
 {
     public class ImageThumbnailService: IImageThumbnailService
     {

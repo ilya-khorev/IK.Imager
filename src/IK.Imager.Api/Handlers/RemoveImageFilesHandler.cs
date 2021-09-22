@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
+using IK.Imager.Core.Abstractions.ImagesCrud;
 using IK.Imager.Core.Abstractions.Models;
-using IK.Imager.Core.Abstractions.Services;
 using IK.Imager.EventBus.Abstractions;
 using IK.Imager.IntegrationEvents;
 #pragma warning disable 1591

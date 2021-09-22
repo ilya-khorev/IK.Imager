@@ -2,13 +2,14 @@
 using System.Threading;
 using System.Threading.Tasks;
 using IK.Imager.Core.Abstractions;
+using IK.Imager.Core.Abstractions.Cdn;
+using IK.Imager.Core.Abstractions.ImagesCrud;
 using IK.Imager.Core.Abstractions.Models;
-using IK.Imager.Core.Abstractions.Services;
 using IK.Imager.Storage.Abstractions.Models;
 using IK.Imager.Storage.Abstractions.Repositories;
 using Microsoft.Extensions.Logging;
 
-namespace IK.Imager.Core.Services
+namespace IK.Imager.Core.ImagesCrud
 {
     public class ImageUploadService: IImageUploadService
     {

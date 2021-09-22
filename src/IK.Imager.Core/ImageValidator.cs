@@ -30,6 +30,8 @@ namespace IK.Imager.Core
         
         //todo add key_error and move errors to resources
 
+        //todo return result instead of throwing an exception 
+        
         public void CheckSize(ImageSize imageSize)
         {
             var limits = _limitationSettings.Value;

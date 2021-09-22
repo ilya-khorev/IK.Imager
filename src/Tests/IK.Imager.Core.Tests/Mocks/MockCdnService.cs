@@ -1,5 +1,5 @@
 ﻿using System;
-using IK.Imager.Core.Abstractions.Services;
+using IK.Imager.Core.Abstractions.Cdn;
 
 namespace IK.Imager.Core.Tests.Mocks
 {

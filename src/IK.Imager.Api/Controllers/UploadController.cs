@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using AutoMapper;
 using IK.Imager.Api.Contract;
 using IK.Imager.Api.Services;
-using IK.Imager.Core.Abstractions.Services;
+using IK.Imager.Core.Abstractions.ImagesCrud;
 using IK.Imager.Core.Settings;
 using IK.Imager.EventBus.Abstractions;
 using IK.Imager.IntegrationEvents;
