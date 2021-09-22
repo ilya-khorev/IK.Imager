@@ -63,7 +63,7 @@ namespace IK.Imager.EventBus.AzureServiceBus
                 AutoComplete = false
             };
             
-            client.RegisterMessageHandler(async (message, token) =>
+            client.RegisterMessageHandler(async (message, _) =>
             {
                 var model = JsonConvert.DeserializeObject<T>(Encoding.UTF8.GetString(message.Body));
                 await handler.Handle(model);

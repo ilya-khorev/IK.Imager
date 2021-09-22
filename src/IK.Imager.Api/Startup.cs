@@ -122,7 +122,7 @@ namespace IK.Imager.Api
 
             var appInsightsAuthApiKey = Configuration.GetValue<string>("ApplicationInsights:AuthenticationApiKey");
             if (!string.IsNullOrWhiteSpace(appInsightsAuthApiKey))
-                services.ConfigureTelemetryModule<QuickPulseTelemetryModule>((module, o) =>
+                services.ConfigureTelemetryModule<QuickPulseTelemetryModule>((module, _) =>
                     module.AuthenticationApiKey = appInsightsAuthApiKey);
         }
 
@@ -147,8 +147,7 @@ namespace IK.Imager.Api
             app.UseSwagger();
             app.UseSwaggerUI(c =>
             {
-                app.UseSwaggerUI(
-                    options =>
+                app.UseSwaggerUI(_ =>
                     {
                         c.SwaggerEndpoint($"/swagger/{CurrentVersion}/swagger.json", ApiTitle);
                         c.RoutePrefix = string.Empty;
