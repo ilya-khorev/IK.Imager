@@ -2,7 +2,6 @@ using System;
 using System.IO;
 using System.Reflection;
 using IK.Imager.Api.Filters;
-using IK.Imager.Api.Handlers;
 using IK.Imager.Api.Services;
 using IK.Imager.Core;
 using IK.Imager.Core.Abstractions;
@@ -19,6 +18,7 @@ using IK.Imager.ImageMetadataStorage.CosmosDB;
 using IK.Imager.ImageBlobStorage.AzureFiles;
 using IK.Imager.IntegrationEvents;
 using IK.Imager.Storage.Abstractions.Repositories;
+using MassTransit;
 using Microsoft.ApplicationInsights.AspNetCore.Extensions;
 using Microsoft.ApplicationInsights.Extensibility.PerfCounterCollector.QuickPulse;
 using Microsoft.AspNetCore.Builder;
@@ -85,8 +85,6 @@ namespace IK.Imager.Api
             
             services.AddTransient<IImageDeleteService, ImageDeleteService>();
             services.AddTransient<IImageThumbnailService, ImageThumbnailService>();
-            services.AddTransient<IIntegrationEventHandler<OriginalImageUploadedIntegrationEvent>, GenerateThumbnailsHandler>();
-            services.AddTransient<IIntegrationEventHandler<ImageDeletedIntegrationEvent>, RemoveImageFilesHandler>();
             
             services.AddHttpClient<ImageDownloadClient>()
                 .AddTransientHttpErrorPolicy(p =>
@@ -94,6 +92,16 @@ namespace IK.Imager.Api
 
             services.AddHealthChecks(); //todo
             SetupAppInsights(services);
+
+            services.AddMassTransit(x =>
+            {
+                x.AddConsumers(Assembly.GetExecutingAssembly());
+                x.UsingInMemory((context,cfg) =>
+                {
+                    cfg.ConfigureEndpoints(context);
+                });
+            });
+            services.AddMassTransitHostedService();
         }
 
         private void RegisterConfigurations(IServiceCollection services)

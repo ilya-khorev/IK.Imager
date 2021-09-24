@@ -1,13 +1,13 @@
 ﻿using System.Threading.Tasks;
 using IK.Imager.Core.Abstractions.Thumbnails;
-using IK.Imager.EventBus.Abstractions;
 using IK.Imager.IntegrationEvents;
+using MassTransit;
 
 #pragma warning disable 1591
 
 namespace IK.Imager.Api.Handlers
 {
-    public class GenerateThumbnailsHandler : IIntegrationEventHandler<OriginalImageUploadedIntegrationEvent>
+    public class GenerateThumbnailsHandler : IConsumer<OriginalImageUploadedIntegrationEvent>
     {
         private readonly IImageThumbnailService _thumbnailsService;
 
@@ -15,10 +15,10 @@ namespace IK.Imager.Api.Handlers
         {
             _thumbnailsService = thumbnailsService;
         }
-
-        public async Task Handle(OriginalImageUploadedIntegrationEvent iEvent)
+        
+        public async Task Consume(ConsumeContext<OriginalImageUploadedIntegrationEvent> context)
         {
-            await _thumbnailsService.GenerateThumbnails(iEvent.ImageId, iEvent.ImageGroup);
+            await _thumbnailsService.GenerateThumbnails(context.Message.ImageId, context.Message.ImageGroup);
         }
     }
 }

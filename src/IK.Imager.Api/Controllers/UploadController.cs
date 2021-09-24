@@ -6,8 +6,8 @@ using IK.Imager.Api.Contract;
 using IK.Imager.Api.Services;
 using IK.Imager.Core.Abstractions.ImagesCrud;
 using IK.Imager.Core.Settings;
-using IK.Imager.EventBus.Abstractions;
 using IK.Imager.IntegrationEvents;
+using MassTransit;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -24,7 +24,7 @@ namespace IK.Imager.Api.Controllers
     {
         private readonly ILogger<UploadController> _logger;
         private readonly IImageUploadService _imageUploadService;
-        private readonly IEventBus _eventBus;
+        private readonly IPublishEndpoint _publishEndpoint;
         private readonly ImageDownloadClient _imageDownloadClient;
         private readonly IOptions<TopicsConfiguration> _topicsConfiguration;
         private readonly IOptionsSnapshot<ImageLimitationSettings> _imageLimitationSettings;
@@ -37,12 +37,12 @@ namespace IK.Imager.Api.Controllers
 
         /// <inheritdoc />
         public UploadController(ILogger<UploadController> logger, IImageUploadService imageUploadService, 
-            IEventBus eventBus, ImageDownloadClient imageDownloadClient, IOptions<TopicsConfiguration> topicsConfiguration, 
+            IPublishEndpoint publishEndpoint, ImageDownloadClient imageDownloadClient, IOptions<TopicsConfiguration> topicsConfiguration, 
             IOptionsSnapshot<ImageLimitationSettings> imageLimitationSettings, IMapper mapper)
         {
             _logger = logger;
             _imageUploadService = imageUploadService;
-            _eventBus = eventBus;
+            _publishEndpoint = publishEndpoint;
             _imageDownloadClient = imageDownloadClient;
             _topicsConfiguration = topicsConfiguration;
             _imageLimitationSettings = imageLimitationSettings;
@@ -119,10 +119,10 @@ namespace IK.Imager.Api.Controllers
             //Once the image file and metadata object are saved, there is time to send a new message to the event bus topic
             //If the program fails at this stage, this message is not sent and therefore thumbnails are not generated for the image. 
             //Such cases are handled when requesting an image metadata object later by resending this event again.
-            await _eventBus.Publish(_topicsConfiguration.Value.UploadedImagesTopicName, new OriginalImageUploadedIntegrationEvent
+            await _publishEndpoint.Publish(new OriginalImageUploadedIntegrationEvent
             {
                 ImageId = uploadImageResult.Id,
-                ImageGroup = imageGroup 
+                ImageGroup = imageGroup
             });
             
             return Ok(_mapper.Map<ImageInfo>(uploadImageResult));

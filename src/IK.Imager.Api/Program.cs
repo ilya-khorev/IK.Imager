@@ -17,7 +17,7 @@ namespace IK.Imager.Api
         public static async Task Main(string[] args)
         {
             var host = CreateHostBuilder(args).Build();
-            await RegisterHandlers(host);
+            //await RegisterHandlers(host);
             await host.RunAsync();
         }
 

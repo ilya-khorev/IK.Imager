@@ -1,8 +1,8 @@
 ﻿using System.Threading.Tasks;
 using IK.Imager.Api.Contract;
 using IK.Imager.Core.Abstractions.ImagesCrud;
-using IK.Imager.EventBus.Abstractions;
 using IK.Imager.IntegrationEvents;
+using MassTransit;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
@@ -16,16 +16,16 @@ namespace IK.Imager.Api.Controllers
     [Route("[controller]")]
     public class DeleteController : ControllerBase
     {
-        private readonly IEventBus _eventBus;
+        private readonly IPublishEndpoint _publishEndpoint;
         private readonly IOptions<TopicsConfiguration> _topicsConfiguration;
         private readonly IImageDeleteService _imageDeleteService;
  
         private const string ImageNotFound = "Requested image with id {0} was not found";
         
         /// <inheritdoc />
-        public DeleteController(IEventBus eventBus, IOptions<TopicsConfiguration> topicsConfiguration, IImageDeleteService imageDeleteService)
+        public DeleteController(IPublishEndpoint publishEndpoint, IOptions<TopicsConfiguration> topicsConfiguration, IImageDeleteService imageDeleteService)
         {
-            _eventBus = eventBus;
+            _publishEndpoint = publishEndpoint;
             _topicsConfiguration = topicsConfiguration;
             _imageDeleteService = imageDeleteService;
         }
@@ -52,7 +52,7 @@ namespace IK.Imager.Api.Controllers
             if (imageDeleteResult == null)
                 return NotFound(string.Format(ImageNotFound, deleteImageRequest.ImageId));
            
-            await _eventBus.Publish(_topicsConfiguration.Value.DeletedImagesTopicName, new ImageDeletedIntegrationEvent
+            await _publishEndpoint.Publish(new ImageDeletedIntegrationEvent
             {
                 ImageId = imageDeleteResult.ImageId,
                 ImageName = imageDeleteResult.ImageName,
