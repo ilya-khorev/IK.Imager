@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Reflection;
 using IK.Imager.Api.Filters;
+using IK.Imager.Api.Handlers;
 using IK.Imager.Api.Services;
 using IK.Imager.Core;
 using IK.Imager.Core.Abstractions;
@@ -96,9 +97,27 @@ namespace IK.Imager.Api
             services.AddMassTransit(x =>
             {
                 x.AddConsumers(Assembly.GetExecutingAssembly());
-                x.UsingInMemory((context,cfg) =>
+                x.UsingAzureServiceBus((context, cfg) =>
                 {
-                    cfg.ConfigureEndpoints(context);
+                    var serviceBusSettings = context.GetRequiredService<IOptions<ServiceBusSettings>>();
+                    var topicsConfiguration = context.GetRequiredService<IOptions<TopicsConfiguration>>();
+
+                    cfg.Message<OriginalImageUploadedIntegrationEvent>(c => 
+                        c.SetEntityName(topicsConfiguration.Value.UploadedImagesTopicName));
+                    cfg.Message<ImageDeletedIntegrationEvent>(c => 
+                        c.SetEntityName(topicsConfiguration.Value.DeletedImagesTopicName));
+                    
+                    cfg.Host(serviceBusSettings.Value.ConnectionString);
+                    cfg.SubscriptionEndpoint<OriginalImageUploadedIntegrationEvent>(topicsConfiguration.Value.SubscriptionName,
+                        configurator =>
+                        {
+                            configurator.ConfigureConsumer<GenerateThumbnailsHandler>(context);
+                        });
+                    cfg.SubscriptionEndpoint<ImageDeletedIntegrationEvent>(topicsConfiguration.Value.SubscriptionName,
+                        configurator =>
+                        {
+                            configurator.ConfigureConsumer<RemoveImageFilesHandler>(context);
+                        });
                 });
             });
             services.AddMassTransitHostedService();
