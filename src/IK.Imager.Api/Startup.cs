@@ -13,8 +13,6 @@ using IK.Imager.Core.Cdn;
 using IK.Imager.Core.ImagesCrud;
 using IK.Imager.Core.Settings;
 using IK.Imager.Core.Thumbnails;
-using IK.Imager.EventBus.Abstractions;
-using IK.Imager.EventBus.AzureServiceBus;
 using IK.Imager.ImageMetadataStorage.CosmosDB;
 using IK.Imager.ImageBlobStorage.AzureFiles;
 using IK.Imager.IntegrationEvents;
@@ -63,9 +61,7 @@ namespace IK.Imager.Api
             services.AddAutoMapper(c => c.AddProfile<MappingProfile>(), typeof(Startup));
 
             RegisterConfigurations(services);
-
-            services.AddSingleton<IEventBus, ServiceBus>();
-
+            
             services.AddSingleton<ICosmosDbClient, CosmosDbClient>();
             services.AddSingleton<IImageMetadataRepository, ImageMetadataCosmosDbRepository>();
             services.AddSingleton<IAzureBlobClient, AzureBlobClient>(s =>
@@ -99,7 +95,10 @@ namespace IK.Imager.Api
                 x.AddConsumers(Assembly.GetExecutingAssembly());
                 x.UsingAzureServiceBus((context, cfg) =>
                 {
-                    var serviceBusSettings = context.GetRequiredService<IOptions<ServiceBusSettings>>();
+                    var configuration = context.GetRequiredService<IConfiguration>();
+                    var serviceBusConnectionString = configuration.GetValue<string>("ServiceBus:ConnectionString");
+                    cfg.Host(serviceBusConnectionString);
+
                     var topicsConfiguration = context.GetRequiredService<IOptions<TopicsConfiguration>>();
 
                     cfg.Message<OriginalImageUploadedIntegrationEvent>(c => 
@@ -107,7 +106,6 @@ namespace IK.Imager.Api
                     cfg.Message<ImageDeletedIntegrationEvent>(c => 
                         c.SetEntityName(topicsConfiguration.Value.DeletedImagesTopicName));
                     
-                    cfg.Host(serviceBusSettings.Value.ConnectionString);
                     cfg.SubscriptionEndpoint<OriginalImageUploadedIntegrationEvent>(topicsConfiguration.Value.SubscriptionName,
                         configurator =>
                         {
@@ -126,7 +124,6 @@ namespace IK.Imager.Api
         private void RegisterConfigurations(IServiceCollection services)
         {
             services.Configure<ImageLimitationSettings>(Configuration.GetSection("ImageLimitations"));
-            services.Configure<ServiceBusSettings>(Configuration.GetSection("ServiceBus"));
             services.Configure<ImageAzureStorageSettings>(Configuration.GetSection("AzureStorage"));
             services.Configure<ImageMetadataCosmosDbStorageSettings>(Configuration.GetSection("CosmosDb"));
             services.Configure<TopicsConfiguration>(Configuration.GetSection("Topics"));

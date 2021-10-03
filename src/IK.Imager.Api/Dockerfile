@@ -11,8 +11,6 @@ EXPOSE 443
 FROM mcr.microsoft.com/dotnet/core/sdk:5.0 AS build
 WORKDIR /src
 COPY ["IK.Imager.Api/IK.Imager.Api.csproj", "IK.Imager.Api/"]
-COPY ["IK.Imager.EventBus.AzureServiceBus/IK.Imager.EventBus.AzureServiceBus.csproj", "IK.Imager.EventBus.AzureServiceBus/"]
-COPY ["IK.Imager.EventBus.Abstractions/IK.Imager.EventBus.Abstractions.csproj", "IK.Imager.EventBus.Abstractions/"]
 COPY ["IK.Imager.Core/IK.Imager.Core.csproj", "IK.Imager.Core/"]
 COPY ["IK.Imager.IntegrationEvents/IK.Imager.IntegrationEvents.csproj", "IK.Imager.IntegrationEvents/"]
 COPY ["IK.Imager.Core.Abstractions/IK.Imager.Core.Abstractions.csproj", "IK.Imager.Core.Abstractions/"]

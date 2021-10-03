@@ -26,7 +26,6 @@ namespace IK.Imager.Api.Controllers
         private readonly IImageUploadService _imageUploadService;
         private readonly IPublishEndpoint _publishEndpoint;
         private readonly ImageDownloadClient _imageDownloadClient;
-        private readonly IOptions<TopicsConfiguration> _topicsConfiguration;
         private readonly IOptionsSnapshot<ImageLimitationSettings> _imageLimitationSettings;
         private readonly IMapper _mapper;
 
@@ -37,14 +36,13 @@ namespace IK.Imager.Api.Controllers
 
         /// <inheritdoc />
         public UploadController(ILogger<UploadController> logger, IImageUploadService imageUploadService, 
-            IPublishEndpoint publishEndpoint, ImageDownloadClient imageDownloadClient, IOptions<TopicsConfiguration> topicsConfiguration, 
+            IPublishEndpoint publishEndpoint, ImageDownloadClient imageDownloadClient, 
             IOptionsSnapshot<ImageLimitationSettings> imageLimitationSettings, IMapper mapper)
         {
             _logger = logger;
             _imageUploadService = imageUploadService;
             _publishEndpoint = publishEndpoint;
             _imageDownloadClient = imageDownloadClient;
-            _topicsConfiguration = topicsConfiguration;
             _imageLimitationSettings = imageLimitationSettings;
             _mapper = mapper;
         }

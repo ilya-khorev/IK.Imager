@@ -5,7 +5,6 @@ using IK.Imager.IntegrationEvents;
 using MassTransit;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Options;
 
 namespace IK.Imager.Api.Controllers
 {
@@ -17,16 +16,14 @@ namespace IK.Imager.Api.Controllers
     public class DeleteController : ControllerBase
     {
         private readonly IPublishEndpoint _publishEndpoint;
-        private readonly IOptions<TopicsConfiguration> _topicsConfiguration;
         private readonly IImageDeleteService _imageDeleteService;
  
         private const string ImageNotFound = "Requested image with id {0} was not found";
         
         /// <inheritdoc />
-        public DeleteController(IPublishEndpoint publishEndpoint, IOptions<TopicsConfiguration> topicsConfiguration, IImageDeleteService imageDeleteService)
+        public DeleteController(IPublishEndpoint publishEndpoint, IImageDeleteService imageDeleteService)
         {
             _publishEndpoint = publishEndpoint;
-            _topicsConfiguration = topicsConfiguration;
             _imageDeleteService = imageDeleteService;
         }
         
