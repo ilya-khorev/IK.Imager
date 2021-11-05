@@ -13,12 +13,11 @@ using IK.Imager.Core.Cdn;
 using IK.Imager.Core.ImagesCrud;
 using IK.Imager.Core.Settings;
 using IK.Imager.Core.Thumbnails;
-using IK.Imager.EventBus.Abstractions;
-using IK.Imager.EventBus.AzureServiceBus;
 using IK.Imager.ImageMetadataStorage.CosmosDB;
 using IK.Imager.ImageBlobStorage.AzureFiles;
 using IK.Imager.IntegrationEvents;
 using IK.Imager.Storage.Abstractions.Repositories;
+using MassTransit;
 using Microsoft.ApplicationInsights.AspNetCore.Extensions;
 using Microsoft.ApplicationInsights.Extensibility.PerfCounterCollector.QuickPulse;
 using Microsoft.AspNetCore.Builder;
@@ -62,9 +61,7 @@ namespace IK.Imager.Api
             services.AddAutoMapper(c => c.AddProfile<MappingProfile>(), typeof(Startup));
 
             RegisterConfigurations(services);
-
-            services.AddSingleton<IEventBus, ServiceBus>();
-
+            
             services.AddSingleton<ICosmosDbClient, CosmosDbClient>();
             services.AddSingleton<IImageMetadataRepository, ImageMetadataCosmosDbRepository>();
             services.AddSingleton<IAzureBlobClient, AzureBlobClient>(s =>
@@ -85,8 +82,6 @@ namespace IK.Imager.Api
             
             services.AddTransient<IImageDeleteService, ImageDeleteService>();
             services.AddTransient<IImageThumbnailService, ImageThumbnailService>();
-            services.AddTransient<IIntegrationEventHandler<OriginalImageUploadedIntegrationEvent>, GenerateThumbnailsHandler>();
-            services.AddTransient<IIntegrationEventHandler<ImageDeletedIntegrationEvent>, RemoveImageFilesHandler>();
             
             services.AddHttpClient<ImageDownloadClient>()
                 .AddTransientHttpErrorPolicy(p =>
@@ -94,12 +89,41 @@ namespace IK.Imager.Api
 
             services.AddHealthChecks(); //todo
             SetupAppInsights(services);
+
+            services.AddMassTransit(x =>
+            {
+                x.AddConsumers(Assembly.GetExecutingAssembly());
+                x.UsingAzureServiceBus((context, cfg) =>
+                {
+                    var configuration = context.GetRequiredService<IConfiguration>();
+                    var serviceBusConnectionString = configuration.GetValue<string>("ServiceBus:ConnectionString");
+                    cfg.Host(serviceBusConnectionString);
+
+                    var topicsConfiguration = context.GetRequiredService<IOptions<TopicsConfiguration>>();
+
+                    cfg.Message<OriginalImageUploadedIntegrationEvent>(c => 
+                        c.SetEntityName(topicsConfiguration.Value.UploadedImagesTopicName));
+                    cfg.Message<ImageDeletedIntegrationEvent>(c => 
+                        c.SetEntityName(topicsConfiguration.Value.DeletedImagesTopicName));
+                    
+                    cfg.SubscriptionEndpoint<OriginalImageUploadedIntegrationEvent>(topicsConfiguration.Value.SubscriptionName,
+                        configurator =>
+                        {
+                            configurator.ConfigureConsumer<GenerateThumbnailsHandler>(context);
+                        });
+                    cfg.SubscriptionEndpoint<ImageDeletedIntegrationEvent>(topicsConfiguration.Value.SubscriptionName,
+                        configurator =>
+                        {
+                            configurator.ConfigureConsumer<RemoveImageFilesHandler>(context);
+                        });
+                });
+            });
+            services.AddMassTransitHostedService();
         }
 
         private void RegisterConfigurations(IServiceCollection services)
         {
             services.Configure<ImageLimitationSettings>(Configuration.GetSection("ImageLimitations"));
-            services.Configure<ServiceBusSettings>(Configuration.GetSection("ServiceBus"));
             services.Configure<ImageAzureStorageSettings>(Configuration.GetSection("AzureStorage"));
             services.Configure<ImageMetadataCosmosDbStorageSettings>(Configuration.GetSection("CosmosDb"));
             services.Configure<TopicsConfiguration>(Configuration.GetSection("Topics"));

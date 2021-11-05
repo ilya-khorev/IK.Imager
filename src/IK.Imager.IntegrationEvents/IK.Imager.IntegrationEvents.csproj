@@ -5,8 +5,4 @@
         <LangVersion>default</LangVersion>
     </PropertyGroup>
 
-    <ItemGroup>
-      <ProjectReference Include="..\EventBus\IK.Imager.EventBus.Abstractions\IK.Imager.EventBus.Abstractions.csproj" />
-    </ItemGroup>
-
 </Project>

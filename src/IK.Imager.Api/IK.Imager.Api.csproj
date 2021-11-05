@@ -11,6 +11,8 @@
     
     <ItemGroup>
       <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="8.1.1" />
+      <PackageReference Include="MassTransit.AspNetCore" Version="7.2.2" />
+      <PackageReference Include="MassTransit.Azure.ServiceBus.Core" Version="7.2.2" />
       <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.18.0" />
       <PackageReference Include="Microsoft.Extensions.Http.Polly" Version="5.0.1" />
       <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.11.1" />
@@ -18,8 +20,6 @@
     </ItemGroup>
     
     <ItemGroup>
-      <ProjectReference Include="..\EventBus\IK.Imager.EventBus.Abstractions\IK.Imager.EventBus.Abstractions.csproj" />
-      <ProjectReference Include="..\EventBus\IK.Imager.EventBus.AzureServiceBus\IK.Imager.EventBus.AzureServiceBus.csproj" />
       <ProjectReference Include="..\IK.Imager.Core.Abstractions\IK.Imager.Core.Abstractions.csproj" />
       <ProjectReference Include="..\IK.Imager.Core\IK.Imager.Core.csproj" />
       <ProjectReference Include="..\IK.Imager.ImageBlobStorage.AzureFiles\IK.Imager.ImageBlobStorage.AzureFiles.csproj" />

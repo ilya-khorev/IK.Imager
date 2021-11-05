@@ -1,8 +1,9 @@
 ﻿using System.Threading.Tasks;
 using IK.Imager.Core.Abstractions.ImagesCrud;
 using IK.Imager.Core.Abstractions.Models;
-using IK.Imager.EventBus.Abstractions;
 using IK.Imager.IntegrationEvents;
+using MassTransit;
+
 #pragma warning disable 1591
 
 namespace IK.Imager.Api.Handlers
@@ -11,7 +12,7 @@ namespace IK.Imager.Api.Handlers
     /// Removing files of the original image and its thumbnails.
     /// Metadata object has been already removed before this event was delivered.
     /// </summary>
-    public class RemoveImageFilesHandler: IIntegrationEventHandler<ImageDeletedIntegrationEvent>
+    public class RemoveImageFilesHandler: IConsumer<ImageDeletedIntegrationEvent>
     {
         private readonly IImageDeleteService _imageDeleteService;
 
@@ -20,13 +21,13 @@ namespace IK.Imager.Api.Handlers
             _imageDeleteService = imageDeleteService;
         }
         
-        public async Task Handle(ImageDeletedIntegrationEvent iEvent)
+        public async Task Consume(ConsumeContext<ImageDeletedIntegrationEvent> context)
         {
             await _imageDeleteService.DeleteImageAndThumbnails(new ImageShortInfo
             {
-                ImageId = iEvent.ImageId,
-                ImageName = iEvent.ImageName,
-                ThumbnailNames = iEvent.ThumbnailNames
+                ImageId = context.Message.ImageId,
+                ImageName = context.Message.ImageName,
+                ThumbnailNames = context.Message.ThumbnailNames
             });
         }
     }
