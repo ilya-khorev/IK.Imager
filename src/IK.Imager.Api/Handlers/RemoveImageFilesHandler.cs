@@ -1,5 +1,5 @@
 ﻿using System.Threading.Tasks;
-using IK.Imager.Core.Abstractions.ImagesCrud;
+using IK.Imager.Core.Abstractions;
 using IK.Imager.Core.Abstractions.Models;
 using IK.Imager.IntegrationEvents;
 using MassTransit;

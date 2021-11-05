@@ -3,7 +3,6 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using IK.Imager.Core.Abstractions.Models;
-using IK.Imager.Core.ImagesCrud;
 using IK.Imager.Storage.Abstractions.Models;
 using IK.Imager.Storage.Abstractions.Repositories;
 using ImageType = IK.Imager.Storage.Abstractions.Models.ImageType;

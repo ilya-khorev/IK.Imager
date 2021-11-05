@@ -2,11 +2,12 @@
 using System.ComponentModel.DataAnnotations;
 using IK.Imager.Core.Abstractions.Models;
 using IK.Imager.Core.Settings;
+using IK.Imager.Core.Validation;
 using Microsoft.Extensions.Options;
 using Moq;
 using Xunit;
 
-namespace IK.Imager.Core.Tests
+namespace IK.Imager.Core.Tests.ValidationTests
 {
     public class ImageValidatorTests
     {

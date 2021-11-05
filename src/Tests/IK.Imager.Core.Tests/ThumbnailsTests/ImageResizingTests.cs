@@ -8,7 +8,7 @@ using IK.Imager.Core.Abstractions.Models;
 using IK.Imager.Core.Thumbnails;
 using Xunit;
 
-namespace IK.Imager.Core.Tests
+namespace IK.Imager.Core.Tests.ThumbnailsTests
 {
     public class ImageResizingTests
     {

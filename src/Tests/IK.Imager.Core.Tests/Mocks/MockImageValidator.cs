@@ -1,5 +1,5 @@
-﻿using IK.Imager.Core.Abstractions;
-using IK.Imager.Core.Abstractions.Models;
+﻿using IK.Imager.Core.Abstractions.Models;
+using IK.Imager.Core.Abstractions.Validation;
 
 namespace IK.Imager.Core.Tests.Mocks
 {

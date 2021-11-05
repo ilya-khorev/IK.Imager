@@ -3,13 +3,13 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using IK.Imager.Core.Abstractions.ImagesCrud;
+using IK.Imager.Core.Abstractions;
 using IK.Imager.Core.Abstractions.Models;
 using IK.Imager.Storage.Abstractions.Models;
 using IK.Imager.Storage.Abstractions.Repositories;
 using Microsoft.Extensions.Logging;
 
-namespace IK.Imager.Core.ImagesCrud
+namespace IK.Imager.Core
 {
     public class ImageDeleteService: IImageDeleteService
     {

@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using IK.Imager.Core.Abstractions.Models;
 
-namespace IK.Imager.Core.Abstractions
+namespace IK.Imager.Core.Abstractions.Validation
 {
     public interface IImageValidator
     {

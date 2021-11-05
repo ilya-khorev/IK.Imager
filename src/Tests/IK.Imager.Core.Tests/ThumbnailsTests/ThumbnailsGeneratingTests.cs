@@ -12,7 +12,7 @@ using Xunit;
 using Xunit.Abstractions;
 using ImageType = IK.Imager.Storage.Abstractions.Models.ImageType;
 
-namespace IK.Imager.Core.Tests
+namespace IK.Imager.Core.Tests.ThumbnailsTests
 {
     public class ThumbnailsGeneratingTests
     {
