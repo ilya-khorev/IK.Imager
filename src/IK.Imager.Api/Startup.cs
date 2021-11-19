@@ -49,9 +49,7 @@ namespace IK.Imager.Api
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllers(options => { options.Filters.Add(typeof(GlobalExceptionFilter)); });
-
-            //todo sort endpoints in swagger
-
+            
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc(CurrentVersion, new OpenApiInfo {Title = ApiTitle, Version = CurrentVersion});
@@ -63,14 +61,14 @@ namespace IK.Imager.Api
             RegisterConfigurations(services);
             
             services.AddSingleton<ICosmosDbClient, CosmosDbClient>();
-            services.AddSingleton<IImageMetadataRepository, ImageMetadataCosmosDbRepository>();
+            services.AddSingleton<IImageMetadataRepository, ImageMetadataCosmosDbRepository>(); //todo scoped / transient
             services.AddSingleton<IAzureBlobClient, AzureBlobClient>(s =>
             {
                 var settings = s.GetRequiredService<IOptions<ImageAzureStorageSettings>>();
                 return new AzureBlobClient(settings.Value.ConnectionString);
             });
                 
-            services.AddSingleton<IImageBlobRepository, ImageBlobAzureRepository>();
+            services.AddSingleton<IImageBlobRepository, ImageBlobAzureRepository>(); //todo scoped / transient
             services.AddSingleton<IImageMetadataReader, ImageMetadataReader>();
             services.AddSingleton<IImageIdentifierProvider, ImageIdentifierProvider>();
             services.AddSingleton<ICdnService, CdnService>();
@@ -87,7 +85,7 @@ namespace IK.Imager.Api
                 .AddTransientHttpErrorPolicy(p =>
                     p.WaitAndRetryAsync(3, _ => TimeSpan.FromMilliseconds(500)));
 
-            services.AddHealthChecks(); //todo
+            services.AddHealthChecks(); //todo add hc for cosmosdb, blobstorage, servicebus
             SetupAppInsights(services);
 
             services.AddMassTransit(x =>

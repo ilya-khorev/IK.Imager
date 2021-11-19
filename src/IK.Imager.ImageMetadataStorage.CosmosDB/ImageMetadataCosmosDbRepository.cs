@@ -108,7 +108,5 @@ namespace IK.Imager.ImageMetadataStorage.CosmosDB
     
             return response.StatusCode == HttpStatusCode.NoContent;
         }
-
-        //todo add operation to search by tags
     }
 }
