@@ -5,12 +5,14 @@ namespace IK.Imager.Core.Tests.Mocks
 {
     public class MockImageValidator: IImageValidator
     {
-        public void CheckFormat(ImageFormat imageFormat)
+        public ValidationResult CheckFormat(ImageFormat imageFormat)
         {
+            return ValidationResult.Success;
         }
 
-        public void CheckSize(ImageSize imageSize)
+        public ValidationResult CheckSize(ImageSize imageSize)
         {
+            return ValidationResult.Success;
         }
     }
 }

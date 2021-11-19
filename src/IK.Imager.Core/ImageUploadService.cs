@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System.ComponentModel.DataAnnotations;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using IK.Imager.Core.Abstractions;
@@ -37,15 +38,23 @@ namespace IK.Imager.Core
             _cdnService = cdnService;
         }
         
+        //todo move cdn service usage outside this class
+        
         public async Task<ImageInfo> UploadImage(Stream imageStream, string imageGroup)
         {
              _logger.LogDebug(CheckingImage);
-            var imageFormat = _metadataReader.DetectFormat(imageStream); 
-            _imageValidator.CheckFormat(imageFormat);
+            var imageFormat = _metadataReader.DetectFormat(imageStream);
+            var validationResult = _imageValidator.CheckFormat(imageFormat);
+            if (!validationResult.IsValid)
+                throw new ValidationException(); //todo return error model instead of exception
+            
             _logger.LogDebug(imageFormat.ToString());
-
+            
             var imageSize = _metadataReader.ReadSize(imageStream);
-            _imageValidator.CheckSize(imageSize);
+            validationResult = _imageValidator.CheckSize(imageSize);
+            if (!validationResult.IsValid)
+                throw new ValidationException(); //todo return error model instead of exception
+            
             _logger.LogDebug(imageSize.ToString());
 
             //Firstly, saving the image stream to the blob storage

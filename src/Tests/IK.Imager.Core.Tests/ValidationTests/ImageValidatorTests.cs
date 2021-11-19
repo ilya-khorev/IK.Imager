@@ -1,5 +1,5 @@
-﻿using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
+﻿using System;
+using System.Collections.Generic;
 using IK.Imager.Core.Abstractions.Models;
 using IK.Imager.Core.Settings;
 using IK.Imager.Core.Validation;
@@ -12,7 +12,7 @@ namespace IK.Imager.Core.Tests.ValidationTests
     public class ImageValidatorTests
     {
         [Fact]
-        public void CheckFormatSucceeded()
+        public void CheckFormat_ExpectedImageFormat_Success()
         {
             var optionsMock = new Mock<IOptionsSnapshot<ImageLimitationSettings>>();
             optionsMock.Setup(x => x.Value).Returns(new ImageLimitationSettings()
@@ -21,11 +21,12 @@ namespace IK.Imager.Core.Tests.ValidationTests
             });
             
             var imageValidator = new ImageValidator(optionsMock.Object);
-            imageValidator.CheckFormat(new ImageFormat("image/jpeg", ".jpg", ImageType.JPEG));
+            var validationResult = imageValidator.CheckFormat(new ImageFormat("image/jpeg", ".jpg", ImageType.JPEG));
+            Assert.True(validationResult.IsValid);
         }
         
         [Fact]
-        public void ShouldThrowIfFormatIsNull()
+        public void CheckFormat_NullArgumentException()
         {
             var optionsMock = new Mock<IOptionsSnapshot<ImageLimitationSettings>>();
             optionsMock.Setup(x => x.Value).Returns(new ImageLimitationSettings()
@@ -34,134 +35,112 @@ namespace IK.Imager.Core.Tests.ValidationTests
             });
             
             var imageValidator = new ImageValidator(optionsMock.Object);
-            Assert.Throws<ValidationException>(() => imageValidator.CheckFormat(null));
+            Assert.Throws<ArgumentNullException>(() => imageValidator.CheckFormat(null));
         }
         
         [Fact]
-        public void ShouldThrowIfFormatIsNotSupported()
+        public void CheckFormat_UnsupportedFormat_InvalidResult()
         {
             var optionsMock = new Mock<IOptionsSnapshot<ImageLimitationSettings>>();
             optionsMock.Setup(x => x.Value).Returns(new ImageLimitationSettings()
             {
-                Types = new List<string> { "PNG"}
+                Types = new List<string> { "PNG" }
             });
             
             var imageValidator = new ImageValidator(optionsMock.Object);
-            Assert.Throws<ValidationException>(() => imageValidator.CheckFormat(new ImageFormat("image/jpeg", ".jpg", ImageType.JPEG)));
+            var validationResult = imageValidator.CheckFormat(new ImageFormat("image/jpeg", ".jpg", ImageType.JPEG));
+            Assert.False(validationResult.IsValid);
+            Assert.Equal(ImageValidator.UnsupportedFormatKey, validationResult.ValidationErrors[0].Key);
         }
 
         [Fact]
-        public void CheckSizeSucceeded()
+        public void CheckSize_Success()
         {
             var imageValidator = new ImageValidator(GetSettings());
             var size = GetValidSize();
-            imageValidator.CheckSize(size);
+            var validationResult = imageValidator.CheckSize(size);
+            Assert.True(validationResult.IsValid);
         }
         
         [Fact]
-        public void ShouldThrowIfSizeIsGreaterThanThreshold()
+        public void CheckSize_SizeIsGreaterThanThreshold_InvalidResult()
         {
             var settings = GetSettings();
             var imageValidator = new ImageValidator(GetSettings());
             var size = GetValidSize();
             size.Bytes = settings.Value.SizeBytes.Max + 1;
-            Assert.Throws<ValidationException>(() =>
-            {
-                imageValidator.CheckSize(size);
-            });
+            var validationResult = imageValidator.CheckSize(size);
+            Assert.False(validationResult.IsValid);
+            Assert.Equal(ImageValidator.IncorrectSizeKey, validationResult.ValidationErrors[0].Key);
         }
         
         [Fact]
-        public void ShouldThrowIfSizeIsSmallerThanThreshold()
+        public void CheckSize_SizeIsSmallerThanThreshold_InvalidResult()
         {
             var settings = GetSettings();
             var imageValidator = new ImageValidator(GetSettings());
             var size = GetValidSize();
             size.Bytes = settings.Value.SizeBytes.Min - 1;
-            Assert.Throws<ValidationException>(() =>
-            {
-                imageValidator.CheckSize(size);
-            });
+            var validationResult = imageValidator.CheckSize(size);
+            Assert.False(validationResult.IsValid);
+            Assert.Equal(ImageValidator.IncorrectSizeKey, validationResult.ValidationErrors[0].Key);
         }
         
-        [Fact]
-        public void ShouldThrowIfWidthIsGreaterThanThreshold()
+        [Theory]
+        [InlineData(1, 0)]
+        [InlineData(-1, 0)]
+        [InlineData(0, 1)]
+        [InlineData(0, -1)]
+        [InlineData(-1, -1)]
+        [InlineData(1, 1)]
+        public void CheckSize_IncorrectDimension_InvalidResult(int diffWidth, int diffHeight)
         {
             var settings = GetSettings();
             var imageValidator = new ImageValidator(GetSettings());
             var size = GetValidSize();
-            size.Width = settings.Value.Width.Max + 1;
-            Assert.Throws<ValidationException>(() =>
+            size.Width = diffWidth switch
             {
-                imageValidator.CheckSize(size);
-            });
+                > 0 => settings.Value.Width.Max + diffWidth,
+                < 0 => settings.Value.Width.Min + diffWidth,
+                _ => size.Width
+            };
+
+            size.Height = diffHeight switch
+            {
+                > 0 => settings.Value.Height.Max + diffHeight,
+                < 0 => settings.Value.Height.Min + diffHeight,
+                _ => size.Height
+            };
+
+            var validationResult = imageValidator.CheckSize(size);
+            Assert.False(validationResult.IsValid);
+            Assert.Equal(ImageValidator.IncorrectDimensionKey, validationResult.ValidationErrors[0].Key);
         }
         
         [Fact]
-        public void ShouldThrowIfWidthIsSmallerThanThreshold()
-        {
-            var settings = GetSettings();
-            var imageValidator = new ImageValidator(GetSettings());
-            var size = GetValidSize();
-            size.Width = settings.Value.Width.Min - 1;
-            Assert.Throws<ValidationException>(() =>
-            {
-                imageValidator.CheckSize(size);
-            });
-        }
-        
-        [Fact]
-        public void ShouldThrowIfHeightIsGreaterThanThreshold()
-        {
-            var settings = GetSettings();
-            var imageValidator = new ImageValidator(GetSettings());
-            var size = GetValidSize();
-            size.Height = settings.Value.Height.Max + 1;
-            Assert.Throws<ValidationException>(() =>
-            {
-                imageValidator.CheckSize(size);
-            });
-        }
-        
-        [Fact]
-        public void ShouldThrowIfHeightIsSmallerThanThreshold()
-        {
-            var settings = GetSettings();
-            var imageValidator = new ImageValidator(GetSettings());
-            var size = GetValidSize();
-            size.Height = settings.Value.Height.Min - 1;
-            Assert.Throws<ValidationException>(() =>
-            {
-                imageValidator.CheckSize(size);
-            });
-        }
-        
-        [Fact]
-        public void ShouldThrowIfAspectRatioIsSmallerThanThreshold()
+        public void CheckSize_AspectRatioIsSmallerThanThreshold_InvalidResult()
         {
             var settings = GetSettings();
             var imageValidator = new ImageValidator(GetSettings());
             var size = GetValidSize();
             
             size.Width = (int)(size.Height * settings.Value.AspectRatio.Min) - 5;
-            Assert.Throws<ValidationException>(() =>
-            {
-                imageValidator.CheckSize(size);
-            });
+            var validationResult = imageValidator.CheckSize(size);
+            Assert.False(validationResult.IsValid);
+            Assert.Equal(ImageValidator.IncorrectAspectRatioKey, validationResult.ValidationErrors[0].Key);
         }
         
         [Fact]
-        public void ShouldThrowIfAspectRatioIsGreaterThanThreshold()
+        public void CheckSize_AspectRatioIsGreaterThanThreshold_InvalidResult()
         {
             var settings = GetSettings();
             var imageValidator = new ImageValidator(GetSettings());
             var size = GetValidSize();
             
             size.Width = (int)(size.Height * settings.Value.AspectRatio.Max) + 5;
-            Assert.Throws<ValidationException>(() =>
-            {
-                imageValidator.CheckSize(size);
-            });
+            var validationResult = imageValidator.CheckSize(size);
+            Assert.False(validationResult.IsValid);
+            Assert.Equal(ImageValidator.IncorrectAspectRatioKey, validationResult.ValidationErrors[0].Key);
         }
 
         private ImageSize GetValidSize()
