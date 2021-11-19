@@ -10,11 +10,10 @@ namespace IK.Imager.Core.Tests
 {
     public class CdnServiceTests
     {
-        private static readonly Uri TestImageUri =
-            new Uri("https://ikimagesstorageaccount.blob.core.windows.net/images/d41be6cb6880421aa87fa401f79ed0f6fb1277.jpg");
+        private static readonly Uri TestImageUri = new("https://ikimagesstorageaccount.blob.core.windows.net/images/d41be6cb6880421aa87fa401f79ed0f6fb1277.jpg");
 
         [Fact]
-        public void ShouldCorrectlyReplaceImageHostOnCdnHost()
+        public void TryTransformToCdnUri_CdnOnInSettings_CorrectlyReplacedImageHosToCdnHost()
         {
             var optionsMock = new Mock<IOptions<CdnSettings>>();
             optionsMock.Setup(x => x.Value).Returns(new CdnSettings
@@ -29,7 +28,7 @@ namespace IK.Imager.Core.Tests
         }
 
         [Fact]
-        public void ShouldReturnOriginalImageIfCdnDisabled()
+        public void TryTransformToCdnUri_CdnOffInSettings_ReturnsOriginalImage()
         {
             var optionsMock = new Mock<IOptions<CdnSettings>>();
             optionsMock.Setup(x => x.Value).Returns(new CdnSettings
