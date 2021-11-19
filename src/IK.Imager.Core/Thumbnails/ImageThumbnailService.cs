@@ -89,6 +89,8 @@ namespace IK.Imager.Core.Thumbnails
                 var thumbnailImageId = _imageIdentifierProvider.GenerateUniqueId();
                 var thumbnailImageName = _imageIdentifierProvider.GetImageName(thumbnailImageId, fileExtension);
                 
+                //todo use cancellation token
+                
                 var uploadedBlob = await _blobRepository.UploadImage(thumbnailImageName, resizingResult.Image, ImageSizeType.Thumbnail, mimeType, CancellationToken.None);
                 imageMetadata.Thumbnails.Add(new ImageThumbnail
                 {
