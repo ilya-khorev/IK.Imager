@@ -1,6 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-
-namespace IK.Imager.Api.Contract
+﻿namespace IK.Imager.Api.Contract
 {
     /// <summary>
     /// Model with identifiers needed to search for images
@@ -11,7 +9,7 @@ namespace IK.Imager.Api.Contract
         /// Image identifiers to search.
         /// Maximum 100 identifiers are allowed within one request.
         /// </summary>
-        [Required]
+        //todo [Required]
         public string[] ImageIds { get; set; }
         
         /// <summary>

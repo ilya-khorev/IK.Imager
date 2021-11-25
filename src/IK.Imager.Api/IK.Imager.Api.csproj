@@ -20,6 +20,7 @@
     </ItemGroup>
     
     <ItemGroup>
+      <ProjectReference Include="..\IK.Imager.Api.Contract\IK.Imager.Api.Contract.csproj" />
       <ProjectReference Include="..\IK.Imager.Core.Abstractions\IK.Imager.Core.Abstractions.csproj" />
       <ProjectReference Include="..\IK.Imager.Core\IK.Imager.Core.csproj" />
       <ProjectReference Include="..\IK.Imager.ImageBlobStorage.AzureFiles\IK.Imager.ImageBlobStorage.AzureFiles.csproj" />

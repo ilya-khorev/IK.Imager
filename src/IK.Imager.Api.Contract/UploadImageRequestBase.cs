@@ -1,6 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-
-namespace IK.Imager.Api.Contract
+﻿namespace IK.Imager.Api.Contract
 {
     /// <summary>
     /// Model that represent a request for uploading a new image
@@ -14,8 +12,8 @@ namespace IK.Imager.Api.Contract
         /// 
         /// Image group is also used as partition to evenly spread data, and to make search requests more efficient.
         /// </summary>
-        [Required]
-        [StringLength(30, MinimumLength = 3)]
+        //todo [Required]
+        //todo[StringLength(30, MinimumLength = 3)]
         public string ImageGroup { get; set; }
         
         //todo optional image name

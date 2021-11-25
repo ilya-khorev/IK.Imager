@@ -29,6 +29,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IK.Imager.TestsBase", "Test
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IK.Imager.IntegrationEvents", "IK.Imager.IntegrationEvents\IK.Imager.IntegrationEvents.csproj", "{5880D669-862E-4AAA-9E2F-0FF84899683D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IK.Imager.Api.Contract", "IK.Imager.Api.Contract\IK.Imager.Api.Contract.csproj", "{75B29545-D750-41AC-84C9-7DD501A7E45B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -83,6 +85,10 @@ Global
 		{5880D669-862E-4AAA-9E2F-0FF84899683D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5880D669-862E-4AAA-9E2F-0FF84899683D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5880D669-862E-4AAA-9E2F-0FF84899683D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{75B29545-D750-41AC-84C9-7DD501A7E45B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{75B29545-D750-41AC-84C9-7DD501A7E45B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{75B29545-D750-41AC-84C9-7DD501A7E45B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{75B29545-D750-41AC-84C9-7DD501A7E45B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -1,5 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-
+﻿#pragma warning disable 8618
 namespace IK.Imager.Api.Contract
 {
     /// <summary>
@@ -10,7 +9,7 @@ namespace IK.Imager.Api.Contract
         /// <summary>
         /// Image identifier
         /// </summary>
-        [Required]
+        //todo [Required]
         public string ImageId { get; set; }
         
         /// <summary>
