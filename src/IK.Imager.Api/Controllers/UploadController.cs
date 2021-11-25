@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
 using IK.Imager.Api.Contract;
@@ -30,10 +29,10 @@ namespace IK.Imager.Api.Controllers
         private readonly IOptionsSnapshot<ImageLimitationSettings> _imageLimitationSettings;
         private readonly IMapper _mapper;
 
-        private const string IncorrectUrlFormat = "Image url is not well formed. It must be absolute url path.";
-        private const string CouldNotDownloadImage = "Couldn't download image by url {0}.";
-        private const string DownloadingByUrl = "Downloading image by url {0}.";
-        private const string DownloadedByUrl = "Downloaded image by url {0}.";
+        private const string IncorrectUrlFormat = "Image url is not well formed. It must be an absolute url path.";
+        private const string CouldNotDownloadImage = "Couldn't download an image by url {0}.";
+        private const string DownloadingByUrl = "Downloading an image by url {0}.";
+        private const string DownloadedByUrl = "Downloaded an image by url {0}.";
 
         /// <inheritdoc />
         public UploadController(ILogger<UploadController> logger, IImageUploadService imageUploadService, 
