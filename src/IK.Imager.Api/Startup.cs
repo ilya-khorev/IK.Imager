@@ -51,10 +51,11 @@ namespace IK.Imager.Api
         {
             services.AddControllers(options => { options.Filters.Add(typeof(GlobalExceptionFilter)); });
             
-            services.AddSwaggerGen(c =>
+            services.AddSwaggerGen(options =>
             {
-                c.SwaggerDoc(CurrentVersion, new OpenApiInfo {Title = ApiTitle, Version = CurrentVersion});
-                c.IncludeXmlComments(XmlCommentsFilePath);
+                options.SwaggerDoc(CurrentVersion, new OpenApiInfo {Title = ApiTitle, Version = CurrentVersion});
+                foreach (var contractFile in Directory.GetFiles(AppDomain.CurrentDomain.BaseDirectory, "IK.Imager.*.xml", SearchOption.AllDirectories))
+                    options.IncludeXmlComments(contractFile);
             });
 
             services.AddAutoMapper(c => c.AddProfile<MappingProfile>(), typeof(Startup));
@@ -149,15 +150,6 @@ namespace IK.Imager.Api
                     module.AuthenticationApiKey = appInsightsAuthApiKey);
         }
 
-        private string XmlCommentsFilePath
-        {
-            get
-            {
-                var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
-                var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
-                return xmlPath;
-            }
-        }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
