@@ -61,6 +61,9 @@ namespace IK.Imager.Core
             string imageId = _imageIdentifierProvider.GenerateUniqueId();
             string imageName = _imageIdentifierProvider.GetImageName(imageId, imageFormat.FileExtension);
             
+            //todo original: id_with_height.jpg
+            //todo thumbnail: widthxheight/originalid_width_height.jpg 
+            
             //todo check if such name already exist (it's unlikely, but worth checking)
             
             var uploadImageResult = await _blobRepository.UploadImage(imageName, imageStream, ImageSizeType.Original, imageFormat.MimeType, CancellationToken.None);
