@@ -18,6 +18,7 @@ namespace IK.Imager.Api.Controllers
     /// <summary>
     /// Set of methods which used for uploading a new image
     /// </summary>
+    [Produces("application/json")]
     [ApiController]
     [Route("[controller]")]
     public class UploadController : ControllerBase
@@ -50,7 +51,7 @@ namespace IK.Imager.Api.Controllers
         /// <summary>
         /// Upload a new image using the given image byte stream.
         /// After uploading the image, the system launches the asynchronous process of thumbnails generating.
-        /// Thumbnails for the given image are available after a short delay - initially image is returned to the client without any thumbnails.
+        /// Thumbnails for the given image are available after a short delay - initially image is returned without any thumbnails.
         /// </summary>
         /// <param name="imageFileRequest"></param>
         /// <returns>A model with information about just uploaded image</returns>
@@ -59,7 +60,7 @@ namespace IK.Imager.Api.Controllers
         /// Or if the image type is different from what the system supports.</response> 
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
         [Consumes("multipart/form-data")]
         //todo probably worth uploading using stream https://docs.microsoft.com/en-us/aspnet/core/mvc/models/file-uploads?view=aspnetcore-3.1#upload-large-files-with-streaming
         public async Task<ActionResult<ImageInfo>> Post([FromForm]UploadImageFileRequest imageFileRequest)
@@ -85,7 +86,7 @@ namespace IK.Imager.Api.Controllers
         [HttpPost]
         [Route("ByUrl")]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
         public async Task<ActionResult<ImageInfo>> PostByUrl(UploadImageRequest uploadImageRequest)
         {
             if (!Uri.IsWellFormedUriString(uploadImageRequest.ImageUrl, UriKind.Absolute))

@@ -11,6 +11,7 @@ namespace IK.Imager.Api.Controllers
     /// <summary>
     /// Methods used for searching of images
     /// </summary>
+    [Produces("application/json")]
     [ApiController]
     [Route("[controller]")]
     public class SearchController : ControllerBase
@@ -42,7 +43,7 @@ namespace IK.Imager.Api.Controllers
         [HttpPost]
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
         public async Task<ActionResult<ImagesSearchResult>> Post(SearchImagesByIdRequest searchImagesByIdRequest)
         {
             const int maxAllowedImages = 100;

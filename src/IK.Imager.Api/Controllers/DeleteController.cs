@@ -11,6 +11,7 @@ namespace IK.Imager.Api.Controllers
     /// <summary>
     /// Used for removing an image
     /// </summary>
+    [Produces("application/json")]
     [ApiController]
     [Route("[controller]")]
     public class DeleteController : ControllerBase
@@ -38,7 +39,7 @@ namespace IK.Imager.Api.Controllers
         /// <response code="404">The requested image was not found.</response> 
         [HttpDelete]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> Delete(DeleteImageRequest deleteImageRequest)
         {
