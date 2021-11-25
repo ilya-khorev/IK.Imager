@@ -2,7 +2,8 @@ using System;
 using System.IO;
 using System.Reflection;
 using IK.Imager.Api.Filters;
-using IK.Imager.Api.Handlers;
+using IK.Imager.Api.IntegrationEvents;
+using IK.Imager.Api.IntegrationEvents.EventHandling;
 using IK.Imager.Api.Middleware;
 using IK.Imager.Api.Services;
 using IK.Imager.Core;
@@ -16,7 +17,6 @@ using IK.Imager.Core.Thumbnails;
 using IK.Imager.Core.Validation;
 using IK.Imager.ImageMetadataStorage.CosmosDB;
 using IK.Imager.ImageBlobStorage.AzureFiles;
-using IK.Imager.IntegrationEvents;
 using IK.Imager.Storage.Abstractions.Repositories;
 using MassTransit;
 using Microsoft.ApplicationInsights.AspNetCore.Extensions;
@@ -29,6 +29,8 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
 using Polly;
+using ImageDeletedIntegrationEvent = IK.Imager.Api.IntegrationEvents.Events.ImageDeletedIntegrationEvent;
+using OriginalImageUploadedIntegrationEvent = IK.Imager.Api.IntegrationEvents.Events.OriginalImageUploadedIntegrationEvent;
 
 #pragma warning disable 1591
 

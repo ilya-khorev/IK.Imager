@@ -1,10 +1,10 @@
 ﻿using System.Threading.Tasks;
 using IK.Imager.Api.Contract;
 using IK.Imager.Core.Abstractions;
-using IK.Imager.IntegrationEvents;
 using MassTransit;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using ImageDeletedIntegrationEvent = IK.Imager.Api.IntegrationEvents.Events.ImageDeletedIntegrationEvent;
 
 namespace IK.Imager.Api.Controllers
 {

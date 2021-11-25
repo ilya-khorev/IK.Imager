@@ -1,11 +1,11 @@
 ﻿using System.Threading.Tasks;
+using IK.Imager.Api.IntegrationEvents.Events;
 using IK.Imager.Core.Abstractions.Thumbnails;
-using IK.Imager.IntegrationEvents;
 using MassTransit;
 
 #pragma warning disable 1591
 
-namespace IK.Imager.Api.Handlers
+namespace IK.Imager.Api.IntegrationEvents.EventHandling
 {
     public class GenerateThumbnailsHandler : IConsumer<OriginalImageUploadedIntegrationEvent>
     {

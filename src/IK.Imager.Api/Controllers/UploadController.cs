@@ -6,12 +6,12 @@ using IK.Imager.Api.Contract;
 using IK.Imager.Api.Services;
 using IK.Imager.Core.Abstractions;
 using IK.Imager.Core.Settings;
-using IK.Imager.IntegrationEvents;
 using MassTransit;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using OriginalImageUploadedIntegrationEvent = IK.Imager.Api.IntegrationEvents.Events.OriginalImageUploadedIntegrationEvent;
 
 namespace IK.Imager.Api.Controllers
 {

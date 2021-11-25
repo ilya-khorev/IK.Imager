@@ -1,12 +1,12 @@
 ﻿using System.Threading.Tasks;
+using IK.Imager.Api.IntegrationEvents.Events;
 using IK.Imager.Core.Abstractions;
 using IK.Imager.Core.Abstractions.Models;
-using IK.Imager.IntegrationEvents;
 using MassTransit;
 
 #pragma warning disable 1591
 
-namespace IK.Imager.Api.Handlers
+namespace IK.Imager.Api.IntegrationEvents.EventHandling
 {
     /// <summary>
     /// Removing files of the original image and its thumbnails.

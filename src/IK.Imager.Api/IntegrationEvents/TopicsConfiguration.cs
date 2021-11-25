@@ -1,4 +1,4 @@
-﻿namespace IK.Imager.IntegrationEvents
+﻿namespace IK.Imager.Api.IntegrationEvents
 {
     public class TopicsConfiguration
     {
