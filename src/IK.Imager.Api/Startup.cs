@@ -3,6 +3,7 @@ using System.IO;
 using System.Reflection;
 using IK.Imager.Api.Filters;
 using IK.Imager.Api.Handlers;
+using IK.Imager.Api.Middleware;
 using IK.Imager.Api.Services;
 using IK.Imager.Core;
 using IK.Imager.Core.Abstractions;
@@ -178,6 +179,8 @@ namespace IK.Imager.Api
             });
 
             app.UseEndpoints(endpoints => { endpoints.MapControllers(); });
+            
+            app.UseMiddleware<ServiceFabricResourceNotFoundMiddleware>();
         }
     }
 }
