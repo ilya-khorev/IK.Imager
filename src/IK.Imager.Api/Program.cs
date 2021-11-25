@@ -27,7 +27,7 @@ namespace IK.Imager.Api
                 {
                     l.ClearProviders();
                     l.AddConfiguration(c.Configuration);
-                    l.AddConsole();
+                    l.AddSystemdConsole(options => options.TimestampFormat = "[dd-MM-yyyy HH:mm:ss.fff] ");
                 })
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
