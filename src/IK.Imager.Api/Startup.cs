@@ -19,6 +19,7 @@ using IK.Imager.ImageMetadataStorage.CosmosDB;
 using IK.Imager.ImageBlobStorage.AzureFiles;
 using IK.Imager.Storage.Abstractions.Repositories;
 using MassTransit;
+using MediatR;
 using Microsoft.ApplicationInsights.AspNetCore.Extensions;
 using Microsoft.ApplicationInsights.Extensibility.PerfCounterCollector.QuickPulse;
 using Microsoft.AspNetCore.Builder;
@@ -88,10 +89,12 @@ namespace IK.Imager.Api
             services.AddHttpClient<ImageDownloadClient>()
                 .AddTransientHttpErrorPolicy(p =>
                     p.WaitAndRetryAsync(3, _ => TimeSpan.FromMilliseconds(500)));
-
+            
+            services.AddMediatR(typeof(Startup).Assembly);  
+            
             services.AddHealthChecks(); //todo add hc for cosmosdb, blobstorage, servicebus
             SetupAppInsights(services);
-
+            
             services.AddMassTransit(x =>
             {
                 x.AddConsumers(Assembly.GetExecutingAssembly());

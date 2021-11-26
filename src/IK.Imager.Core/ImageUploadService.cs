@@ -42,7 +42,7 @@ namespace IK.Imager.Core
         
         public async Task<ImageInfo> UploadImage(Stream imageStream, string imageGroup)
         {
-             _logger.LogDebug(CheckingImage);
+            _logger.LogDebug(CheckingImage);
             var imageFormat = _metadataReader.DetectFormat(imageStream);
             var validationResult = _imageValidator.CheckFormat(imageFormat);
             if (!validationResult.IsValid)

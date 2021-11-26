@@ -17,13 +17,5 @@
         public string ImageGroup { get; set; }
         
         //todo optional image name
-        
-        /// <summary>
-        /// Limitations, which prevent to upload a new image if the actual image parameters do not meet these values.
-        /// Setting specified here override the default system limitations.
-        /// If the nested object, representing a particular parameter (e.g. height) is passed as null,
-        /// the system keeps default limitation settings of this parameter.
-        /// </summary>
-        public ImageLimitationSettingsRequest LimitationSettings { get; set; }
     }
 }

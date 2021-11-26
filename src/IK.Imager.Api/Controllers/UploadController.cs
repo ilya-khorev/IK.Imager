@@ -1,16 +1,14 @@
 ﻿using System;
 using System.IO;
 using System.Threading.Tasks;
-using AutoMapper;
+using IK.Imager.Api.Commands;
 using IK.Imager.Api.Contract;
 using IK.Imager.Api.Services;
-using IK.Imager.Core.Abstractions;
-using IK.Imager.Core.Settings;
 using MassTransit;
+using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using OriginalImageUploadedIntegrationEvent = IK.Imager.Api.IntegrationEvents.Events.OriginalImageUploadedIntegrationEvent;
 
 namespace IK.Imager.Api.Controllers
@@ -24,28 +22,23 @@ namespace IK.Imager.Api.Controllers
     public class UploadController : ControllerBase
     {
         private readonly ILogger<UploadController> _logger;
-        private readonly IImageUploadService _imageUploadService;
         private readonly IPublishEndpoint _publishEndpoint;
         private readonly ImageDownloadClient _imageDownloadClient;
-        private readonly IOptionsSnapshot<ImageLimitationSettings> _imageLimitationSettings;
-        private readonly IMapper _mapper;
 
+        private readonly IMediator _mediator;
+        
         private const string IncorrectUrlFormat = "Image url is not well formed. It must be an absolute url path.";
         private const string CouldNotDownloadImage = "Couldn't download an image by url {0}.";
         private const string DownloadingByUrl = "Downloading an image by url {0}.";
         private const string DownloadedByUrl = "Downloaded an image by url {0}.";
 
         /// <inheritdoc />
-        public UploadController(ILogger<UploadController> logger, IImageUploadService imageUploadService, 
-            IPublishEndpoint publishEndpoint, ImageDownloadClient imageDownloadClient, 
-            IOptionsSnapshot<ImageLimitationSettings> imageLimitationSettings, IMapper mapper)
+        public UploadController(ILogger<UploadController> logger, IPublishEndpoint publishEndpoint, ImageDownloadClient imageDownloadClient, IMediator mediator)
         {
             _logger = logger;
-            _imageUploadService = imageUploadService;
             _publishEndpoint = publishEndpoint;
             _imageDownloadClient = imageDownloadClient;
-            _imageLimitationSettings = imageLimitationSettings;
-            _mapper = mapper;
+            _mediator = mediator;
         }
 
         /// <summary>
@@ -65,10 +58,8 @@ namespace IK.Imager.Api.Controllers
         //todo probably worth uploading using stream https://docs.microsoft.com/en-us/aspnet/core/mvc/models/file-uploads?view=aspnetcore-3.1#upload-large-files-with-streaming
         public async Task<ActionResult<ImageInfo>> Post([FromForm]UploadImageFileRequest imageFileRequest)
         {
-            return await UploadImage(imageFileRequest.File.OpenReadStream(), imageFileRequest.ImageGroup, imageFileRequest.LimitationSettings);
+            return await UploadImage(imageFileRequest.File.OpenReadStream(), imageFileRequest.ImageGroup);
         }
-        
-        //todo add image restrictions as a part of the request model
 
         /// <summary>
         /// Upload a new image using the given image url.
@@ -100,7 +91,7 @@ namespace IK.Imager.Api.Controllers
 
             _logger.LogDebug(DownloadedByUrl, uploadImageRequest.ImageUrl);
             
-            return await UploadImage(imageStream, uploadImageRequest.ImageGroup, uploadImageRequest.LimitationSettings);
+            return await UploadImage(imageStream, uploadImageRequest.ImageGroup);
         }
         
         private BadRequestObjectResult BadRequestAndLog(string message)
@@ -109,11 +100,9 @@ namespace IK.Imager.Api.Controllers
             return BadRequest(message);
         }
 
-        private async Task<ActionResult<ImageInfo>> UploadImage(Stream imageStream, string imageGroup, ImageLimitationSettingsRequest imageLimitationSettings)
+        private async Task<ActionResult<ImageInfo>> UploadImage(Stream imageStream, string imageGroup)
         {
-            OverrideImageLimitationSettings(imageLimitationSettings);
-            
-            var uploadImageResult = await _imageUploadService.UploadImage(imageStream, imageGroup);
+            var uploadImageResult = await _mediator.Send(new UploadImageCommand(imageStream, imageGroup));
             
             //Once the image file and metadata object are saved, there is time to send a new message to the event bus topic
             //If the program fails at this stage, this message is not sent and therefore thumbnails are not generated for the image. 
@@ -124,54 +113,7 @@ namespace IK.Imager.Api.Controllers
                 ImageGroup = imageGroup
             });
             
-            return Ok(_mapper.Map<ImageInfo>(uploadImageResult));
-        }
-
-        private void OverrideImageLimitationSettings(ImageLimitationSettingsRequest imageLimitationSettingsRequest)
-        {
-            if (imageLimitationSettingsRequest == null)
-                return;
-
-            if (imageLimitationSettingsRequest.Height != null)
-            {
-                _imageLimitationSettings.Value.Height = new Core.Settings.Range<int>
-                {
-                    Max = imageLimitationSettingsRequest.Height.Max,
-                    Min = imageLimitationSettingsRequest.Height.Min
-                };
-            }
-            
-            if (imageLimitationSettingsRequest.Width != null)
-            {
-                _imageLimitationSettings.Value.Width = new Core.Settings.Range<int>
-                {
-                    Max = imageLimitationSettingsRequest.Width.Max,
-                    Min = imageLimitationSettingsRequest.Width.Min
-                };
-            }
-            
-            if (imageLimitationSettingsRequest.SizeBytes != null)
-            {
-                _imageLimitationSettings.Value.SizeBytes = new Core.Settings.Range<int>
-                {
-                    Max = imageLimitationSettingsRequest.SizeBytes.Max,
-                    Min = imageLimitationSettingsRequest.SizeBytes.Min
-                };
-            }
-            
-            if (imageLimitationSettingsRequest.AspectRatio != null)
-            {
-                _imageLimitationSettings.Value.AspectRatio = new Core.Settings.Range<double>
-                {
-                    Max = imageLimitationSettingsRequest.AspectRatio.Max,
-                    Min = imageLimitationSettingsRequest.AspectRatio.Min
-                };
-            }
-            
-            if (imageLimitationSettingsRequest.Types != null)
-            {
-                _imageLimitationSettings.Value.Types = imageLimitationSettingsRequest.Types;
-            }
+            return Ok(uploadImageResult);
         }
     }
 }
