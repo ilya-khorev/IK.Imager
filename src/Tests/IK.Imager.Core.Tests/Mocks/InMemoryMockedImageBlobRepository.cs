@@ -26,7 +26,7 @@ namespace IK.Imager.Core.Tests.Mocks
             {
                 Url = GetImageUri(imageName, imageSizeType),
                 DateAdded = DateTimeOffset.Now,
-                MD5Hash = Guid.NewGuid().ToString()
+                Hash = Guid.NewGuid().ToString()
             };
         }
 

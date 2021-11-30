@@ -96,7 +96,7 @@ namespace IK.Imager.Core.Thumbnails
                 {
                     Id = thumbnailImageId,
                     Name = thumbnailImageName,
-                    MD5Hash = uploadedBlob.MD5Hash,
+                    MD5Hash = uploadedBlob.Hash,
                     DateAddedUtc = uploadedBlob.DateAdded.DateTime,
                     MimeType = mimeType,
                     Height = resizingResult.Size.Height,

@@ -39,7 +39,7 @@ namespace IK.Imager.ImageStorage.AzureFiles.Tests
             var uploadImageResult = await UploadTestImage(imageType);
             
             Assert.NotNull(uploadImageResult.Item2.Url);
-            Assert.NotNull(uploadImageResult.Item2.MD5Hash);
+            Assert.NotNull(uploadImageResult.Item2.Hash);
         }
         
         [Theory]

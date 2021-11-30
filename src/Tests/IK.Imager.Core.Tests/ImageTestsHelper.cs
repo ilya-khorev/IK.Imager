@@ -67,7 +67,7 @@ namespace IK.Imager.Core.Tests
                 DateAddedUtc = uploadImageResult.DateAdded.DateTime,
                 Height = height,
                 Width = width,
-                MD5Hash = uploadImageResult.MD5Hash,
+                MD5Hash = uploadImageResult.Hash,
                 SizeBytes = file.Length,
                 MimeType = contentType,
                 ImageType = imageType,

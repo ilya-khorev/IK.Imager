@@ -85,7 +85,7 @@ namespace IK.Imager.Core
                 DateAddedUtc = uploadImageResult.DateAdded.DateTime,
                 Height = imageSize.Height,
                 Width = imageSize.Width,
-                MD5Hash = uploadImageResult.MD5Hash,
+                MD5Hash = uploadImageResult.Hash,
                 SizeBytes = imageSize.Bytes,
                 MimeType = imageFormat.MimeType,
                 ImageType = (Storage.Abstractions.Models.ImageType) imageFormat.ImageType,
@@ -99,7 +99,7 @@ namespace IK.Imager.Core
             {
                 Id = imageId,
                 Name = imageName,
-                Hash = uploadImageResult.MD5Hash,
+                Hash = uploadImageResult.Hash,
                 DateAdded = uploadImageResult.DateAdded,
                 Url = _cdnService.TryTransformToCdnUri(uploadImageResult.Url).ToString(),
                 Bytes = imageSize.Bytes,

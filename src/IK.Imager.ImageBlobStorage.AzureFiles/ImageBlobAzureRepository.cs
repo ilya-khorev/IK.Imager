@@ -35,10 +35,10 @@ namespace IK.Imager.ImageBlobStorage.AzureFiles
              
             imageStream.Position = 0;
             var uploadResult = await blobClient.UploadAsync(imageStream, cancellationToken).ConfigureAwait(false);
-
+            
             return new UploadImageResult
             {
-                MD5Hash = System.Text.Encoding.UTF8.GetString(uploadResult.Value.ContentHash),
+                Hash = Convert.ToBase64String(uploadResult.Value.ContentHash),
                 DateAdded = uploadResult.Value.LastModified,
                 Url = blobClient.Uri
             };
