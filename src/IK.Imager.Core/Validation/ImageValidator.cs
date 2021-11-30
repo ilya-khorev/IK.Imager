@@ -29,8 +29,6 @@ namespace IK.Imager.Core.Validation
 
         public ValidationResult CheckFormat(ImageFormat imageFormat)
         {
-            ArgumentHelper.AssertNotNull(nameof(imageFormat), imageFormat);
-
             var limits = _limitationSettings.Value;
 
             if (imageFormat == null || !limits.Types.Contains(imageFormat.ImageType.ToString()))

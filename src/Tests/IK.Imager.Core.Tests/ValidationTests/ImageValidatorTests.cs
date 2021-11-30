@@ -26,7 +26,7 @@ namespace IK.Imager.Core.Tests.ValidationTests
         }
         
         [Fact]
-        public void CheckFormat_NullArgumentException()
+        public void CheckFormat_Null_InvalidResult()
         {
             var optionsMock = new Mock<IOptionsSnapshot<ImageLimitationSettings>>();
             optionsMock.Setup(x => x.Value).Returns(new ImageLimitationSettings()
@@ -35,7 +35,8 @@ namespace IK.Imager.Core.Tests.ValidationTests
             });
             
             var imageValidator = new ImageValidator(optionsMock.Object);
-            Assert.Throws<ArgumentNullException>(() => imageValidator.CheckFormat(null));
+            var validationResult = imageValidator.CheckFormat(null);
+            Assert.False(validationResult.IsValid);
         }
         
         [Fact]
