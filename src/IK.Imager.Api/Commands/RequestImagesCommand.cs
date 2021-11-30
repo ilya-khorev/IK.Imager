@@ -1,7 +1,7 @@
-﻿namespace IK.Imager.Api.Commands
+﻿using IK.Imager.Api.Contract;
+using MediatR;
+
+namespace IK.Imager.Api.Commands
 {
-    public class RequestImagesCommand
-    {
-        
-    }
+    public record RequestImagesCommand(string[] ImageIds, string ImageGroup) : IRequest<ImagesSearchResult>;
 }

@@ -1,7 +1,8 @@
 ﻿using System.Threading.Tasks;
+using IK.Imager.Api.Commands;
 using IK.Imager.Api.Contract;
-using IK.Imager.Core.Abstractions;
 using MassTransit;
+using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using ImageDeletedIntegrationEvent = IK.Imager.Api.IntegrationEvents.Events.ImageDeletedIntegrationEvent;
@@ -17,15 +18,15 @@ namespace IK.Imager.Api.Controllers
     public class DeleteController : ControllerBase
     {
         private readonly IPublishEndpoint _publishEndpoint;
-        private readonly IImageDeleteService _imageDeleteService;
+        private readonly IMediator _mediator;
  
         private const string ImageNotFound = "Requested image with id {0} was not found";
         
         /// <inheritdoc />
-        public DeleteController(IPublishEndpoint publishEndpoint, IImageDeleteService imageDeleteService)
+        public DeleteController(IPublishEndpoint publishEndpoint, IMediator mediator)
         {
             _publishEndpoint = publishEndpoint;
-            _imageDeleteService = imageDeleteService;
+            _mediator = mediator;
         }
         
         /// <summary>
@@ -43,10 +44,8 @@ namespace IK.Imager.Api.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> Delete(DeleteImageRequest deleteImageRequest)
         {
-            var imageDeleteResult =
-                await _imageDeleteService.DeleteImageMetadata(deleteImageRequest.ImageId,
-                    deleteImageRequest.ImageGroup);
-
+            var imageDeleteResult = await _mediator.Send(new RemoveImageCommand(deleteImageRequest.ImageId, deleteImageRequest.ImageGroup));
+            
             if (imageDeleteResult == null)
                 return NotFound(string.Format(ImageNotFound, deleteImageRequest.ImageId));
            

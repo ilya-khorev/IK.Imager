@@ -15,6 +15,6 @@ namespace IK.Imager.Api.Contract
         /// Image group, that was specified when the image was uploaded.
         /// This parameter is optional, however, specifying this value will increase this operation performance.
         /// </summary>
-        public string ImageGroup { get; set; }
+        public string? ImageGroup { get; set; }
     }
 }

@@ -1,10 +1,9 @@
 ﻿using System.Threading.Tasks;
-using AutoMapper;
+using IK.Imager.Api.Commands;
 using IK.Imager.Api.Contract;
-using IK.Imager.Core.Abstractions;
+using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 
 namespace IK.Imager.Api.Controllers
 {
@@ -16,18 +15,12 @@ namespace IK.Imager.Api.Controllers
     [Route("[controller]")]
     public class SearchController : ControllerBase
     {
-        private readonly ILogger<SearchController> _logger;
-        private readonly IImageSearchService _imageSearchService;
-        private readonly IMapper _mapper;
+        private readonly IMediator _mediator;
 
-        private const string TooManyImagesRequested = "Maximum allowed images to be requested within one API call is 100.";
-        
         /// <inheritdoc /> 
-        public SearchController(ILogger<SearchController> logger, IImageSearchService imageSearchService, IMapper mapper)
+        public SearchController(IMediator mediator)
         {
-            _logger = logger;
-            _imageSearchService = imageSearchService;
-            _mapper = mapper;
+            _mediator = mediator;
         }
         
         /// <summary>
@@ -39,24 +32,14 @@ namespace IK.Imager.Api.Controllers
         /// If some image is not found, this image is returned as null object.</returns>
         /// <response code="200">Returns information about images.</response>
         /// <response code="400">If the image id is not specified.
-        /// Or if it is requested for more than 100 images.</response> 
-        [HttpPost]
+        /// Or if it is requested for more than 200 images.</response> 
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
         public async Task<ActionResult<ImagesSearchResult>> Post(SearchImagesByIdRequest searchImagesByIdRequest)
         {
-            const int maxAllowedImages = 100;
-            if (searchImagesByIdRequest.ImageIds.Length > maxAllowedImages)
-            {
-                _logger.LogWarning(TooManyImagesRequested);
-                return BadRequest(TooManyImagesRequested);
-            }
-
-            var searchResult = await _imageSearchService.Search(searchImagesByIdRequest.ImageIds,
-                searchImagesByIdRequest.ImageGroup);
-
-            return Ok(_mapper.Map<ImagesSearchResult>(searchResult));
+            var uploadImageResult = await _mediator.Send(new RequestImagesCommand(searchImagesByIdRequest.ImageIds, searchImagesByIdRequest.ImageGroup));
+            return uploadImageResult;
         }
     }
 }

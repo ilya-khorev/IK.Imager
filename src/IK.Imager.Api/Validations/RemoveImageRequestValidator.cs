@@ -9,7 +9,6 @@ namespace IK.Imager.Api.Validations
         public RemoveImageRequestValidator()
         {
             RuleFor(x => x.ImageGroup)
-                .NotEmpty()
                 .MaximumLength(ValidationConstants.MaxImageGroupLength)
                 .MinimumLength(ValidationConstants.MinImageGroupLength);
 
