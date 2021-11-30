@@ -69,23 +69,23 @@ namespace IK.Imager.Api
             RegisterConfigurations(services);
             
             services.AddSingleton<ICosmosDbClient, CosmosDbClient>();
-            services.AddSingleton<IImageMetadataRepository, ImageMetadataCosmosDbRepository>(); //todo scoped / transient
             services.AddSingleton<IAzureBlobClient, AzureBlobClient>(s =>
             {
                 var settings = s.GetRequiredService<IOptions<ImageAzureStorageSettings>>();
                 return new AzureBlobClient(settings.Value.ConnectionString);
             });
                 
-            services.AddSingleton<IImageBlobRepository, ImageBlobAzureRepository>(); //todo scoped / transient
             services.AddSingleton<IImageMetadataReader, ImageMetadataReader>();
             services.AddSingleton<IImageIdentifierProvider, ImageIdentifierProvider>();
             services.AddSingleton<ICdnService, CdnService>();
             services.AddSingleton<IImageResizing, ImageResizing>();
-
-            services.AddScoped<IImageValidator, ImageValidator>();
-            services.AddScoped<IImageUploadService, ImageUploadService>();
-            services.AddScoped<IImageSearchService, ImageSearchService>();
             
+            services.AddScoped<IImageBlobRepository, ImageBlobAzureRepository>();
+            services.AddScoped<IImageMetadataRepository, ImageMetadataCosmosDbRepository>();
+            services.AddScoped<IImageValidator, ImageValidator>();
+            
+            services.AddTransient<IImageUploadService, ImageUploadService>();
+            services.AddTransient<IImageSearchService, ImageSearchService>();
             services.AddTransient<IImageDeleteService, ImageDeleteService>();
             services.AddTransient<IImageThumbnailService, ImageThumbnailService>();
             
