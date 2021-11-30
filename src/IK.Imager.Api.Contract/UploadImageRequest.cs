@@ -8,7 +8,6 @@
         /// <summary>
         /// Absolute image url
         /// </summary>
-        //todo [Required]
         public string ImageUrl { get; set; }
     }
 }

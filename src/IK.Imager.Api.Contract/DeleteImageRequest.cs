@@ -9,7 +9,6 @@ namespace IK.Imager.Api.Contract
         /// <summary>
         /// Image identifier
         /// </summary>
-        //todo [Required]
         public string ImageId { get; set; }
         
         /// <summary>

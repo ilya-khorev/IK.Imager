@@ -1,5 +1,4 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 using System.Threading.Tasks;
 using IK.Imager.Api.Commands;
 using IK.Imager.Api.Contract;
@@ -27,7 +26,6 @@ namespace IK.Imager.Api.Controllers
 
         private readonly IMediator _mediator;
         
-        private const string IncorrectUrlFormat = "Image url is not well formed. It must be an absolute url path.";
         private const string CouldNotDownloadImage = "Couldn't download an image by url {0}.";
         private const string DownloadingByUrl = "Downloading an image by url {0}.";
         private const string DownloadedByUrl = "Downloaded an image by url {0}.";
@@ -80,9 +78,6 @@ namespace IK.Imager.Api.Controllers
         [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
         public async Task<ActionResult<ImageInfo>> PostByUrl(UploadImageRequest uploadImageRequest)
         {
-            if (!Uri.IsWellFormedUriString(uploadImageRequest.ImageUrl, UriKind.Absolute))
-                return BadRequest(IncorrectUrlFormat);
-
             _logger.LogDebug(DownloadingByUrl, uploadImageRequest.ImageUrl);
 
             var imageStream = await _imageDownloadClient.GetMemoryStream(uploadImageRequest.ImageUrl);

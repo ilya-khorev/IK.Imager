@@ -7,9 +7,8 @@
     {
         /// <summary>
         /// Image identifiers to search.
-        /// Maximum 100 identifiers are allowed within one request.
+        /// Maximum 200 identifiers are allowed to be passed into one request.
         /// </summary>
-        //todo [Required]
         public string[] ImageIds { get; set; }
         
         /// <summary>

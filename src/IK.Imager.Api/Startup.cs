@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Reflection;
+using FluentValidation.AspNetCore;
 using IK.Imager.Api.Filters;
 using IK.Imager.Api.IntegrationEvents;
 using IK.Imager.Api.IntegrationEvents.EventHandling;
@@ -20,6 +21,8 @@ using IK.Imager.ImageBlobStorage.AzureFiles;
 using IK.Imager.Storage.Abstractions.Repositories;
 using MassTransit;
 using MediatR;
+using MicroElements.Swashbuckle.FluentValidation;
+using MicroElements.Swashbuckle.FluentValidation.AspNetCore;
 using Microsoft.ApplicationInsights.AspNetCore.Extensions;
 using Microsoft.ApplicationInsights.Extensibility.PerfCounterCollector.QuickPulse;
 using Microsoft.AspNetCore.Builder;
@@ -91,6 +94,13 @@ namespace IK.Imager.Api
                     p.WaitAndRetryAsync(3, _ => TimeSpan.FromMilliseconds(500)));
             
             services.AddMediatR(typeof(Startup).Assembly);  
+            
+            services.AddFluentValidation(fv =>
+            {
+                fv.RegisterValidatorsFromAssemblyContaining<Startup>();
+                fv.ValidatorFactoryType = typeof(HttpContextServiceProviderValidatorFactory);
+            });
+            services.AddFluentValidationRulesToSwagger();
             
             services.AddHealthChecks(); //todo add hc for cosmosdb, blobstorage, servicebus
             SetupAppInsights(services);

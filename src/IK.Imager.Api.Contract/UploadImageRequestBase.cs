@@ -12,8 +12,6 @@
         /// 
         /// Image group is also used as partition to evenly spread data, and to make search requests more efficient.
         /// </summary>
-        //todo [Required]
-        //todo[StringLength(30, MinimumLength = 3)]
         public string ImageGroup { get; set; }
         
         //todo optional image name
