@@ -185,9 +185,9 @@ namespace IK.Imager.Api
                 );
             });
 
-            app.UseEndpoints(endpoints => { endpoints.MapControllers(); });
-            
             app.UseMiddleware<ServiceFabricResourceNotFoundMiddleware>();
+
+            app.UseEndpoints(endpoints => { endpoints.MapControllers(); });
         }
     }
 }

@@ -41,7 +41,7 @@ namespace IK.Imager.Api.Middleware
             context.Response.OnStarting(state =>
             {
                 var httpContext = (HttpContext)state;
-                if (httpContext.Response.StatusCode == 404)
+                if (httpContext.Response.StatusCode == 404 && !httpContext.Response.Headers.ContainsKey(ServiceFabricHeader))
                     httpContext.Response.Headers.Add(ServiceFabricHeader, ServiceFabricNotFound);
 
                 return Task.CompletedTask;
