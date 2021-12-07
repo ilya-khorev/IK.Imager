@@ -123,6 +123,8 @@ namespace IK.Imager.Api
                         c.SetEntityName(topicsConfiguration.Value.UploadedImagesTopicName));
                     cfg.Message<ImageDeletedIntegrationEvent>(c => 
                         c.SetEntityName(topicsConfiguration.Value.DeletedImagesTopicName));
+
+                    cfg.MaxConcurrentCalls = topicsConfiguration.Value.MaxConcurrentCalls;
                     
                     cfg.SubscriptionEndpoint<OriginalImageUploadedIntegrationEvent>(topicsConfiguration.Value.SubscriptionName,
                         configurator =>

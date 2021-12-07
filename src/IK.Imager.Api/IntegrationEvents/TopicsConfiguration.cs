@@ -1,4 +1,5 @@
-﻿namespace IK.Imager.Api.IntegrationEvents
+﻿#pragma warning disable 1591
+namespace IK.Imager.Api.IntegrationEvents
 {
     public class TopicsConfiguration
     {
