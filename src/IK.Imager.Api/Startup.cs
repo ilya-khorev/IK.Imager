@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Reflection;
 using FluentValidation.AspNetCore;
+using HealthChecks.UI.Client;
 using IK.Imager.Api.Filters;
 using IK.Imager.Api.IntegrationEvents;
 using IK.Imager.Api.IntegrationEvents.EventHandling;
@@ -26,9 +27,11 @@ using MicroElements.Swashbuckle.FluentValidation.AspNetCore;
 using Microsoft.ApplicationInsights.AspNetCore.Extensions;
 using Microsoft.ApplicationInsights.Extensibility.PerfCounterCollector.QuickPulse;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
@@ -102,8 +105,8 @@ namespace IK.Imager.Api
             });
             services.AddFluentValidationRulesToSwagger();
             
-            services.AddHealthChecks(); //todo add hc for cosmosdb, blobstorage, servicebus
-            SetupAppInsights(services);
+            services.AddHealthChecks(Configuration);
+            services.SetupAppInsights(Configuration);
             
             services.AddMassTransit(x =>
             {
@@ -146,26 +149,6 @@ namespace IK.Imager.Api
             services.Configure<ImageThumbnailsSettings>(Configuration.GetSection("Thumbnails"));
         }
 
-        private void SetupAppInsights(IServiceCollection services)
-        {
-            ApplicationInsightsServiceOptions aiOptions = new ApplicationInsightsServiceOptions();
-            var appInsightsDependencyConfigValue =
-                Configuration.GetValue<bool>("ApplicationInsights:EnableDependencyTrackingTelemetryModule");
-            //dependency tracking is disabled by default as it is produce a lot of logs and therefore quite expensive
-            aiOptions.EnableDependencyTrackingTelemetryModule = appInsightsDependencyConfigValue;
-
-            //By default, instrumentation key is taken from the configuration
-            //Alternatively, specify the instrumentation key in either of the following environment variables:
-            //APPINSIGHTS_INSTRUMENTATIONKEY or ApplicationInsights:InstrumentationKey
-            services.AddApplicationInsightsTelemetry(aiOptions);
-
-            var appInsightsAuthApiKey = Configuration.GetValue<string>("ApplicationInsights:AuthenticationApiKey");
-            if (!string.IsNullOrWhiteSpace(appInsightsAuthApiKey))
-                services.ConfigureTelemetryModule<QuickPulseTelemetryModule>((module, _) =>
-                    module.AuthenticationApiKey = appInsightsAuthApiKey);
-        }
-
-
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
@@ -187,7 +170,55 @@ namespace IK.Imager.Api
 
             app.UseMiddleware<ServiceFabricResourceNotFoundMiddleware>();
 
-            app.UseEndpoints(endpoints => { endpoints.MapControllers(); });
+            app.UseEndpoints(endpoints =>
+            {
+                endpoints.MapControllers();
+                endpoints.MapHealthChecks("/hc", new HealthCheckOptions()
+                {
+                    Predicate = _ => true,
+                    ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
+                });
+                endpoints.MapHealthChecks("/liveness", new HealthCheckOptions
+                {
+                    Predicate = r => r.Name.Contains("self")
+                });
+            });
+        }
+    }
+ 
+    public static class CustomExtensionsMethods
+    {
+        public static void AddHealthChecks(this IServiceCollection services, IConfiguration configuration)
+        {
+            var hcBuilder = services.AddHealthChecks();
+
+            hcBuilder.AddCheck("self", () => HealthCheckResult.Healthy());
+            
+            var cosmosDbConnectionString = configuration["CosmosDb:ConnectionString"];
+            var cosmosDbDatabase = configuration["CosmosDb:DatabaseId"];
+            hcBuilder.AddCosmosDb(cosmosDbConnectionString, cosmosDbDatabase, "ik.imager-cosmossdb-check", tags: new [] { "cosmosdb" });
+
+            var azureConnectionString = configuration["AzureStorage:ConnectionString"];
+            var azureContainerName = configuration["AzureStorage:ImagesContainerName"];
+            hcBuilder.AddAzureBlobStorage(azureConnectionString, azureContainerName, name: "ik.imager-blobstorage-check", tags: new [] { "blobstorage" });
+        }
+        
+        public static void SetupAppInsights(this IServiceCollection services, IConfiguration configuration)
+        {
+            ApplicationInsightsServiceOptions aiOptions = new ApplicationInsightsServiceOptions();
+            var appInsightsDependencyConfigValue = configuration.GetValue<bool>("ApplicationInsights:EnableDependencyTrackingTelemetryModule");
+            //dependency tracking is disabled by default as it is produce a lot of logs and therefore quite expensive
+            aiOptions.EnableDependencyTrackingTelemetryModule = appInsightsDependencyConfigValue;
+
+            //By default, instrumentation key is taken from the configuration
+            //Alternatively, specify the instrumentation key in either of the following environment variables:
+            //APPINSIGHTS_INSTRUMENTATIONKEY or ApplicationInsights:InstrumentationKey
+            services.AddApplicationInsightsTelemetry(aiOptions);
+
+            var appInsightsAuthApiKey = configuration.GetValue<string>("ApplicationInsights:AuthenticationApiKey");
+            if (!string.IsNullOrWhiteSpace(appInsightsAuthApiKey))
+                services.ConfigureTelemetryModule<QuickPulseTelemetryModule>((module, _) =>
+                    module.AuthenticationApiKey = appInsightsAuthApiKey);
         }
     }
 }

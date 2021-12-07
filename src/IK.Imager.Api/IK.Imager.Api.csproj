@@ -10,6 +10,9 @@
     </PropertyGroup>
     
     <ItemGroup>
+      <PackageReference Include="AspNetCore.HealthChecks.AzureStorage" Version="5.0.1" />
+      <PackageReference Include="AspNetCore.HealthChecks.CosmosDb" Version="5.0.4" />
+      <PackageReference Include="AspNetCore.HealthChecks.UI.Client" Version="5.0.1" />
       <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="8.1.1" />
       <PackageReference Include="FluentValidation.AspNetCore" Version="10.3.4" />
       <PackageReference Include="MassTransit.AspNetCore" Version="7.2.2" />
