@@ -45,6 +45,12 @@ namespace IK.Imager.Core.Thumbnails
             _thumbnailTargetWidth = imageThumbnailsSettings.Value.TargetWidth.OrderByDescending(x => x).ToList();
         }
         
+        //todo 
+        /*
+         * "width": 199,
+          "height": 132,
+         */
+        
         /// <inheritdoc />
         public async Task<List<ImageThumbnailGeneratingResult>> GenerateThumbnails(string imageId, string imageGroup)
         {
