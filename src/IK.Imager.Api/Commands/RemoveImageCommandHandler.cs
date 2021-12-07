@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using IK.Imager.Core.Abstractions;
 using MediatR;
+#pragma warning disable 1591
 
 namespace IK.Imager.Api.Commands
 {

@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using IK.Imager.Api.Commands;
 using IK.Imager.Api.Contract;
 using IK.Imager.Api.IntegrationEvents.Events;
+using IK.Imager.Api.Queries;
 using IK.Imager.Api.Services;
 using MassTransit;
 using MediatR;
@@ -129,7 +130,7 @@ namespace IK.Imager.Api.Controllers
         [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
         public async Task<ActionResult<ImagesSearchResult>> Post(SearchImagesByIdRequest searchImagesByIdRequest)
         {
-            var uploadImageResult = await _mediator.Send(new RequestImagesCommand(searchImagesByIdRequest.ImageIds, searchImagesByIdRequest.ImageGroup));
+            var uploadImageResult = await _mediator.Send(new RequestImagesQuery(searchImagesByIdRequest.ImageIds, searchImagesByIdRequest.ImageGroup));
             return uploadImageResult;
         }
         

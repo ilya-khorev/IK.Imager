@@ -4,6 +4,7 @@ using AutoMapper;
 using IK.Imager.Api.Contract;
 using IK.Imager.Core.Abstractions;
 using MediatR;
+#pragma warning disable 1591
 
 namespace IK.Imager.Api.Commands
 {
