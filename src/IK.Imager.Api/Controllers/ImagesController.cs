@@ -1,15 +1,12 @@
-﻿using System.IO;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using IK.Imager.Api.Commands;
 using IK.Imager.Api.Contract;
 using IK.Imager.Api.IntegrationEvents.Events;
 using IK.Imager.Api.Queries;
-using IK.Imager.Api.Services;
 using MassTransit;
 using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using OriginalImageUploadedIntegrationEvent = IK.Imager.Api.IntegrationEvents.Events.OriginalImageUploadedIntegrationEvent;
 
 namespace IK.Imager.Api.Controllers
@@ -22,23 +19,14 @@ namespace IK.Imager.Api.Controllers
     [Route("[controller]")]
     public class ImagesController : ControllerBase
     {
-        private readonly ILogger<ImagesController> _logger;
         private readonly IPublishEndpoint _publishEndpoint;
-        private readonly ImageDownloadClient _imageDownloadClient;
-
         private readonly IMediator _mediator;
-        
-        private const string CouldNotDownloadImage = "Couldn't download an image by url {0}.";
-        private const string DownloadingByUrl = "Downloading an image by url {0}.";
-        private const string DownloadedByUrl = "Downloaded an image by url {0}.";
         private const string ImageNotFound = "Requested image with id {0} was not found";
 
         /// <inheritdoc />
-        public ImagesController(ILogger<ImagesController> logger, IPublishEndpoint publishEndpoint, ImageDownloadClient imageDownloadClient, IMediator mediator)
+        public ImagesController(IPublishEndpoint publishEndpoint, IMediator mediator)
         {
-            _logger = logger;
             _publishEndpoint = publishEndpoint;
-            _imageDownloadClient = imageDownloadClient;
             _mediator = mediator;
         }
 
@@ -59,7 +47,9 @@ namespace IK.Imager.Api.Controllers
         [Consumes("multipart/form-data")]
         public async Task<ActionResult<ImageInfo>> Post([FromForm]UploadImageFileRequest imageFileRequest)
         {
-            return await UploadImage(imageFileRequest.File.OpenReadStream(), imageFileRequest.ImageGroup);
+            var uploadImageResult = await _mediator.Send(new UploadImageCommand(imageFileRequest.File.OpenReadStream(), imageFileRequest.ImageGroup));
+            await PublishImageUploaded(uploadImageResult.Id, imageFileRequest.ImageGroup);
+            return Ok(uploadImageResult);
         }
 
         /// <summary>
@@ -81,37 +71,22 @@ namespace IK.Imager.Api.Controllers
         [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
         public async Task<ActionResult<ImageInfo>> PostByUrl(UploadImageRequest uploadImageRequest)
         {
-            _logger.LogDebug(DownloadingByUrl, uploadImageRequest.ImageUrl);
-
-            var imageStream = await _imageDownloadClient.GetMemoryStream(uploadImageRequest.ImageUrl);
-            if (imageStream == null)
-                return BadRequestAndLog(string.Format(CouldNotDownloadImage, uploadImageRequest.ImageUrl));
-
-            _logger.LogDebug(DownloadedByUrl, uploadImageRequest.ImageUrl);
-            
-            return await UploadImage(imageStream, uploadImageRequest.ImageGroup);
-        }
-        
-        private BadRequestObjectResult BadRequestAndLog(string message)
-        {
-            _logger.LogWarning(message);
-            return BadRequest(message);
+            var uploadImageResult = await _mediator.Send(new UploadImageByUrlCommand(uploadImageRequest.ImageUrl, uploadImageRequest.ImageGroup));
+            await PublishImageUploaded(uploadImageResult.Id, uploadImageRequest.ImageGroup);
+            return Ok(uploadImageResult);
         }
 
-        private async Task<ActionResult<ImageInfo>> UploadImage(Stream imageStream, string imageGroup)
+        private async Task PublishImageUploaded(string imageId, string imageGroup)
         {
-            var uploadImageResult = await _mediator.Send(new UploadImageCommand(imageStream, imageGroup));
-            
             //Once the image file and metadata object are saved, there is time to send a new message to the event bus topic
             //If the program fails at this stage, this message is not sent and therefore thumbnails are not generated for the image. 
             //Such cases are handled when requesting an image metadata object later by resending this event again.
+            
             await _publishEndpoint.Publish(new OriginalImageUploadedIntegrationEvent
             {
-                ImageId = uploadImageResult.Id,
+                ImageId = imageId,
                 ImageGroup = imageGroup
             });
-            
-            return Ok(uploadImageResult);
         }
         
         /// <summary>
