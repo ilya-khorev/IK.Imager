@@ -1,22 +1,22 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
 using IK.Imager.Api.IntegrationEvents.Events;
-using IK.Imager.Core.Abstractions.ImageRemoving;
+using IK.Imager.Core.Abstractions.ImageDeleting;
 using MassTransit;
 using MediatR;
 
 namespace IK.Imager.Api.DomainEventHandlers;
 
-public class ImageRemovedDomainEventHandler: INotificationHandler<ImageRemovedDomainEvent>
+public class ImageDeletedDomainEventHandler: INotificationHandler<ImageDeletedDomainEvent>
 {
     private readonly IPublishEndpoint _publishEndpoint;
 
-    public ImageRemovedDomainEventHandler(IPublishEndpoint publishEndpoint)
+    public ImageDeletedDomainEventHandler(IPublishEndpoint publishEndpoint)
     {
         _publishEndpoint = publishEndpoint;
     }
     
-    public async Task Handle(ImageRemovedDomainEvent notification, CancellationToken cancellationToken)
+    public async Task Handle(ImageDeletedDomainEvent notification, CancellationToken cancellationToken)
     {
         await _publishEndpoint.Publish(new ImageDeletedIntegrationEvent
         {

@@ -1,7 +1,7 @@
 ﻿using System.Threading.Tasks;
 using IK.Imager.Core.Abstractions.Models;
 
-namespace IK.Imager.Core.Abstractions.ImageRemoving;
+namespace IK.Imager.Core.Abstractions.ImageDeleting;
 
 public interface IImageDeleteService
 {

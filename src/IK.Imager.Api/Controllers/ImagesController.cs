@@ -1,7 +1,7 @@
 ﻿using System.Threading.Tasks;
 using AutoMapper;
 using IK.Imager.Api.Contract;
-using IK.Imager.Core.Abstractions.ImageRemoving;
+using IK.Imager.Core.Abstractions.ImageDeleting;
 using IK.Imager.Core.Abstractions.ImageSearch;
 using IK.Imager.Core.Abstractions.ImageUploading;
 using MediatR;
@@ -108,7 +108,7 @@ namespace IK.Imager.Api.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> Delete(DeleteImageRequest deleteImageRequest)
         {
-            var imageDeleted = await _mediator.Send(new RemoveImageCommand(deleteImageRequest.ImageId, deleteImageRequest.ImageGroup));
+            var imageDeleted = await _mediator.Send(new DeleteImageCommand(deleteImageRequest.ImageId, deleteImageRequest.ImageGroup));
             if (!imageDeleted)
                 return NotFound(string.Format(ImageNotFound, deleteImageRequest.ImageId));
 

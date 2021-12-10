@@ -1,13 +1,13 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
-using IK.Imager.Core.Abstractions.ImageRemoving;
+using IK.Imager.Core.Abstractions.ImageDeleting;
 using MediatR;
 
 #pragma warning disable 1591
 
-namespace IK.Imager.Core.ImageRemoving;
+namespace IK.Imager.Core.ImageDeleting;
 
-public class RemoveImageCommandHandler: IRequestHandler<RemoveImageCommand, bool>
+public class RemoveImageCommandHandler: IRequestHandler<DeleteImageCommand, bool>
 {
     private readonly IImageDeleteService _imageDeleteService;
     private readonly IMediator _mediator;
@@ -18,13 +18,13 @@ public class RemoveImageCommandHandler: IRequestHandler<RemoveImageCommand, bool
         _mediator = mediator;
     }
         
-    public async Task<bool> Handle(RemoveImageCommand request, CancellationToken cancellationToken)
+    public async Task<bool> Handle(DeleteImageCommand request, CancellationToken cancellationToken)
     {
         var imageDeleteResult = await _imageDeleteService.DeleteImageMetadata(request.ImageId, request.ImageGroup);
         if (imageDeleteResult == null)
             return false;
 
-        await _mediator.Publish(new ImageRemovedDomainEvent(imageDeleteResult.ImageId, imageDeleteResult.ImageName,
+        await _mediator.Publish(new ImageDeletedDomainEvent(imageDeleteResult.ImageId, imageDeleteResult.ImageName,
             imageDeleteResult.ThumbnailNames));
         
         return true;
