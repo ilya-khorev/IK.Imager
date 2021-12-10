@@ -1,4 +1,4 @@
-﻿using IK.Imager.Api.Contract;
+﻿using IK.Imager.Core.Abstractions.Models;
 using MediatR;
 #pragma warning disable 1591
 

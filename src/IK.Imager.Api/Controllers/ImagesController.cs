@@ -1,8 +1,9 @@
 ﻿using System.Threading.Tasks;
-using IK.Imager.Api.Commands;
+using AutoMapper;
 using IK.Imager.Api.Contract;
 using IK.Imager.Api.IntegrationEvents.Events;
 using IK.Imager.Api.Queries;
+using IK.Imager.Core.Commands;
 using MassTransit;
 using MediatR;
 using Microsoft.AspNetCore.Http;
@@ -21,13 +22,15 @@ namespace IK.Imager.Api.Controllers
     {
         private readonly IPublishEndpoint _publishEndpoint;
         private readonly IMediator _mediator;
+        private readonly IMapper _mapper;
         private const string ImageNotFound = "Requested image with id {0} was not found";
 
         /// <inheritdoc />
-        public ImagesController(IPublishEndpoint publishEndpoint, IMediator mediator)
+        public ImagesController(IPublishEndpoint publishEndpoint, IMediator mediator, IMapper mapper)
         {
             _publishEndpoint = publishEndpoint;
             _mediator = mediator;
+            _mapper = mapper;
         }
 
         /// <summary>
@@ -49,7 +52,7 @@ namespace IK.Imager.Api.Controllers
         {
             var uploadImageResult = await _mediator.Send(new UploadImageCommand(imageFileRequest.File.OpenReadStream(), imageFileRequest.ImageGroup));
             await PublishImageUploaded(uploadImageResult.Id, imageFileRequest.ImageGroup);
-            return Ok(uploadImageResult);
+            return _mapper.Map<ImageInfo>(uploadImageResult);
         }
 
         /// <summary>
@@ -73,7 +76,7 @@ namespace IK.Imager.Api.Controllers
         {
             var uploadImageResult = await _mediator.Send(new UploadImageByUrlCommand(uploadImageRequest.ImageUrl, uploadImageRequest.ImageGroup));
             await PublishImageUploaded(uploadImageResult.Id, uploadImageRequest.ImageGroup);
-            return Ok(uploadImageResult);
+            return _mapper.Map<ImageInfo>(uploadImageResult);
         }
 
         private async Task PublishImageUploaded(string imageId, string imageGroup)
@@ -106,7 +109,7 @@ namespace IK.Imager.Api.Controllers
         public async Task<ActionResult<ImagesSearchResult>> Post(SearchImagesByIdRequest searchImagesByIdRequest)
         {
             var uploadImageResult = await _mediator.Send(new RequestImagesQuery(searchImagesByIdRequest.ImageIds, searchImagesByIdRequest.ImageGroup));
-            return uploadImageResult;
+            return _mapper.Map<ImagesSearchResult>(uploadImageResult);
         }
         
         /// <summary>

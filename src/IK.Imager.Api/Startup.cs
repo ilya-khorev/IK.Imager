@@ -7,13 +7,13 @@ using IK.Imager.Api.Filters;
 using IK.Imager.Api.IntegrationEvents;
 using IK.Imager.Api.IntegrationEvents.EventHandling;
 using IK.Imager.Api.Middleware;
-using IK.Imager.Api.Services;
 using IK.Imager.Core;
 using IK.Imager.Core.Abstractions;
 using IK.Imager.Core.Abstractions.Cdn;
 using IK.Imager.Core.Abstractions.Thumbnails;
 using IK.Imager.Core.Abstractions.Validation;
 using IK.Imager.Core.Cdn;
+using IK.Imager.Core.Commands;
 using IK.Imager.Core.Settings;
 using IK.Imager.Core.Thumbnails;
 using IK.Imager.Core.Validation;
@@ -96,7 +96,7 @@ namespace IK.Imager.Api
                 .AddTransientHttpErrorPolicy(p =>
                     p.WaitAndRetryAsync(3, _ => TimeSpan.FromMilliseconds(500)));
             
-            services.AddMediatR(typeof(Startup).Assembly);  
+            services.AddMediatR(typeof(Startup).Assembly, typeof(UploadImageCommand).Assembly);  
             
             services.AddFluentValidation(fv =>
             {

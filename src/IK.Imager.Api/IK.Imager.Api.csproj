@@ -34,6 +34,10 @@
       <ProjectReference Include="..\IK.Imager.ImageMetadataStorage.CosmosDB\IK.Imager.ImageMetadataStorage.CosmosDB.csproj" />
       <ProjectReference Include="..\IK.Imager.Storage.Abstractions\IK.Imager.Storage.Abstractions.csproj" />
     </ItemGroup>
+    
+    <ItemGroup>
+      <Folder Include="Services" />
+    </ItemGroup>
 
 
 </Project>
