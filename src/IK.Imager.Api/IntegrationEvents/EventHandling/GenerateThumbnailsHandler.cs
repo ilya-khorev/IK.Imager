@@ -11,6 +11,8 @@ namespace IK.Imager.Api.IntegrationEvents.EventHandling
     {
         private readonly IImageThumbnailService _thumbnailsService;
 
+        //todo mediator
+        
         public GenerateThumbnailsHandler(IImageThumbnailService thumbnailsService)
         {
             _thumbnailsService = thumbnailsService;

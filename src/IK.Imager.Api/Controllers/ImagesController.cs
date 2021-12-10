@@ -1,14 +1,12 @@
 ﻿using System.Threading.Tasks;
 using AutoMapper;
 using IK.Imager.Api.Contract;
-using IK.Imager.Api.IntegrationEvents.Events;
-using IK.Imager.Api.Queries;
-using IK.Imager.Core.Commands;
-using MassTransit;
+using IK.Imager.Core.Abstractions.ImageRemoving;
+using IK.Imager.Core.Abstractions.ImageSearch;
+using IK.Imager.Core.Abstractions.ImageUploading;
 using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using OriginalImageUploadedIntegrationEvent = IK.Imager.Api.IntegrationEvents.Events.OriginalImageUploadedIntegrationEvent;
 
 namespace IK.Imager.Api.Controllers
 {
@@ -20,15 +18,13 @@ namespace IK.Imager.Api.Controllers
     [Route("[controller]")]
     public class ImagesController : ControllerBase
     {
-        private readonly IPublishEndpoint _publishEndpoint;
         private readonly IMediator _mediator;
         private readonly IMapper _mapper;
         private const string ImageNotFound = "Requested image with id {0} was not found";
 
         /// <inheritdoc />
-        public ImagesController(IPublishEndpoint publishEndpoint, IMediator mediator, IMapper mapper)
+        public ImagesController(IMediator mediator, IMapper mapper)
         {
-            _publishEndpoint = publishEndpoint;
             _mediator = mediator;
             _mapper = mapper;
         }
@@ -51,7 +47,6 @@ namespace IK.Imager.Api.Controllers
         public async Task<ActionResult<ImageInfo>> Post([FromForm]UploadImageFileRequest imageFileRequest)
         {
             var uploadImageResult = await _mediator.Send(new UploadImageCommand(imageFileRequest.File.OpenReadStream(), imageFileRequest.ImageGroup));
-            await PublishImageUploaded(uploadImageResult.Id, imageFileRequest.ImageGroup);
             return _mapper.Map<ImageInfo>(uploadImageResult);
         }
 
@@ -75,21 +70,7 @@ namespace IK.Imager.Api.Controllers
         public async Task<ActionResult<ImageInfo>> PostByUrl(UploadImageRequest uploadImageRequest)
         {
             var uploadImageResult = await _mediator.Send(new UploadImageByUrlCommand(uploadImageRequest.ImageUrl, uploadImageRequest.ImageGroup));
-            await PublishImageUploaded(uploadImageResult.Id, uploadImageRequest.ImageGroup);
             return _mapper.Map<ImageInfo>(uploadImageResult);
-        }
-
-        private async Task PublishImageUploaded(string imageId, string imageGroup)
-        {
-            //Once the image file and metadata object are saved, there is time to send a new message to the event bus topic
-            //If the program fails at this stage, this message is not sent and therefore thumbnails are not generated for the image. 
-            //Such cases are handled when requesting an image metadata object later by resending this event again.
-            
-            await _publishEndpoint.Publish(new OriginalImageUploadedIntegrationEvent
-            {
-                ImageId = imageId,
-                ImageGroup = imageGroup
-            });
         }
         
         /// <summary>
@@ -127,17 +108,9 @@ namespace IK.Imager.Api.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> Delete(DeleteImageRequest deleteImageRequest)
         {
-            var imageDeleteResult = await _mediator.Send(new RemoveImageCommand(deleteImageRequest.ImageId, deleteImageRequest.ImageGroup));
-            
-            if (imageDeleteResult == null)
+            var imageDeleted = await _mediator.Send(new RemoveImageCommand(deleteImageRequest.ImageId, deleteImageRequest.ImageGroup));
+            if (!imageDeleted)
                 return NotFound(string.Format(ImageNotFound, deleteImageRequest.ImageId));
-           
-            await _publishEndpoint.Publish(new ImageDeletedIntegrationEvent
-            {
-                ImageId = imageDeleteResult.ImageId,
-                ImageName = imageDeleteResult.ImageName,
-                ThumbnailNames = imageDeleteResult.ThumbnailNames
-            });
 
             return NoContent();
         }

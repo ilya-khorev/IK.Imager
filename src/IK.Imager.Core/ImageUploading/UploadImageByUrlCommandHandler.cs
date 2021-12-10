@@ -1,12 +1,13 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
+using IK.Imager.Core.Abstractions.ImageUploading;
 using IK.Imager.Core.Abstractions.Models;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
 #pragma warning disable 1591
 
-namespace IK.Imager.Core.Commands;
+namespace IK.Imager.Core.ImageUploading;
 
 public class UploadImageByUrlCommandHandler: IRequestHandler<UploadImageByUrlCommand, ImageInfo>
 {

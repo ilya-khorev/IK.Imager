@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using IK.Imager.Core.Abstractions;
 using IK.Imager.Core.Abstractions.Validation;
+using IK.Imager.Core.ImageUploading;
 using IK.Imager.Core.Tests.Mocks;
 using IK.Imager.Storage.Abstractions.Models;
 using IK.Imager.Storage.Abstractions.Repositories;

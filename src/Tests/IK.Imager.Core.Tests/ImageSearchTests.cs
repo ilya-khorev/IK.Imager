@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 using IK.Imager.Core.Abstractions;
 using IK.Imager.Core.Abstractions.Thumbnails;
 using IK.Imager.Core.Abstractions.Validation;
+using IK.Imager.Core.ImageSearch;
+using IK.Imager.Core.ImageUploading;
 using IK.Imager.Core.Tests.Mocks;
 using IK.Imager.Core.Thumbnails;
 using IK.Imager.Storage.Abstractions.Repositories;
