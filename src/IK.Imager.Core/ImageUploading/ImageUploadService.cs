@@ -60,7 +60,7 @@ public class ImageUploadService: IImageUploadService
 
         //Firstly, saving the image stream to the blob storage
         string imageId = _imageIdentifierProvider.GenerateUniqueId();
-        string imageName = _imageIdentifierProvider.GetImageName(imageId, imageFormat.FileExtension);
+        string imageName = _imageIdentifierProvider.GetImageFileName(imageId, imageFormat.FileExtension);
             
         //todo original: id_with_height.jpg
         //todo thumbnail: widthxheight/originalid_width_height.jpg 

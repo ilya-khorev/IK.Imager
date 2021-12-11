@@ -136,7 +136,7 @@ namespace IK.Imager.Api
                     cfg.SubscriptionEndpoint<OriginalImageUploadedIntegrationEvent>(topicsConfiguration.Value.SubscriptionName,
                         configurator =>
                         {
-                            configurator.ConfigureConsumer<GenerateThumbnailsHandler>(context);
+                            configurator.ConfigureConsumer<CreateThumbnailsHandler>(context);
                         });
                     cfg.SubscriptionEndpoint<ImageDeletedIntegrationEvent>(topicsConfiguration.Value.SubscriptionName,
                         configurator =>

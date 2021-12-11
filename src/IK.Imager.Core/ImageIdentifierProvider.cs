@@ -14,7 +14,7 @@ namespace IK.Imager.Core
                 .Replace("-", "");
         }
 
-        public string GetImageName(string imageId, string extension)
+        public string GetImageFileName(string imageId, string extension)
         {
             return string.IsNullOrWhiteSpace(extension) 
                 ? imageId 

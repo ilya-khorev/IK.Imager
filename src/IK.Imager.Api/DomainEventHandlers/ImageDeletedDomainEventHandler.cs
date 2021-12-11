@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using IK.Imager.Api.IntegrationEvents.Events;
 using IK.Imager.Core.Abstractions.ImageDeleting;
+using IK.Imager.Utils;
 using MassTransit;
 using MediatR;
 
@@ -13,6 +14,7 @@ public class ImageDeletedDomainEventHandler: INotificationHandler<ImageDeletedDo
 
     public ImageDeletedDomainEventHandler(IPublishEndpoint publishEndpoint)
     {
+        ArgumentHelper.AssertNotNull(nameof(publishEndpoint), publishEndpoint);
         _publishEndpoint = publishEndpoint;
     }
     

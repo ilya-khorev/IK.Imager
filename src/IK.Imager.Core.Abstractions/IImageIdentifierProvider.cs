@@ -3,6 +3,6 @@
     public interface IImageIdentifierProvider
     {
         string GenerateUniqueId();
-        string GetImageName(string imageId, string extension);
+        string GetImageFileName(string imageId, string extension);
     }
 }

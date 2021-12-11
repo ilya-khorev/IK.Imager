@@ -91,7 +91,7 @@ namespace IK.Imager.Core.Tests
             IImageIdentifierProvider imageIdentifierProvider = new ImageIdentifierProvider();
             var thumbnailsService = new ImageThumbnailService(_output.BuildLoggerFor<ImageThumbnailService>(), imageResizing, _blobRepository, 
                 _metadataRepository, imageIdentifierProvider, imageThumbnailSettings);
-            await thumbnailsService.GenerateThumbnails(uploadedImage.Id, imageGroup);
+            await thumbnailsService.CreateThumbnails(uploadedImage.Id, imageGroup);
             
             imagesSearchResult = await _imageSearchService.Search(new[] {uploadedImage.Id}, imageGroup);
             imageMetadata = (await _metadataRepository.GetMetadata(new[] {uploadedImage.Id}, imageGroup, CancellationToken.None))[0];

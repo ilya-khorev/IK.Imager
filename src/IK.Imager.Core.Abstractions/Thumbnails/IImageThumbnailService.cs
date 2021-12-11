@@ -5,6 +5,6 @@ namespace IK.Imager.Core.Abstractions.Thumbnails
 {
     public interface IImageThumbnailService
     {
-        Task<List<ImageThumbnailGeneratingResult>> GenerateThumbnails(string imageId, string imageGroup);
+        Task CreateThumbnails(string imageId, string imageGroup);
     }
 }

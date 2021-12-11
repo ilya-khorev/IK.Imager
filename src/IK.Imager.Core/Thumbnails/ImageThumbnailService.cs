@@ -21,7 +21,7 @@ namespace IK.Imager.Core.Thumbnails
         private readonly IImageBlobRepository _blobRepository;
         private readonly IImageMetadataRepository _metadataRepository;
         private readonly IImageIdentifierProvider _imageIdentifierProvider;
-        private readonly List<int> _thumbnailTargetWidth;
+        private readonly List<int> _thumbnailTargetWidths;
 
         private const string ImageNotFound = "Image metadata object with id = {0} was not found. Stopping to generate thumbnails.";
         private const string MetadataReceived = "Received original image id = {0}, width = {1}, height = {0}";
@@ -42,7 +42,7 @@ namespace IK.Imager.Core.Thumbnails
             _blobRepository = blobRepository;
             _metadataRepository = metadataRepository;
             _imageIdentifierProvider = imageIdentifierProvider;
-            _thumbnailTargetWidth = imageThumbnailsSettings.Value.TargetWidth.OrderByDescending(x => x).ToList();
+            _thumbnailTargetWidths = imageThumbnailsSettings.Value.TargetWidth.OrderByDescending(x => x).ToList();
         }
         
         //todo 
@@ -52,25 +52,26 @@ namespace IK.Imager.Core.Thumbnails
          */
         
         /// <inheritdoc />
-        public async Task<List<ImageThumbnailGeneratingResult>> GenerateThumbnails(string imageId, string imageGroup)
+        public async Task CreateThumbnails(string imageId, string imageGroup)
         {
+            //firstly, receiving image metadata of the given image
             var imageMetadataList = await _metadataRepository.GetMetadata(new List<string> {imageId}, imageGroup, CancellationToken.None);
             if (imageMetadataList == null || !imageMetadataList.Any())
             {
                 _logger.LogInformation(ImageNotFound, imageId);
-                return null;
+                return;
             }
 
             var imageMetadata = imageMetadataList[0];
             imageMetadata.Thumbnails = new List<ImageThumbnail>();
             _logger.LogDebug(MetadataReceived, imageMetadata.Id, imageMetadata.Width, imageMetadata.Height);
-            if (imageMetadata.Width <= _thumbnailTargetWidth.Last())
+            if (imageMetadata.Width <= _thumbnailTargetWidths.Last())
             {
                 _logger.LogInformation(ImageSmallerThanTargetWidth, imageMetadata.Id, imageMetadata.Width);
-                return new List<ImageThumbnailGeneratingResult>(0);
+                return;
             }
-            
-            using var originalImageStream = await _blobRepository.DownloadImage(imageMetadata.Name, ImageSizeType.Original, CancellationToken.None);
+
+            await using var originalImageStream = await _blobRepository.DownloadImage(imageMetadata.Name, ImageSizeType.Original, CancellationToken.None);
             _logger.LogDebug(ImageDownloaded, imageMetadata.Id);
 
             StorageImageType imageType = imageMetadata.ImageType;
@@ -84,8 +85,10 @@ namespace IK.Imager.Core.Thumbnails
             }
             
             var imageStream = originalImageStream;
-            foreach (var targetWidth in _thumbnailTargetWidth)
+            foreach (var targetWidth in _thumbnailTargetWidths)
             {
+                //the current image width is smaller than the target thumbnail with, so just ignoring it 
+                //and moving to the next target thumbnail
                 if (targetWidth >= imageMetadata.Width)
                     continue;
 
@@ -93,7 +96,7 @@ namespace IK.Imager.Core.Thumbnails
                 _logger.LogDebug(ImageResized, imageMetadata.Id, resizingResult.Size);
 
                 var thumbnailImageId = _imageIdentifierProvider.GenerateUniqueId();
-                var thumbnailImageName = _imageIdentifierProvider.GetImageName(thumbnailImageId, fileExtension);
+                var thumbnailImageName = _imageIdentifierProvider.GetImageFileName(thumbnailImageId, fileExtension);
                 
                 //todo use cancellation token
                 
@@ -110,22 +113,15 @@ namespace IK.Imager.Core.Thumbnails
                     SizeBytes = resizingResult.Size.Bytes
                 });
 
+                //keeping reference to the resized image, so that the further thumbnail is generated faster
                 imageStream = resizingResult.Image;
             }
 
-            imageStream.Dispose();
+            await imageStream.DisposeAsync();
             
-            imageMetadata.Thumbnails.Reverse();
+            imageMetadata.Thumbnails.Reverse(); //smaller thumbnails come first
             await _metadataRepository.SetMetadata(imageMetadata, CancellationToken.None);
             _logger.LogInformation(ThumbnailsGenerated, imageMetadata.Thumbnails.Count, imageId);
-            
-            return imageMetadata.Thumbnails.Select(x => new ImageThumbnailGeneratingResult
-            {
-                Id = x.Id,
-                Width = x.Width,
-                Height = x.Height,
-                MimeType = x.MimeType
-            }).ToList();
         }
     }
 }
