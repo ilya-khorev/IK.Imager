@@ -5,7 +5,7 @@ namespace IK.Imager.Core.Tests.Mocks
 {
     public class MockImageThumbnailsSettings: IOptions<ImageThumbnailsSettings>
     {
-        public ImageThumbnailsSettings Value { get; } = new ImageThumbnailsSettings
+        public ImageThumbnailsSettings Value { get; } = new()
         {
             TargetWidth = new [] { 200, 300, 500 }
         };
