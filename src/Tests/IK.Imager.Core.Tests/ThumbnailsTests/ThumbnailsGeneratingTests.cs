@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using AutoFixture;
 using IK.Imager.Core.Abstractions;
+using IK.Imager.Core.Abstractions.Models;
 using IK.Imager.Core.Abstractions.Thumbnails;
 using IK.Imager.Core.Settings;
 using IK.Imager.Core.Tests.Mocks;
@@ -24,14 +26,14 @@ namespace IK.Imager.Core.Tests.ThumbnailsTests
     {
         private readonly Mock<IImageBlobRepository> _blobRepositoryMock;
         private readonly Mock<IImageMetadataRepository> _metadataRepositoryMock;
-        private readonly Mock<ImageResizing> _imageResizingMock;
+        private readonly Mock<IImageResizing> _imageResizingMock;
         private readonly Mock<IOptions<ImageThumbnailsSettings>> _imageThumbnailSettingsMock;
         private readonly ILogger<ImageThumbnailService> _logger;
         private readonly IImageIdentifierProvider _imageIdentifierProvider; 
         
         public ThumbnailsGeneratingTests(ITestOutputHelper output)
         {
-            _imageResizingMock = new Mock<ImageResizing>();
+            _imageResizingMock = new Mock<IImageResizing>();
             _blobRepositoryMock = new Mock<IImageBlobRepository>();
             _metadataRepositoryMock = new Mock<IImageMetadataRepository>();
             _imageThumbnailSettingsMock = new Mock<IOptions<ImageThumbnailsSettings>>();
@@ -120,6 +122,60 @@ namespace IK.Imager.Core.Tests.ThumbnailsTests
                 It.IsAny<string>(), 
                 ImageSizeType.Original, 
                 It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task CreateThumbnails_Bmp_PngThumbnailsGenerated()
+        {
+            ImageMetadata imageMetadata = new Fixture().Create<ImageMetadata>();
+            imageMetadata.Width = 500;
+
+            _imageThumbnailSettingsMock.Setup(x => x.Value)
+                .Returns(new ImageThumbnailsSettings { TargetWidth = new[]
+                {
+                    imageMetadata.Width - 100,
+                    imageMetadata.Width - 200
+                } });
+            
+            //setting up so that imageMetadata defined above is returned
+            _metadataRepositoryMock.Setup(x => x.GetMetadata(
+                    It.IsAny<ICollection<string>>(),
+                    It.IsAny<string>(),
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<ImageMetadata> { imageMetadata });
+
+            _blobRepositoryMock.Setup(x => x.DownloadImage(
+                    It.IsAny<string>(),
+                    It.IsAny<ImageSizeType>(),
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new MemoryStream());
+            
+            _blobRepositoryMock.Setup(x => x.UploadImage(
+                    It.IsAny<string>(),
+                    It.IsAny<Stream>(),
+                    It.IsAny<ImageSizeType>(),
+                    It.IsAny<string>(),
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new Fixture().Create<UploadImageResult>());
+
+            _imageResizingMock.Setup(x => x.Resize(
+                    It.IsAny<Stream>(),
+                    It.IsAny<IK.Imager.Core.Abstractions.Models.ImageType>(),
+                    It.IsAny<int>()))
+                .Returns(new ImageResizingResult()
+                {
+                    Image = new MemoryStream(),
+                    Size = new Fixture().Create<ImageSize>()
+                });
+            
+            var thumbnailsService = new ImageThumbnailService(_logger, _imageResizingMock.Object,
+                _blobRepositoryMock.Object, _metadataRepositoryMock.Object,
+                _imageIdentifierProvider, _imageThumbnailSettingsMock.Object);
+
+            await thumbnailsService.CreateThumbnails(Guid.NewGuid().ToString(), Guid.NewGuid().ToString());
+
+            _imageResizingMock.Verify(x => x.Resize(It.IsAny<Stream>(),
+                IK.Imager.Core.Abstractions.Models.ImageType.PNG, It.IsAny<int>()), Times.AtLeastOnce);
         }
 
         /*

@@ -87,7 +87,7 @@ namespace IK.Imager.Core.Thumbnails
             var imageStream = originalImageStream;
             foreach (var targetWidth in _thumbnailTargetWidths)
             {
-                //the current image width is smaller than the target thumbnail with, so just ignoring it 
+                //the current image width is smaller than the target thumbnail width, so just ignoring it 
                 //and moving to the next target thumbnail
                 if (targetWidth >= imageMetadata.Width)
                     continue;
