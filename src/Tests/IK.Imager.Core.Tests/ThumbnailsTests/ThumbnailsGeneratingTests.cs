@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using AutoFixture;
@@ -9,7 +8,6 @@ using IK.Imager.Core.Abstractions;
 using IK.Imager.Core.Abstractions.Models;
 using IK.Imager.Core.Abstractions.Thumbnails;
 using IK.Imager.Core.Settings;
-using IK.Imager.Core.Tests.Mocks;
 using IK.Imager.Core.Thumbnails;
 using IK.Imager.Storage.Abstractions.Models;
 using IK.Imager.Storage.Abstractions.Repositories;
@@ -40,32 +38,6 @@ namespace IK.Imager.Core.Tests.ThumbnailsTests
             _logger = output.BuildLoggerFor<ImageThumbnailService>(); 
             _imageIdentifierProvider = new ImageIdentifierProvider();
         }
-        
-        /*
-        [Fact]
-        public async Task ShouldGenerateThumbnails()
-        {
-            string imageGroup = Guid.NewGuid().ToString();
-            string contentType = "image/jpeg";
-            int width = 800;
-            int height = 600;
-            double aspectRatio = width / (double)height; 
-            var uploadImageResult = await ImageTestsHelper.UploadImage(_blobRepository, _metadataRepository,"Images\\jpeg\\1043-800x600.jpg", width, height, contentType, ImageType.JPEG, imageGroup);
-
-            var imageWithGeneratedThumbnails = await _thumbnailsService.CreateThumbnails(uploadImageResult.Id, imageGroup);
-            Assert.Equal(_imageThumbnailSettings.Value.TargetWidth.Length, imageWithGeneratedThumbnails.Count);
-            int i = 0;
-            foreach (var imageThumbnail in imageWithGeneratedThumbnails)
-            {
-                Assert.Equal(_imageThumbnailSettings.Value.TargetWidth[i++],imageThumbnail.Width);
-                Assert.Equal(contentType,imageThumbnail.MimeType);
-                Assert.NotNull(imageThumbnail.Id);
-                
-                //Making sure aspect ration is retained
-                double thumbnailAspectRation = imageThumbnail.Width / (double)imageThumbnail.Height;
-                Assert.Equal(aspectRatio, thumbnailAspectRation);
-            }
-        }*/
 
         [Fact]
         public async Task CreateThumbnails_ImageMetadataNotFound_SkippedBlobDownloading()
@@ -137,7 +109,35 @@ namespace IK.Imager.Core.Tests.ThumbnailsTests
                     imageMetadata.Width - 200
                 } });
             
-            //setting up so that imageMetadata defined above is returned
+            await MockForPositiveFlow(imageMetadata);
+
+            _imageResizingMock.Verify(x => x.Resize(It.IsAny<Stream>(),
+                IK.Imager.Core.Abstractions.Models.ImageType.PNG, It.IsAny<int>()), Times.AtLeastOnce);
+            
+            _metadataRepositoryMock.Verify(x => x.SetMetadata(It.IsAny<ImageMetadata>(), It.IsAny<CancellationToken>()), Times.Once);
+        }
+        
+        [Fact]
+        public async Task CreateThumbnails_ProperThumbnailsGenerated()
+        {
+            ImageMetadata imageMetadata = new Fixture().Create<ImageMetadata>();
+            imageMetadata.Width = 2000;
+            imageMetadata.ImageType = ImageType.PNG;
+
+            _imageThumbnailSettingsMock.Setup(x => x.Value)
+                .Returns(new ImageThumbnailsSettings { TargetWidth = new[] { 2200, 1600, 900, 500 }});
+            
+            await MockForPositiveFlow(imageMetadata);
+
+            _imageResizingMock.Verify(x => x.Resize(It.IsAny<Stream>(),
+                IK.Imager.Core.Abstractions.Models.ImageType.PNG, It.IsAny<int>()), Times.Exactly(3));
+
+            _metadataRepositoryMock.Verify(x => x.SetMetadata(It.Is<ImageMetadata>(i =>
+                    i.Thumbnails.Count == 3), It.IsAny<CancellationToken>()), Times.Once);
+        }
+        
+        private async Task MockForPositiveFlow(ImageMetadata imageMetadata)
+        {
             _metadataRepositoryMock.Setup(x => x.GetMetadata(
                     It.IsAny<ICollection<string>>(),
                     It.IsAny<string>(),
@@ -173,24 +173,6 @@ namespace IK.Imager.Core.Tests.ThumbnailsTests
                 _imageIdentifierProvider, _imageThumbnailSettingsMock.Object);
 
             await thumbnailsService.CreateThumbnails(Guid.NewGuid().ToString(), Guid.NewGuid().ToString());
-
-            _imageResizingMock.Verify(x => x.Resize(It.IsAny<Stream>(),
-                IK.Imager.Core.Abstractions.Models.ImageType.PNG, It.IsAny<int>()), Times.AtLeastOnce);
         }
-
-        /*
-        [Fact]
-        public async Task ShouldGeneratePngThumbnailsForBmpImage()
-        {
-            string imageGroup = Guid.NewGuid().ToString();
-            string contentType = "image/bmp";
-            var uploadImageResult = await ImageTestsHelper.UploadImage(_blobRepository, _metadataRepository,"Images\\bmp\\1068-800x1600.bmp", 800, 1200, contentType, ImageType.BMP, imageGroup);
-            var imageWithGeneratedThumbnails = await _thumbnailsService.CreateThumbnails(uploadImageResult.Id, imageGroup);
-
-            foreach (var imageThumbnail in imageWithGeneratedThumbnails)
-            {
-                Assert.Equal("image/png", imageThumbnail.MimeType);
-            }
-        }*/
     }
 }
