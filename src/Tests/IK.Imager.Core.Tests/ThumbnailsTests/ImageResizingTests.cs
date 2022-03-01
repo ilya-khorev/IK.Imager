@@ -53,6 +53,8 @@ namespace IK.Imager.Core.Tests.ThumbnailsTests
             {
                 var imageResizingResult = _imageResizing.Resize(originalImageStream, ImageType.JPEG, images[i].Width);
                 Assert.Equal(images[i].Height, imageResizingResult.Size.Height);
+                Assert.Equal(images[i].Width, imageResizingResult.Size.Width);
+                Assert.True(originalImageStream.Length > imageResizingResult.Size.Bytes);
             }
         }
 

@@ -95,7 +95,6 @@ namespace IK.Imager.Api
             services.AddTransient<IImageUploadService, ImageUploadService>();
             services.AddTransient<IImageSearchService, ImageSearchService>();
             services.AddTransient<IImageDeleteService, ImageDeleteService>();
-            services.AddTransient<IImageThumbnailService, ImageThumbnailService>();
             
             services.AddHttpClient<ImageDownloadClient>()
                 .AddTransientHttpErrorPolicy(p =>

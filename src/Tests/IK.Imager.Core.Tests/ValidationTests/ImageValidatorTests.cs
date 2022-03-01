@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using IK.Imager.Core.Abstractions.Models;
 using IK.Imager.Core.Settings;
 using IK.Imager.Core.Validation;

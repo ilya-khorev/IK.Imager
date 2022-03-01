@@ -89,9 +89,9 @@ namespace IK.Imager.Core.Tests
             var imageThumbnailSettings = new MockImageThumbnailsSettings();
             IImageResizing imageResizing = new ImageResizing();
             IImageIdentifierProvider imageIdentifierProvider = new ImageIdentifierProvider();
-            var thumbnailsService = new ImageThumbnailService(_output.BuildLoggerFor<ImageThumbnailService>(), imageResizing, _blobRepository, 
-                _metadataRepository, imageIdentifierProvider, imageThumbnailSettings);
-            await thumbnailsService.CreateThumbnails(uploadedImage.Id, imageGroup);
+            // var thumbnailsService = new ImageThumbnailService(_output.BuildLoggerFor<ImageThumbnailService>(), imageResizing, _blobRepository, 
+            //     _metadataRepository, imageIdentifierProvider, imageThumbnailSettings);
+            // await thumbnailsService.CreateThumbnails(uploadedImage.Id, imageGroup);
             
             imagesSearchResult = await _imageSearchService.Search(new[] {uploadedImage.Id}, imageGroup);
             imageMetadata = (await _metadataRepository.GetMetadata(new[] {uploadedImage.Id}, imageGroup, CancellationToken.None))[0];
