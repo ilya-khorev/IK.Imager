@@ -5,4 +5,4 @@
 
 namespace IK.Imager.Core.Abstractions.ImageDeleting;
 
-public record DeleteImageCommand(string ImageId, string? ImageGroup, string[] thumbnailNames) : IRequest<bool>;
+public record DeleteImageMetadataCommand(string ImageId, string? ImageGroup) : IRequest<bool>;

@@ -39,13 +39,14 @@ public class ImageDeleteService: IImageDeleteService
         if (metadata == null || !metadata.Any())
             return null;
             
-        _logger.LogInformation(MetadataRemoved, imageId);
         var imageMetadata = metadata[0];
             
         var deletedMetadata = await _metadataRepository.RemoveMetadata(imageMetadata.Id, imageMetadata.ImageGroup, CancellationToken.None);
         if (!deletedMetadata)
             return null;
 
+        _logger.LogInformation(MetadataRemoved, imageId);
+        
         return new ImageShortInfo
         {
             ImageId = imageMetadata.Id,

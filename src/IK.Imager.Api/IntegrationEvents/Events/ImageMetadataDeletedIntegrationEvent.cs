@@ -1,6 +1,6 @@
 ﻿namespace IK.Imager.Api.IntegrationEvents.Events
 {
-    public class ImageDeletedIntegrationEvent
+    public class ImageMetadataDeletedIntegrationEvent
     {
         public string ImageId { get; set; }
         public string ImageName { get; set; }

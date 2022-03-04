@@ -8,19 +8,19 @@ using MediatR;
 
 namespace IK.Imager.Api.DomainEventHandlers;
 
-public class ImageDeletedDomainEventHandler: INotificationHandler<ImageDeletedDomainEvent>
+public class ImageMetadataDeletedDomainEventHandler: INotificationHandler<ImageMetadataDeletedDomainEvent>
 {
     private readonly IPublishEndpoint _publishEndpoint;
 
-    public ImageDeletedDomainEventHandler(IPublishEndpoint publishEndpoint)
+    public ImageMetadataDeletedDomainEventHandler(IPublishEndpoint publishEndpoint)
     {
         ArgumentHelper.AssertNotNull(nameof(publishEndpoint), publishEndpoint);
         _publishEndpoint = publishEndpoint;
     }
     
-    public async Task Handle(ImageDeletedDomainEvent notification, CancellationToken cancellationToken)
+    public async Task Handle(ImageMetadataDeletedDomainEvent notification, CancellationToken cancellationToken)
     {
-        await _publishEndpoint.Publish(new ImageDeletedIntegrationEvent
+        await _publishEndpoint.Publish(new ImageMetadataDeletedIntegrationEvent
         {
             ImageId = notification.ImageId,
             ImageName = notification.ImageName,

@@ -6,6 +6,7 @@ using HealthChecks.UI.Client;
 using IK.Imager.Api.Filters;
 using IK.Imager.Api.IntegrationEvents;
 using IK.Imager.Api.IntegrationEvents.EventHandling;
+using IK.Imager.Api.IntegrationEvents.Events;
 using IK.Imager.Api.Middleware;
 using IK.Imager.Core;
 using IK.Imager.Core.Abstractions;
@@ -41,7 +42,6 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
 using Polly;
-using ImageDeletedIntegrationEvent = IK.Imager.Api.IntegrationEvents.Events.ImageDeletedIntegrationEvent;
 using OriginalImageUploadedIntegrationEvent = IK.Imager.Api.IntegrationEvents.Events.OriginalImageUploadedIntegrationEvent;
 
 #pragma warning disable 1591
@@ -127,7 +127,7 @@ namespace IK.Imager.Api
 
                     cfg.Message<OriginalImageUploadedIntegrationEvent>(c => 
                         c.SetEntityName(topicsConfiguration.Value.UploadedImagesTopicName));
-                    cfg.Message<ImageDeletedIntegrationEvent>(c => 
+                    cfg.Message<ImageMetadataDeletedIntegrationEvent>(c => 
                         c.SetEntityName(topicsConfiguration.Value.DeletedImagesTopicName));
 
                     cfg.MaxConcurrentCalls = topicsConfiguration.Value.MaxConcurrentCalls;
@@ -137,7 +137,7 @@ namespace IK.Imager.Api
                         {
                             configurator.ConfigureConsumer<CreateThumbnailsHandler>(context);
                         });
-                    cfg.SubscriptionEndpoint<ImageDeletedIntegrationEvent>(topicsConfiguration.Value.SubscriptionName,
+                    cfg.SubscriptionEndpoint<ImageMetadataDeletedIntegrationEvent>(topicsConfiguration.Value.SubscriptionName,
                         configurator =>
                         {
                             configurator.ConfigureConsumer<RemoveImageFilesHandler>(context);

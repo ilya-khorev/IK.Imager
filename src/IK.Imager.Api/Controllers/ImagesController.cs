@@ -108,7 +108,7 @@ namespace IK.Imager.Api.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> Delete(DeleteImageRequest deleteImageRequest)
         {
-            var imageDeleted = await _mediator.Send(new DeleteImageCommand(deleteImageRequest.ImageId, deleteImageRequest.ImageGroup));
+            var imageDeleted = await _mediator.Send(new DeleteImageMetadataCommand(deleteImageRequest.ImageId, deleteImageRequest.ImageGroup));
             if (!imageDeleted)
                 return NotFound(string.Format(ImageNotFound, deleteImageRequest.ImageId));
 

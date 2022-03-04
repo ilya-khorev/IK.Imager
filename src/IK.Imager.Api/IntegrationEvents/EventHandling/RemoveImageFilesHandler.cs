@@ -4,6 +4,7 @@ using IK.Imager.Core.Abstractions;
 using IK.Imager.Core.Abstractions.ImageDeleting;
 using IK.Imager.Core.Abstractions.Models;
 using MassTransit;
+using MediatR;
 
 #pragma warning disable 1591
 
@@ -13,23 +14,19 @@ namespace IK.Imager.Api.IntegrationEvents.EventHandling
     /// Removing files of the original image and its thumbnails.
     /// Metadata object has been already removed before this event was delivered.
     /// </summary>
-    public class RemoveImageFilesHandler: IConsumer<ImageDeletedIntegrationEvent>
+    public class RemoveImageFilesHandler: IConsumer<ImageMetadataDeletedIntegrationEvent>
     {
-        private readonly IImageDeleteService _imageDeleteService;
+        private readonly IMediator _mediator;
 
-        public RemoveImageFilesHandler(IImageDeleteService imageDeleteService)
+        public RemoveImageFilesHandler(IMediator mediator)
         {
-            _imageDeleteService = imageDeleteService;
+            _mediator = mediator;
         }
         
-        public async Task Consume(ConsumeContext<ImageDeletedIntegrationEvent> context)
+        public async Task Consume(ConsumeContext<ImageMetadataDeletedIntegrationEvent> context)
         {
-            await _imageDeleteService.DeleteImageAndThumbnails(new ImageShortInfo
-            {
-                ImageId = context.Message.ImageId,
-                ImageName = context.Message.ImageName,
-                ThumbnailNames = context.Message.ThumbnailNames
-            });
+            await _mediator.Send(new DeleteImageCommand(context.Message.ImageId, context.Message.ImageName,
+                context.Message.ThumbnailNames));
         }
     }
 }
