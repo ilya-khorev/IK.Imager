@@ -1,8 +1,6 @@
 ﻿using System.Threading.Tasks;
 using IK.Imager.Api.IntegrationEvents.Events;
-using IK.Imager.Core.Abstractions;
 using IK.Imager.Core.Abstractions.ImageDeleting;
-using IK.Imager.Core.Abstractions.Models;
 using MassTransit;
 using MediatR;
 
@@ -25,8 +23,7 @@ namespace IK.Imager.Api.IntegrationEvents.EventHandling
         
         public async Task Consume(ConsumeContext<ImageMetadataDeletedIntegrationEvent> context)
         {
-            await _mediator.Send(new DeleteImageCommand(context.Message.ImageId, context.Message.ImageName,
-                context.Message.ThumbnailNames));
+            await _mediator.Send(new DeleteImageCommand(context.Message.ImageId, context.Message.ImageName, context.Message.ThumbnailNames));
         }
     }
 }
