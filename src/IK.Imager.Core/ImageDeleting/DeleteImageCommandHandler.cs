@@ -1,7 +1,6 @@
 ﻿using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using IK.Imager.Core.Abstractions.ImageDeleting;
 using IK.Imager.Storage.Abstractions.Models;
 using IK.Imager.Storage.Abstractions.Repositories;
 using MediatR;
@@ -11,14 +10,14 @@ namespace IK.Imager.Core.ImageDeleting;
 
 public class DeleteImageCommandHandler: IRequestHandler<DeleteImageCommand>
 {
-    private readonly ILogger<ImageDeleteService> _logger;
+    private readonly ILogger<DeleteImageCommandHandler> _logger;
     private readonly IImageBlobRepository _blobRepository;
     
     private const string Removing = "Removing image and thumbnails for {0}";
     private const string OriginalImageDeleted = "Original image {0} has been deleted. ";
     private const string ThumbnailsDeleted = "{0} / {1} thumbnails were deleted.";
     
-    public DeleteImageCommandHandler(ILogger<ImageDeleteService> logger, IImageBlobRepository blobRepository)
+    public DeleteImageCommandHandler(ILogger<DeleteImageCommandHandler> logger, IImageBlobRepository blobRepository)
     {
         _logger = logger;
         _blobRepository = blobRepository;

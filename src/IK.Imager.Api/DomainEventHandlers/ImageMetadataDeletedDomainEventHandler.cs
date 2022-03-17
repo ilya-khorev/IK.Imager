@@ -1,10 +1,11 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
 using IK.Imager.Api.IntegrationEvents.Events;
-using IK.Imager.Core.Abstractions.ImageDeleting;
+using IK.Imager.Core.ImageDeleting;
 using IK.Imager.Utils;
 using MassTransit;
 using MediatR;
+#pragma warning disable CS1591
 
 namespace IK.Imager.Api.DomainEventHandlers;
 

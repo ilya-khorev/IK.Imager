@@ -5,6 +5,7 @@ using IK.Imager.Core.Abstractions.ImageUploading;
 using IK.Imager.Utils;
 using MassTransit;
 using MediatR;
+#pragma warning disable CS1591
 
 namespace IK.Imager.Api.DomainEventHandlers;
 

@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using IK.Imager.Core.Abstractions.ImageDeleting;
 using IK.Imager.Storage.Abstractions.Repositories;
 using MediatR;
 using Microsoft.Extensions.Logging;

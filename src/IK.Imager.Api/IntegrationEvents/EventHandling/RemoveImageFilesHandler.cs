@@ -1,8 +1,9 @@
 ﻿using System.Threading.Tasks;
 using IK.Imager.Api.IntegrationEvents.Events;
-using IK.Imager.Core.Abstractions.ImageDeleting;
+using IK.Imager.Core.ImageDeleting;
 using MassTransit;
 using MediatR;
+// ReSharper disable ClassNeverInstantiated.Global
 
 #pragma warning disable 1591
 
