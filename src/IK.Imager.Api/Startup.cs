@@ -11,13 +11,11 @@ using IK.Imager.Api.Middleware;
 using IK.Imager.Core;
 using IK.Imager.Core.Abstractions;
 using IK.Imager.Core.Abstractions.Cdn;
-using IK.Imager.Core.Abstractions.ImageDeleting;
 using IK.Imager.Core.Abstractions.ImageSearch;
 using IK.Imager.Core.Abstractions.ImageUploading;
 using IK.Imager.Core.Abstractions.Thumbnails;
 using IK.Imager.Core.Abstractions.Validation;
 using IK.Imager.Core.Cdn;
-using IK.Imager.Core.ImageDeleting;
 using IK.Imager.Core.ImageSearch;
 using IK.Imager.Core.ImageUploading;
 using IK.Imager.Core.Settings;
@@ -94,7 +92,6 @@ namespace IK.Imager.Api
             
             services.AddTransient<IImageUploadService, ImageUploadService>();
             services.AddTransient<IImageSearchService, ImageSearchService>();
-            services.AddTransient<IImageDeleteService, ImageDeleteService>();
             
             services.AddHttpClient<ImageDownloadClient>()
                 .AddTransientHttpErrorPolicy(p =>

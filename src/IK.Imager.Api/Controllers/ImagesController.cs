@@ -1,7 +1,6 @@
 ﻿using System.Threading.Tasks;
 using AutoMapper;
 using IK.Imager.Api.Contract;
-using IK.Imager.Core.Abstractions.ImageDeleting;
 using IK.Imager.Core.Abstractions.ImageSearch;
 using IK.Imager.Core.Abstractions.ImageUploading;
 using IK.Imager.Core.ImageDeleting;
