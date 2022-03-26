@@ -163,16 +163,14 @@ namespace IK.Imager.Api
             app.UseRouting();
 
             app.UseSwagger();
+    
             app.UseSwaggerUI(c =>
-            {
-                app.UseSwaggerUI(_ =>
-                    {
-                        c.SwaggerEndpoint($"/swagger/{CurrentVersion}/swagger.json", ApiTitle);
-                        c.RoutePrefix = string.Empty;
-                    }
-                );
-            });
-
+                {
+                    c.SwaggerEndpoint($"/swagger/{CurrentVersion}/swagger.json", ApiTitle);
+                    c.RoutePrefix = string.Empty;
+                }
+            );
+            
             app.UseMiddleware<ServiceFabricResourceNotFoundMiddleware>();
 
             app.UseEndpoints(endpoints =>
