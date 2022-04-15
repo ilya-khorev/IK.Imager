@@ -3,7 +3,6 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using IK.Imager.Core.Abstractions;
-using IK.Imager.Core.Abstractions.Cdn;
 using IK.Imager.Core.Abstractions.ImageUploading;
 using IK.Imager.Core.Abstractions.Models;
 using IK.Imager.Core.Abstractions.Validation;
@@ -21,14 +20,13 @@ public class ImageUploadService: IImageUploadService
     private readonly IImageMetadataRepository _metadataRepository;
     private readonly IImageValidator _imageValidator;
     private readonly IImageIdentifierProvider _imageIdentifierProvider;
-    private readonly ICdnService _cdnService;
 
     private const string CheckingImage = "Starting to check the image.";
     private const string UploadedToBlobStorage = "Uploaded the image to the blob storage, imageId={0}.";
     private const string UploadingFinished = "Image with id={0} and its metadata have been saved.";
         
     public ImageUploadService(ILogger<ImageUploadService> logger, IImageMetadataReader metadataReader, IImageBlobRepository blobRepository, 
-        IImageMetadataRepository metadataRepository, IImageValidator imageValidator, IImageIdentifierProvider imageIdentifierProvider, ICdnService cdnService)
+        IImageMetadataRepository metadataRepository, IImageValidator imageValidator, IImageIdentifierProvider imageIdentifierProvider)
     {
         _logger = logger;
         _metadataReader = metadataReader;
@@ -36,11 +34,8 @@ public class ImageUploadService: IImageUploadService
         _metadataRepository = metadataRepository;
         _imageValidator = imageValidator;
         _imageIdentifierProvider = imageIdentifierProvider;
-        _cdnService = cdnService;
     }
-        
-    //todo move cdn service usage outside this class
-        
+
     public async Task<ImageInfo> UploadImage(Stream imageStream, string imageGroup)
     {
         _logger.LogDebug(CheckingImage);
@@ -102,7 +97,7 @@ public class ImageUploadService: IImageUploadService
             Name = imageName,
             Hash = uploadImageResult.Hash,
             DateAdded = uploadImageResult.DateAdded,
-            Url = _cdnService.TryTransformToCdnUri(uploadImageResult.Url).ToString(),
+            Url = uploadImageResult.Url,
             Bytes = imageSize.Bytes,
             Height = imageSize.Height,
             Width = imageSize.Width,

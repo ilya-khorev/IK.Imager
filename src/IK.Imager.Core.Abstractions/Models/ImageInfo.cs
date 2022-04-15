@@ -20,7 +20,7 @@ namespace IK.Imager.Core.Abstractions.Models
         /// <summary>
         /// Image https url
         /// </summary>
-        public string Url { get; set; }
+        public Uri Url { get; set; }
         
         /// <summary>
         /// Image hashcode
