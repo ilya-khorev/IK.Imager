@@ -22,7 +22,8 @@ namespace IK.Imager.Core.Cdn
             
             var builder = new UriBuilder(originalUri)
             {
-                Host = _cdnSettings.Value.Uri.Host
+                Host = _cdnSettings.Value.Uri.Host,
+                Scheme = _cdnSettings.Value.Uri.Scheme
             };
             
             return builder.Uri;
