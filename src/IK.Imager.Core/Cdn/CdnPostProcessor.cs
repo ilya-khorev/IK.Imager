@@ -5,6 +5,7 @@ using IK.Imager.Core.Abstractions.Cdn;
 using IK.Imager.Core.Abstractions.ImageUploading;
 using IK.Imager.Core.Abstractions.Models;
 using IK.Imager.Core.ImageSearch;
+using IK.Imager.Core.ImageUploading;
 using MediatR.Pipeline;
 
 namespace IK.Imager.Core.Cdn;

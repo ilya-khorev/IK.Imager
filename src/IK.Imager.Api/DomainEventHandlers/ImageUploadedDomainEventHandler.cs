@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using IK.Imager.Api.IntegrationEvents.Events;
 using IK.Imager.Core.Abstractions.ImageUploading;
+using IK.Imager.Core.ImageUploading;
 using IK.Imager.Utils;
 using MassTransit;
 using MediatR;

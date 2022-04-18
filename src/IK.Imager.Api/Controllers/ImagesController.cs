@@ -4,6 +4,7 @@ using IK.Imager.Api.Contract;
 using IK.Imager.Core.Abstractions.ImageUploading;
 using IK.Imager.Core.ImageDeleting;
 using IK.Imager.Core.ImageSearch;
+using IK.Imager.Core.ImageUploading;
 using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
