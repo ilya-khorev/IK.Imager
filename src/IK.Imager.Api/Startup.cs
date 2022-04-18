@@ -138,7 +138,6 @@ namespace IK.Imager.Api
                         });
                 });
             });
-            services.AddMassTransitHostedService();
         }
 
         private void RegisterConfigurations(IServiceCollection services)
