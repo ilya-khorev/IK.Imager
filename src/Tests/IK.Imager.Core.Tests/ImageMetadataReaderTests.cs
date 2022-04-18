@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using System.Threading.Tasks;
 using IK.Imager.Core.Abstractions.Models;
@@ -32,12 +33,19 @@ namespace IK.Imager.Core.Tests
 
         [Theory]
         [InlineData(ImageTestsHelper.WebpImagePath)]
-        [InlineData(ImageTestsHelper.TextFilePath)]
-        public async Task DetectFormat_UnsupportedFormat_ReturnsNull(string filePath)
+        public async Task DetectFormat_UnsupportedImageFormat_NotSupportedException(string filePath)
         {
             await using var fileStream = ImageTestsHelper.OpenFileForReading(filePath);
-            var imageFormat = _imageMetadataReader.DetectFormat(fileStream);
-            Assert.Null(imageFormat);
+            Assert.Throws<NotSupportedException>(() => _imageMetadataReader.DetectFormat(fileStream));
+        }
+        
+        [Theory]
+        [InlineData(ImageTestsHelper.TextFilePath)]
+        public async Task DetectFormat_UnrecognizedFormat_ReturnsNull(string filePath)
+        {
+            await using var fileStream = ImageTestsHelper.OpenFileForReading(filePath);
+            var format = _imageMetadataReader.DetectFormat(fileStream);
+            Assert.Null(format);
         }
         
         [Theory]
@@ -56,7 +64,6 @@ namespace IK.Imager.Core.Tests
         }
 
         [Theory]
-        [InlineData(ImageTestsHelper.WebpImagePath)]
         [InlineData(ImageTestsHelper.TextFilePath)]
         public async Task ReadSize_UnsupportedFormat_ReturnsNull(string filePath)
         {

@@ -9,7 +9,7 @@
       <PackageReference Include="MediatR" Version="10.0.1" />
       <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="6.0.0" />
       <PackageReference Include="Microsoft.Extensions.Options" Version="6.0.0" />
-      <PackageReference Include="SixLabors.ImageSharp" Version="1.0.4" />
+      <PackageReference Include="SixLabors.ImageSharp" Version="2.1.0" />
     </ItemGroup>
 
     <ItemGroup>
