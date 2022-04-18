@@ -1,9 +1,8 @@
 ﻿#pragma warning disable 1591
-namespace IK.Imager.Api.Validations
+namespace IK.Imager.Api.Validations;
+
+internal static class ValidationConstants
 {
-    internal static class ValidationConstants
-    {
-        public const int MaxImageGroupLength = 30;
-        public const int MinImageGroupLength = 3;
-    }
+    public const int MaxImageGroupLength = 30;
+    public const int MinImageGroupLength = 3;
 }

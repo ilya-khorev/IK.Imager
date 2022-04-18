@@ -8,7 +8,7 @@ namespace IK.Imager.Core.Tests.Mocks
 {
     public class InMemoryMockedImageMetadataRepository: IImageMetadataRepository
     {
-        readonly Dictionary<string, ImageMetadata> _dictionary = new Dictionary<string, ImageMetadata>();
+        readonly Dictionary<string, ImageMetadata> _dictionary = new();
         
         public Task SetMetadata(ImageMetadata metadata, CancellationToken cancellationToken)
         {

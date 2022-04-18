@@ -2,16 +2,15 @@
 using IK.Imager.Api.Contract;
 #pragma warning disable 1591
 
-namespace IK.Imager.Api.Validations
+namespace IK.Imager.Api.Validations;
+
+public class UploadImageFileRequestValidator: AbstractValidator<UploadImageFileRequest>
 {
-    public class UploadImageFileRequestValidator: AbstractValidator<UploadImageFileRequest>
+    public UploadImageFileRequestValidator()
     {
-        public UploadImageFileRequestValidator()
-        {
-            RuleFor(x => x.ImageGroup)
-                .NotEmpty()
-                .MaximumLength(ValidationConstants.MaxImageGroupLength)
-                .MinimumLength(ValidationConstants.MinImageGroupLength);
-        }
+        RuleFor(x => x.ImageGroup)
+            .NotEmpty()
+            .MaximumLength(ValidationConstants.MaxImageGroupLength)
+            .MinimumLength(ValidationConstants.MinImageGroupLength);
     }
 }
