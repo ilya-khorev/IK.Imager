@@ -31,7 +31,7 @@ namespace IK.Imager.Core.Settings
         public Range<double> AspectRatio { get; set; }
         
         /// <summary>
-        /// Supported image types (PNG, BMP, GIF, JPEG only allowed)
+        /// Supported image types 
         /// </summary>
         public List<string> Types { get; set; }
 

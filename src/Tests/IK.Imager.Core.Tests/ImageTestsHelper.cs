@@ -19,6 +19,8 @@ namespace IK.Imager.Core.Tests
         public const string GifImagesDirectory = ImagesDirectory + "\\gif";
 
         public const string WebpImagePath = ImagesDirectory + "\\556-200x300.webp";
+        public const string TgaImagePath = ImagesDirectory + "\\sample_640×426.tga";
+
         public const string TextFilePath = "textFile.txt";
 
         static readonly Random Random = new ();

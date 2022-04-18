@@ -32,7 +32,7 @@ namespace IK.Imager.Core.Tests
         }
 
         [Theory]
-        [InlineData(ImageTestsHelper.WebpImagePath)]
+        [InlineData(ImageTestsHelper.TgaImagePath)]
         public async Task DetectFormat_UnsupportedImageFormat_NotSupportedException(string filePath)
         {
             await using var fileStream = ImageTestsHelper.OpenFileForReading(filePath);
@@ -53,6 +53,7 @@ namespace IK.Imager.Core.Tests
         [InlineData(ImageTestsHelper.BmpImagesDirectory + "\\1068-1000x2000.bmp", 1000, 2000, 8000138)]
         [InlineData(ImageTestsHelper.GifImagesDirectory + "\\giphy_400x400.gif", 400, 400, 149130)]
         [InlineData(ImageTestsHelper.PngImagesDirectory + "\\1060-800x800.png", 800, 800, 514792)]
+        [InlineData(ImageTestsHelper.WebpImagePath, 200, 300, 3086)]
         public async Task ReadSize_SupportedFormat_ReturnsSizeModel(string imagePath, int expectedWidth,
             int expectedHeight, int expectedSize)
         {
