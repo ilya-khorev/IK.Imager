@@ -11,7 +11,6 @@ using IK.Imager.Api.Middleware;
 using IK.Imager.Core;
 using IK.Imager.Core.Abstractions;
 using IK.Imager.Core.Abstractions.Cdn;
-using IK.Imager.Core.Abstractions.ImageUploading;
 using IK.Imager.Core.Abstractions.Thumbnails;
 using IK.Imager.Core.Abstractions.Validation;
 using IK.Imager.Core.Cdn;
@@ -87,9 +86,7 @@ public class Startup
         services.AddScoped<IImageBlobRepository, ImageBlobAzureRepository>();
         services.AddScoped<IImageMetadataRepository, ImageMetadataCosmosDbRepository>();
         services.AddScoped<IImageValidator, ImageValidator>();
-            
-        services.AddTransient<IImageUploadService, ImageUploadService>();
-            
+
         services.AddHttpClient<ImageDownloadClient>()
             .AddTransientHttpErrorPolicy(p =>
                 p.WaitAndRetryAsync(3, _ => TimeSpan.FromMilliseconds(500)));

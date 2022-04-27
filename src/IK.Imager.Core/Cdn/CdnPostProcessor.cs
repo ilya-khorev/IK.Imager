@@ -2,7 +2,6 @@
 using System.Threading;
 using System.Threading.Tasks;
 using IK.Imager.Core.Abstractions.Cdn;
-using IK.Imager.Core.Abstractions.ImageUploading;
 using IK.Imager.Core.Abstractions.Models;
 using IK.Imager.Core.ImageSearch;
 using IK.Imager.Core.ImageUploading;

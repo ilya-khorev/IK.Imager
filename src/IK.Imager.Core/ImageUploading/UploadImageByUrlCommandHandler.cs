@@ -1,6 +1,5 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
-using IK.Imager.Core.Abstractions.ImageUploading;
 using IK.Imager.Core.Abstractions.Models;
 using MediatR;
 using Microsoft.Extensions.Logging;
