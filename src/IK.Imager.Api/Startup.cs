@@ -9,14 +9,7 @@ using IK.Imager.Api.IntegrationEvents.EventHandling;
 using IK.Imager.Api.IntegrationEvents.Events;
 using IK.Imager.Api.Middleware;
 using IK.Imager.Core;
-using IK.Imager.Core.Abstractions;
-using IK.Imager.Core.Abstractions.Cdn;
-using IK.Imager.Core.Abstractions.Thumbnails;
 using IK.Imager.Core.Abstractions.Validation;
-using IK.Imager.Core.Cdn;
-using IK.Imager.Core.ImageUploading;
-using IK.Imager.Core.Settings;
-using IK.Imager.Core.Thumbnails;
 using IK.Imager.Core.Validation;
 using IK.Imager.ImageMetadataStorage.CosmosDB;
 using IK.Imager.ImageBlobStorage.AzureFiles;
@@ -77,12 +70,9 @@ public class Startup
             var settings = s.GetRequiredService<IOptions<ImageAzureStorageSettings>>();
             return new AzureBlobClient(settings.Value.ConnectionString);
         });
-                
-        services.AddSingleton<IImageMetadataReader, ImageMetadataReader>();
-        services.AddSingleton<IImageIdentifierProvider, ImageIdentifierProvider>();
-        services.AddSingleton<ICdnService, CdnService>();
-        services.AddSingleton<IImageResizing, ImageResizing>();
-            
+
+        services.RegisterCoreServices(Configuration);
+        
         services.AddScoped<IImageBlobRepository, ImageBlobAzureRepository>();
         services.AddScoped<IImageMetadataRepository, ImageMetadataCosmosDbRepository>();
         services.AddScoped<IImageValidator, ImageValidator>();
@@ -91,9 +81,7 @@ public class Startup
             .AddTransientHttpErrorPolicy(p =>
                 p.WaitAndRetryAsync(3, _ => TimeSpan.FromMilliseconds(500)));
             
-        services.AddMediatR(typeof(Startup).Assembly, 
-            typeof(UploadImageCommand).Assembly,
-            typeof(UploadImageCommandHandler).Assembly);  
+        services.AddMediatR(typeof(Startup).Assembly);  
             
         services.AddFluentValidation(fv =>
         {
@@ -139,12 +127,9 @@ public class Startup
 
     private void RegisterConfigurations(IServiceCollection services)
     {
-        services.Configure<ImageLimitationSettings>(Configuration.GetSection("ImageLimitations"));
         services.Configure<ImageAzureStorageSettings>(Configuration.GetSection("AzureStorage"));
         services.Configure<ImageMetadataCosmosDbStorageSettings>(Configuration.GetSection("CosmosDb"));
         services.Configure<TopicsConfiguration>(Configuration.GetSection("Topics"));
-        services.Configure<CdnSettings>(Configuration.GetSection("Cdn"));
-        services.Configure<ImageThumbnailsSettings>(Configuration.GetSection("Thumbnails"));
     }
 
     // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
