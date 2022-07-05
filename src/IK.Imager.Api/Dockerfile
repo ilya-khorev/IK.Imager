@@ -3,18 +3,16 @@
 #Depending on the operating system of the host machines(s) that will build or run the containers, the image specified in the FROM statement may need to be changed.
 #For more information, please see https://aka.ms/containercompat
 
-FROM mcr.microsoft.com/dotnet/core/aspnet:3.1-nanoserver-1809 AS base
+FROM mcr.microsoft.com/dotnet/core/aspnet:6.0 AS base
 WORKDIR /app
 EXPOSE 80
 EXPOSE 443
 
-FROM mcr.microsoft.com/dotnet/core/sdk:3.1-nanoserver-1809 AS build
+FROM mcr.microsoft.com/dotnet/core/sdk:6.0 AS build
 WORKDIR /src
 COPY ["IK.Imager.Api/IK.Imager.Api.csproj", "IK.Imager.Api/"]
-COPY ["IK.Imager.EventBus.AzureServiceBus/IK.Imager.EventBus.AzureServiceBus.csproj", "IK.Imager.EventBus.AzureServiceBus/"]
-COPY ["IK.Imager.EventBus.Abstractions/IK.Imager.EventBus.Abstractions.csproj", "IK.Imager.EventBus.Abstractions/"]
 COPY ["IK.Imager.Core/IK.Imager.Core.csproj", "IK.Imager.Core/"]
-COPY ["IK.Imager.IntegrationEvents/IK.Imager.IntegrationEvents.csproj", "IK.Imager.IntegrationEvents/"]
+COPY ["IK.Imager.Api.Contract/IK.Imager.Api.Contract.csproj", "IK.Imager.Api.Contract/"]
 COPY ["IK.Imager.Core.Abstractions/IK.Imager.Core.Abstractions.csproj", "IK.Imager.Core.Abstractions/"]
 COPY ["IK.Imager.Utils/IK.Imager.Utils.csproj", "IK.Imager.Utils/"]
 COPY ["IK.Imager.ImageBlobStorage.AzureFiles/IK.Imager.ImageBlobStorage.AzureFiles.csproj", "IK.Imager.ImageBlobStorage.AzureFiles/"]

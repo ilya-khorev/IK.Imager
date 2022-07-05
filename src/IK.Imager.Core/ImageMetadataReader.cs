@@ -9,6 +9,8 @@ using SixLabors.ImageSharp.Formats.Bmp;
 using SixLabors.ImageSharp.Formats.Gif;
 using SixLabors.ImageSharp.Formats.Jpeg;
 using SixLabors.ImageSharp.Formats.Png;
+using SixLabors.ImageSharp.Formats.Tiff;
+using SixLabors.ImageSharp.Formats.Webp;
 
 namespace IK.Imager.Core
 {
@@ -34,6 +36,10 @@ namespace IK.Imager.Core
                 imageType = ImageType.GIF;
             else if (imageFormat is BmpFormat)
                 imageType = ImageType.BMP;
+            else if (imageFormat is TiffFormat)
+                imageType = ImageType.TIFF;
+            else if (imageFormat is WebpFormat)
+                imageType = ImageType.WEBP;
             else 
                 throw new NotSupportedException($"Image format {imageFormat.Name} is not supported");
 

@@ -20,8 +20,13 @@
         /// <summary>
         /// Bitmap file
         /// </summary>
-        BMP
+        BMP,
 
-        //The rest of image types are not supported here
+        /// <summary>
+        /// Tag Image File Format
+        /// </summary>
+        TIFF,
+        
+        WEBP
     }
 }

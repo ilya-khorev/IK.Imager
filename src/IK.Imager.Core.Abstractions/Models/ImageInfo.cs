@@ -13,9 +13,14 @@ namespace IK.Imager.Core.Abstractions.Models
         public string Id { get; set; }
         
         /// <summary>
+        /// Unique image name
+        /// </summary>
+        public string Name { get; set; }
+        
+        /// <summary>
         /// Image https url
         /// </summary>
-        public string Url { get; set; }
+        public Uri Url { get; set; }
         
         /// <summary>
         /// Image hashcode

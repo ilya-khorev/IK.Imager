@@ -1,152 +1,204 @@
 using System;
 using System.IO;
 using System.Reflection;
-using AutoMapper;
+using FluentValidation.AspNetCore;
+using HealthChecks.UI.Client;
 using IK.Imager.Api.Filters;
-using IK.Imager.Api.Services;
+using IK.Imager.Api.IntegrationEvents;
+using IK.Imager.Api.IntegrationEvents.EventHandling;
+using IK.Imager.Api.IntegrationEvents.Events;
+using IK.Imager.Api.Middleware;
 using IK.Imager.Core;
-using IK.Imager.Core.Abstractions;
-using IK.Imager.Core.Abstractions.Services;
-using IK.Imager.Core.Configuration;
-using IK.Imager.Core.Services;
-using IK.Imager.EventBus.Abstractions;
-using IK.Imager.EventBus.AzureServiceBus;
+using IK.Imager.Core.Abstractions.Validation;
+using IK.Imager.Core.Validation;
 using IK.Imager.ImageMetadataStorage.CosmosDB;
 using IK.Imager.ImageBlobStorage.AzureFiles;
-using IK.Imager.IntegrationEvents;
-using IK.Imager.Storage.Abstractions.Storage;
+using IK.Imager.Storage.Abstractions.Repositories;
+using MassTransit;
+using MediatR;
+using MicroElements.Swashbuckle.FluentValidation;
+using MicroElements.Swashbuckle.FluentValidation.AspNetCore;
 using Microsoft.ApplicationInsights.AspNetCore.Extensions;
 using Microsoft.ApplicationInsights.Extensibility.PerfCounterCollector.QuickPulse;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
 using Polly;
+using OriginalImageUploadedIntegrationEvent = IK.Imager.Api.IntegrationEvents.Events.OriginalImageUploadedIntegrationEvent;
 
 #pragma warning disable 1591
 
-namespace IK.Imager.Api
+namespace IK.Imager.Api;
+
+public class Startup
 {
-    public class Startup
+    private const string ApiTitle = "IK.Imager API";
+    private const string CurrentVersion = "v1.0";
+
+    public Startup(IConfiguration configuration)
     {
-        private const string ApiTitle = "IK.Imager API";
-        private const string CurrentVersion = "v1.0";
+        Configuration = configuration;
+    }
 
-        public Startup(IConfiguration configuration)
+    public IConfiguration Configuration { get; }
+
+    // This method gets called by the runtime. Use this method to add services to the container.
+    public void ConfigureServices(IServiceCollection services)
+    {
+        services.AddControllers(options => { options.Filters.Add(typeof(GlobalExceptionFilter)); });
+            
+        services.AddSwaggerGen(options =>
         {
-            Configuration = configuration;
-        }
+            options.SwaggerDoc(CurrentVersion, new OpenApiInfo {Title = ApiTitle, Version = CurrentVersion});
+            foreach (var contractFile in Directory.GetFiles(AppDomain.CurrentDomain.BaseDirectory, "IK.Imager.*.xml", SearchOption.AllDirectories))
+                options.IncludeXmlComments(contractFile);
+        });
 
-        public IConfiguration Configuration { get; }
+        services.AddAutoMapper(c => c.AddProfile<MappingProfile>(), typeof(Startup));
 
-        // This method gets called by the runtime. Use this method to add services to the container.
-        public void ConfigureServices(IServiceCollection services)
+        RegisterConfigurations(services);
+            
+        services.AddSingleton<ICosmosDbClient, CosmosDbClient>();
+        services.AddSingleton<IAzureBlobClient, AzureBlobClient>(s =>
         {
-            services.AddControllers(options => { options.Filters.Add(typeof(GlobalExceptionFilter)); });
+            var settings = s.GetRequiredService<IOptions<ImageAzureStorageSettings>>();
+            return new AzureBlobClient(settings.Value.ConnectionString);
+        });
 
-            //todo sort endpoints in swagger
+        services.RegisterCoreServices(Configuration);
+        
+        services.AddScoped<IImageBlobRepository, ImageBlobAzureRepository>();
+        services.AddScoped<IImageMetadataRepository, ImageMetadataCosmosDbRepository>();
+        services.AddScoped<IImageValidator, ImageValidator>();
 
-            services.AddSwaggerGen(c =>
+        services.AddHttpClient<ImageDownloadClient>()
+            .AddTransientHttpErrorPolicy(p =>
+                p.WaitAndRetryAsync(3, _ => TimeSpan.FromMilliseconds(500)));
+            
+        services.AddMediatR(typeof(Startup).Assembly);  
+            
+        services.AddFluentValidation(fv =>
+        {
+            fv.RegisterValidatorsFromAssemblyContaining<Startup>();
+            fv.ValidatorFactoryType = typeof(HttpContextServiceProviderValidatorFactory);
+        });
+        services.AddFluentValidationRulesToSwagger();
+            
+        services.AddHealthChecks(Configuration);
+        services.SetupAppInsights(Configuration);
+            
+        services.AddMassTransit(x =>
+        {
+            x.AddConsumers(Assembly.GetExecutingAssembly());
+            x.UsingAzureServiceBus((context, cfg) =>
             {
-                c.SwaggerDoc(CurrentVersion, new OpenApiInfo {Title = ApiTitle, Version = CurrentVersion});
-                c.IncludeXmlComments(XmlCommentsFilePath);
-            });
+                var configuration = context.GetRequiredService<IConfiguration>();
+                var serviceBusConnectionString = configuration.GetValue<string>("ServiceBus:ConnectionString");
+                cfg.Host(serviceBusConnectionString);
 
-            services.AddAutoMapper(c => c.AddProfile<AutoMapping>(), typeof(Startup));
+                var topicsConfiguration = context.GetRequiredService<IOptions<TopicsConfiguration>>();
 
-            RegisterConfigurations(services);
+                cfg.Message<OriginalImageUploadedIntegrationEvent>(c => 
+                    c.SetEntityName(topicsConfiguration.Value.UploadedImagesTopicName));
+                cfg.Message<ImageMetadataDeletedIntegrationEvent>(c => 
+                    c.SetEntityName(topicsConfiguration.Value.DeletedImagesTopicName));
 
-            services.AddSingleton<IEventBus, ServiceBus>();
-            services.AddSingleton<IImageMetadataStorage, ImageMetadataCosmosDbStorage>();
-            services.AddSingleton<IImageBlobStorage, ImageBlobAzureStorage>();
-            services.AddSingleton<IImageMetadataReader, ImageMetadataReader>();
-            services.AddSingleton<IImageIdentifierProvider, ImageIdentifierProvider>();
-
-            services.AddSingleton<IImageUploadService, ImageUploadService>();
-            services.AddSingleton<IImageSearchService, ImageSearchService>();
-            services.AddSingleton<IImageDeleteService, ImageDeleteService>();
-
-            services.AddHttpClient<ImageDownloadClient>()
-                .AddTransientHttpErrorPolicy(p =>
-                    p.WaitAndRetryAsync(3, _ => TimeSpan.FromMilliseconds(500)));
-
-            services.AddHealthChecks(); //todo
-            SetupAppInsights(services);
-        }
-
-        private void RegisterConfigurations(IServiceCollection services)
-        {
-            services.Configure<ImageLimitationSettings>(Configuration.GetSection("ImageLimitations"));
-            services.AddSingleton(resolver => resolver.GetRequiredService<IOptions<ImageLimitationSettings>>().Value);
-
-            services.Configure<ServiceBusSettings>(Configuration.GetSection("ServiceBus"));
-            services.AddSingleton(resolver => resolver.GetRequiredService<IOptions<ServiceBusSettings>>().Value);
-
-            services.Configure<ImageAzureStorageConfiguration>(Configuration.GetSection("AzureStorage"));
-            services.AddSingleton(resolver =>
-                resolver.GetRequiredService<IOptions<ImageAzureStorageConfiguration>>().Value);
-
-            services.Configure<ImageMetadataCosmosDbStorageConfiguration>(Configuration.GetSection("CosmosDb"));
-            services.AddSingleton(resolver =>
-                resolver.GetRequiredService<IOptions<ImageMetadataCosmosDbStorageConfiguration>>().Value);
-
-            services.Configure<TopicsConfiguration>(Configuration.GetSection("Topics"));
-            services.AddSingleton(resolver => resolver.GetRequiredService<IOptions<TopicsConfiguration>>().Value);
-        }
-
-        private void SetupAppInsights(IServiceCollection services)
-        {
-            ApplicationInsightsServiceOptions aiOptions = new ApplicationInsightsServiceOptions();
-            var appInsightsDependencyConfigValue =
-                Configuration.GetValue<bool>("ApplicationInsights:EnableDependencyTrackingTelemetryModule");
-            //dependency tracking is disabled by default as it is quite expensive
-            aiOptions.EnableDependencyTrackingTelemetryModule = appInsightsDependencyConfigValue;
-
-            //by default instrumentation key is taken from config
-            //Alternatively, specify the instrumentation key in either of the following environment variables.
-            //APPINSIGHTS_INSTRUMENTATIONKEY or ApplicationInsights:InstrumentationKey
-            services.AddApplicationInsightsTelemetry(aiOptions);
-
-            var appInsightsAuthApiKey = Configuration.GetValue<string>("ApplicationInsights:AuthenticationApiKey");
-            if (!string.IsNullOrWhiteSpace(appInsightsAuthApiKey))
-                services.ConfigureTelemetryModule<QuickPulseTelemetryModule>((module, o) =>
-                    module.AuthenticationApiKey = appInsightsAuthApiKey);
-        }
-
-        private string XmlCommentsFilePath
-        {
-            get
-            {
-                var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
-                var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
-                return xmlPath;
-            }
-        }
-
-        // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
-        {
-            if (env.IsDevelopment())
-                app.UseDeveloperExceptionPage();
-
-            app.UseRouting();
-
-            app.UseSwagger(c => { c.SerializeAsV2 = true; });
-            app.UseSwaggerUI(c =>
-            {
-                app.UseSwaggerUI(
-                    options =>
+                cfg.MaxConcurrentCalls = topicsConfiguration.Value.MaxConcurrentCalls;
+                    
+                cfg.SubscriptionEndpoint<OriginalImageUploadedIntegrationEvent>(topicsConfiguration.Value.SubscriptionName,
+                    configurator =>
                     {
-                        c.SwaggerEndpoint($"/swagger/{CurrentVersion}/swagger.json", ApiTitle);
-                        c.RoutePrefix = string.Empty;
-                    }
-                );
+                        configurator.ConfigureConsumer<CreateThumbnailsHandler>(context);
+                    });
+                cfg.SubscriptionEndpoint<ImageMetadataDeletedIntegrationEvent>(topicsConfiguration.Value.SubscriptionName,
+                    configurator =>
+                    {
+                        configurator.ConfigureConsumer<RemoveImageFilesHandler>(context);
+                    });
             });
+        });
+    }
 
-            app.UseEndpoints(endpoints => { endpoints.MapControllers(); });
-        }
+    private void RegisterConfigurations(IServiceCollection services)
+    {
+        services.Configure<ImageAzureStorageSettings>(Configuration.GetSection("AzureStorage"));
+        services.Configure<ImageMetadataCosmosDbStorageSettings>(Configuration.GetSection("CosmosDb"));
+        services.Configure<TopicsConfiguration>(Configuration.GetSection("Topics"));
+    }
+
+    // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
+    public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+    {
+        if (env.IsDevelopment())
+            app.UseDeveloperExceptionPage();
+
+        app.UseRouting();
+
+        app.UseSwagger();
+    
+        app.UseSwaggerUI(c =>
+            {
+                c.SwaggerEndpoint($"/swagger/{CurrentVersion}/swagger.json", ApiTitle);
+                c.RoutePrefix = string.Empty;
+            }
+        );
+            
+        app.UseMiddleware<ServiceFabricResourceNotFoundMiddleware>();
+
+        app.UseEndpoints(endpoints =>
+        {
+            endpoints.MapControllers();
+            endpoints.MapHealthChecks("/hc", new HealthCheckOptions()
+            {
+                Predicate = _ => true,
+                ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
+            });
+            endpoints.MapHealthChecks("/liveness", new HealthCheckOptions
+            {
+                Predicate = r => r.Name.Contains("self")
+            });
+        });
+    }
+}
+ 
+public static class CustomExtensionsMethods
+{
+    public static void AddHealthChecks(this IServiceCollection services, IConfiguration configuration)
+    {
+        var hcBuilder = services.AddHealthChecks();
+
+        hcBuilder.AddCheck("self", () => HealthCheckResult.Healthy());
+            
+        var cosmosDbConnectionString = configuration["CosmosDb:ConnectionString"];
+        var cosmosDbDatabase = configuration["CosmosDb:DatabaseId"];
+        hcBuilder.AddCosmosDb(cosmosDbConnectionString, cosmosDbDatabase, "ik.imager-cosmossdb-check", tags: new [] { "cosmosdb" });
+
+        var azureConnectionString = configuration["AzureStorage:ConnectionString"];
+        var azureContainerName = configuration["AzureStorage:ImagesContainerName"];
+        hcBuilder.AddAzureBlobStorage(azureConnectionString, azureContainerName, name: "ik.imager-blobstorage-check", tags: new [] { "blobstorage" });
+    }
+        
+    public static void SetupAppInsights(this IServiceCollection services, IConfiguration configuration)
+    {
+        ApplicationInsightsServiceOptions aiOptions = new ApplicationInsightsServiceOptions();
+        var appInsightsDependencyConfigValue = configuration.GetValue<bool>("ApplicationInsights:EnableDependencyTrackingTelemetryModule");
+        //dependency tracking is disabled by default as it is produce a lot of logs and therefore quite expensive
+        aiOptions.EnableDependencyTrackingTelemetryModule = appInsightsDependencyConfigValue;
+
+        //By default, instrumentation key is taken from the configuration
+        //Alternatively, specify the instrumentation key in either of the following environment variables:
+        //APPINSIGHTS_INSTRUMENTATIONKEY or ApplicationInsights:InstrumentationKey
+        services.AddApplicationInsightsTelemetry(aiOptions);
+
+        var appInsightsAuthApiKey = configuration.GetValue<string>("ApplicationInsights:AuthenticationApiKey");
+        if (!string.IsNullOrWhiteSpace(appInsightsAuthApiKey))
+            services.ConfigureTelemetryModule<QuickPulseTelemetryModule>((module, _) =>
+                module.AuthenticationApiKey = appInsightsAuthApiKey);
     }
 }
