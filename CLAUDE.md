@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Commands
 
-All projects are .NET 6; the solution is `src/IK.Imager.sln`.
+All projects are .NET 10 (except `IK.Imager.Api.Contract`, see below); the solution is `src/IK.Imager.sln`.
 
 ```powershell
 dotnet build src\IK.Imager.sln --configuration Release   # what CI runs (.github/workflows/dotnetcore.yml)
@@ -32,15 +32,15 @@ A single ASP.NET Core service (`IK.Imager.Api`) that both serves the HTTP API **
 
 ### Request flow
 
-Everything goes through MediatR. Controller actions are thin: they build a command/query, `_mediator.Send(...)`, and AutoMapper-map the core model to the `IK.Imager.Api.Contract` model.
+Dispatch is hand-rolled rather than via a mediator library. `IK.Imager.Core.Abstractions/Messaging` defines `ICommandHandler<TCommand>`, `ICommandHandler<TCommand, TResult>`, `IQueryHandler<TQuery, TResult>`, and `IDomainEvent` / `IDomainEventHandler<T>` / `IDomainEventDispatcher`. Controller actions are thin: they inject the handler interface they need, call `Handle(...)`, and map the core model to the `IK.Imager.Api.Contract` model with the `ToContract()` extensions in `IK.Imager.Api/Mapping/ContractMappingExtensions.cs` (hand-written — there is no AutoMapper).
 
 Upload → `UploadImageCommandHandler` (validate format/size → blob storage → metadata) → publishes the **domain** event `ImageUploadedDomainEvent` → `ImageUploadedDomainEventHandler` (in the Api project) republishes it as the **integration** event `OriginalImageUploadedIntegrationEvent` on Service Bus → `CreateThumbnailsHandler` consumes it and sends `CreateThumbnailsCommand`. Hence the ~2s delay before thumbnails appear in search results.
 
 Delete → `DeleteImageMetadataCommandHandler` removes only the metadata (image disappears from search immediately) → `ImageMetadataDeletedDomainEvent` → `ImageMetadataDeletedIntegrationEvent` → `RemoveImageFilesHandler` → `DeleteImageCommand` deletes the original blob and thumbnail blobs.
 
-This **domain event (MediatR `INotification`) → integration event (MassTransit) → command** relay is the core pattern. Domain events stay in `IK.Imager.Core`; the translation to Service Bus lives entirely in `IK.Imager.Api/DomainEventHandlers` and `IK.Imager.Api/IntegrationEvents`, so `IK.Imager.Core` has no messaging dependency.
+This **domain event (`IDomainEvent`, dispatched in-process) → integration event (MassTransit) → command** relay is the core pattern. Domain events stay in `IK.Imager.Core`; the translation to Service Bus lives entirely in `IK.Imager.Api/DomainEventHandlers` and `IK.Imager.Api/IntegrationEvents`, so `IK.Imager.Core` has no messaging dependency. `DomainEventDispatcher` (in `IK.Imager.Core/Messaging`) just resolves every `IDomainEventHandler<T>` from the container and awaits them in turn; handlers are registered in `Startup.ConfigureServices`.
 
-CDN rewriting is applied outside handlers, via MediatR `IRequestPostProcessor` implementations in `IK.Imager.Core/Cdn/CdnPostProcessor.cs` — a handler always returns the raw blob URL, and the post-processor swaps in the CDN host when `Cdn:Uri` is configured. Add a post-processor there rather than touching handlers when a new response needs URL rewriting.
+CDN rewriting is applied outside handlers, via decorators in `IK.Imager.Core/Cdn/CdnDecorators.cs` — a handler always returns the raw blob URL, and the decorator swaps in the CDN host when `Cdn:Uri` is configured. The decorators are wired in `RegisterCoreServices`: the concrete handler is registered by its own type, and the handler *interface* resolves to the decorator wrapping it. Add a decorator there rather than touching handlers when a new response needs URL rewriting.
 
 ### Project layout
 
@@ -55,7 +55,7 @@ Core services register themselves through `IK.Imager.Core.ServiceCollectionExten
 
 ### Validation is two-layered
 
-FluentValidation validators in `IK.Imager.Api/Validations` check the *request shape* (URL well-formed, `ImageGroup` length 3–30, ≤200 image ids) and surface into Swagger. `IK.Imager.Core.Validation.ImageValidator` checks the *image itself* (format/size/dimensions/aspect ratio) against the `ImageLimitations` config section. Note the handlers currently throw `ValidationException` on failure (there are `//todo`s about returning an error model instead); `GlobalExceptionFilter` maps it to a 400.
+FluentValidation validators in `IK.Imager.Api/Validations` check the *request shape* (URL well-formed, `ImageGroup` length 3–30, ≤200 image ids) and surface into Swagger. FluentValidation 12 dropped built-in ASP.NET Core auto-validation, so `IK.Imager.Api/Filters/FluentValidationActionFilter.cs` runs the validators over the action arguments and short-circuits with a 400 `ValidationProblemDetails`. `IK.Imager.Core.Validation.ImageValidator` checks the *image itself* (format/size/dimensions/aspect ratio) against the `ImageLimitations` config section. Note the handlers currently throw `ValidationException` on failure (there are `//todo`s about returning an error model instead); `GlobalExceptionFilter` maps it to a 400.
 
 ## Configuration
 

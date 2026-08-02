@@ -1,8 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using IK.Imager.Core.Abstractions.Messaging;
 using IK.Imager.Core.Abstractions.Models;
-using MediatR;
 using IK.Imager.Storage.Abstractions.Models;
 using IK.Imager.Storage.Abstractions.Repositories;
 using Microsoft.Extensions.Logging;
@@ -11,7 +11,7 @@ using Microsoft.Extensions.Logging;
 
 namespace IK.Imager.Core.ImageSearch;
 
-public class RequestImagesQueryHandler: IRequestHandler<RequestImagesQuery, ImagesSearchResult>
+public class RequestImagesQueryHandler: IQueryHandler<RequestImagesQuery, ImagesSearchResult>
 {
     private readonly ILogger<RequestImagesQueryHandler> _logger;
     private readonly IImageMetadataRepository _metadataRepository;

@@ -2,10 +2,10 @@
 using System.Threading;
 using System.Threading.Tasks;
 using AutoFixture;
+using IK.Imager.Core.Abstractions.Messaging;
 using IK.Imager.Core.ImageDeleting;
 using IK.Imager.Storage.Abstractions.Models;
 using IK.Imager.Storage.Abstractions.Repositories;
-using MediatR;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
@@ -17,13 +17,13 @@ public class DeleteImageMetadataCommandTests
 {
     private readonly ILogger<DeleteImageMetadataCommandHandler> _logger;
     private readonly Mock<IImageMetadataRepository> _metadataRepositoryMock;
-    private readonly Mock<IMediator> _mediatorMock;
+    private readonly Mock<IDomainEventDispatcher> _domainEventDispatcherMock;
 
     public DeleteImageMetadataCommandTests(ITestOutputHelper output)
     {
         _logger = output.BuildLoggerFor<DeleteImageMetadataCommandHandler>();
         _metadataRepositoryMock = new Mock<IImageMetadataRepository>();
-        _mediatorMock = new Mock<IMediator>();
+        _domainEventDispatcherMock = new Mock<IDomainEventDispatcher>();
     }
 
     [Fact]
@@ -42,13 +42,13 @@ public class DeleteImageMetadataCommandTests
             .ReturnsAsync(true);
         
         DeleteImageMetadataCommandHandler deleteImageMetadataCommandHandler =
-            new DeleteImageMetadataCommandHandler(_logger, _metadataRepositoryMock.Object, _mediatorMock.Object);
+            new DeleteImageMetadataCommandHandler(_logger, _metadataRepositoryMock.Object, _domainEventDispatcherMock.Object);
         
         var result = await deleteImageMetadataCommandHandler.Handle(new Fixture().Create<DeleteImageMetadataCommand>(),
             CancellationToken.None);
         Assert.True(result);
         
-        _mediatorMock.Verify(x => x.Publish(It.IsAny<ImageMetadataDeletedDomainEvent>(), CancellationToken.None), Times.Once);
+        _domainEventDispatcherMock.Verify(x => x.Publish(It.IsAny<ImageMetadataDeletedDomainEvent>(), CancellationToken.None), Times.Once);
     }
     
     [Fact]
@@ -61,7 +61,7 @@ public class DeleteImageMetadataCommandTests
             .ReturnsAsync(new List<ImageMetadata>());
 
         DeleteImageMetadataCommandHandler deleteImageMetadataCommandHandler =
-            new DeleteImageMetadataCommandHandler(_logger, _metadataRepositoryMock.Object, _mediatorMock.Object);
+            new DeleteImageMetadataCommandHandler(_logger, _metadataRepositoryMock.Object, _domainEventDispatcherMock.Object);
 
         var result = await deleteImageMetadataCommandHandler.Handle(new Fixture().Create<DeleteImageMetadataCommand>(),
             CancellationToken.None);

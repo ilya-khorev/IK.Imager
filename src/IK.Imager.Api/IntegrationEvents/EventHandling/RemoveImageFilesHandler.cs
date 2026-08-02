@@ -1,8 +1,8 @@
 ﻿using System.Threading.Tasks;
 using IK.Imager.Api.IntegrationEvents.Events;
+using IK.Imager.Core.Abstractions.Messaging;
 using IK.Imager.Core.ImageDeleting;
 using MassTransit;
-using MediatR;
 // ReSharper disable ClassNeverInstantiated.Global
 
 #pragma warning disable 1591
@@ -15,15 +15,17 @@ namespace IK.Imager.Api.IntegrationEvents.EventHandling;
 /// </summary>
 public class RemoveImageFilesHandler: IConsumer<ImageMetadataDeletedIntegrationEvent>
 {
-    private readonly IMediator _mediator;
+    private readonly ICommandHandler<DeleteImageCommand> _deleteImageCommandHandler;
 
-    public RemoveImageFilesHandler(IMediator mediator)
+    public RemoveImageFilesHandler(ICommandHandler<DeleteImageCommand> deleteImageCommandHandler)
     {
-        _mediator = mediator;
+        _deleteImageCommandHandler = deleteImageCommandHandler;
     }
-        
+
     public async Task Consume(ConsumeContext<ImageMetadataDeletedIntegrationEvent> context)
     {
-        await _mediator.Send(new DeleteImageCommand(context.Message.ImageId, context.Message.ImageName, context.Message.ThumbnailNames));
+        await _deleteImageCommandHandler.Handle(
+            new DeleteImageCommand(context.Message.ImageId, context.Message.ImageName, context.Message.ThumbnailNames),
+            context.CancellationToken);
     }
 }

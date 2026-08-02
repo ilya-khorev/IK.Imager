@@ -1,12 +1,11 @@
-﻿using MediatR;
-// ReSharper disable InconsistentNaming
+﻿// ReSharper disable InconsistentNaming
 
 #pragma warning disable 8632
 #pragma warning disable 1591
 
 namespace IK.Imager.Core.ImageDeleting;
 
-public record DeleteImageCommand(string ImageId, string? ImageName, string[] ThumbnailNames) : IRequest
+public record DeleteImageCommand(string ImageId, string? ImageName, string[] ThumbnailNames)
 {
     public void Deconstruct(out string ImageId, out string? ImageName, out string[] ThumbnailNames)
     {

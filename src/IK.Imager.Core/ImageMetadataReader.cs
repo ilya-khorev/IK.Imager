@@ -5,6 +5,7 @@ using IK.Imager.Core.Abstractions;
 using IK.Imager.Core.Abstractions.Models;
 using IK.Imager.Utils;
 using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Formats;
 using SixLabors.ImageSharp.Formats.Bmp;
 using SixLabors.ImageSharp.Formats.Gif;
 using SixLabors.ImageSharp.Formats.Jpeg;
@@ -21,10 +22,17 @@ namespace IK.Imager.Core
             ArgumentHelper.AssertNotNull(nameof(imageStream), imageStream);
 
             imageStream.Position = 0;
-            
-            var imageFormat = Image.DetectFormat(imageStream);
-            if (imageFormat == null)
+
+            IImageFormat imageFormat;
+            try
+            {
+                imageFormat = Image.DetectFormat(imageStream);
+            }
+            catch (UnknownImageFormatException)
+            {
+                //ImageSharp throws instead of returning null when it cannot recognise the stream at all
                 return null;
+            }
 
             ImageType imageType;
             
@@ -51,11 +59,17 @@ namespace IK.Imager.Core
             ArgumentHelper.AssertNotNull(nameof(imageStream), imageStream);
 
             imageStream.Position = 0;
-            
-            var identify = Image.Identify(imageStream);
-            if (identify == null)
+
+            SixLabors.ImageSharp.ImageInfo identify;
+            try
+            {
+                identify = Image.Identify(imageStream);
+            }
+            catch (UnknownImageFormatException)
+            {
                 return null;
-            
+            }
+
             return new ImageSize
             {
                 Bytes = imageStream.Length,

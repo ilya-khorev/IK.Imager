@@ -42,7 +42,7 @@ public class ServiceFabricResourceNotFoundMiddleware
         {
             var httpContext = (HttpContext)state;
             if (httpContext.Response.StatusCode == 404 && !httpContext.Response.Headers.ContainsKey(ServiceFabricHeader))
-                httpContext.Response.Headers.Add(ServiceFabricHeader, ServiceFabricNotFound);
+                httpContext.Response.Headers.Append(ServiceFabricHeader, ServiceFabricNotFound);
 
             return Task.CompletedTask;
         }, context);

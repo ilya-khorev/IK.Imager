@@ -21,26 +21,14 @@ namespace IK.Imager.Core.Thumbnails
 
             imageStream.Position = 0;
             
-            IImageFormat imageFormat = PngFormat.Instance;
-            switch (imageType)
+            IImageEncoder imageEncoder = imageType switch
             {
-                case ImageType.PNG:
-                    imageFormat = PngFormat.Instance;
-                    break;
-                
-                case ImageType.JPEG:
-                    imageFormat = JpegFormat.Instance;
-                    break;
-                
-                case ImageType.BMP:
-                    imageFormat = BmpFormat.Instance;
-                    break;
-                
-                case ImageType.GIF:
-                    imageFormat = GifFormat.Instance;
-                    break;
-            }
-            
+                ImageType.JPEG => new JpegEncoder(),
+                ImageType.BMP => new BmpEncoder(),
+                ImageType.GIF => new GifEncoder(),
+                _ => new PngEncoder()
+            };
+
             using var image = Image.Load(imageStream);
             
             decimal divisor = (decimal)image.Width / targetWidth;
@@ -54,7 +42,7 @@ namespace IK.Imager.Core.Thumbnails
                 }));
             
             MemoryStream resultStream = new MemoryStream();
-            image.Save(resultStream, imageFormat);
+            image.Save(resultStream, imageEncoder);
             return new ImageResizingResult
             {
                 Image = resultStream,
