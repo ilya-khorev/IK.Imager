@@ -1,12 +1,14 @@
-﻿using System.Threading.Tasks;
-using AutoMapper;
+﻿using System.Threading;
+using System.Threading.Tasks;
 using IK.Imager.Api.Contract;
+using IK.Imager.Api.Mapping;
+using IK.Imager.Core.Abstractions.Messaging;
 using IK.Imager.Core.ImageDeleting;
 using IK.Imager.Core.ImageSearch;
 using IK.Imager.Core.ImageUploading;
-using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using CoreModels = IK.Imager.Core.Abstractions.Models;
 
 namespace IK.Imager.Api.Controllers;
 
@@ -18,15 +20,23 @@ namespace IK.Imager.Api.Controllers;
 [Route("[controller]")]
 public class ImagesController : ControllerBase
 {
-    private readonly IMediator _mediator;
-    private readonly IMapper _mapper;
+    private readonly ICommandHandler<UploadImageCommand, CoreModels.ImageInfo> _uploadImageCommandHandler;
+    private readonly ICommandHandler<UploadImageByUrlCommand, CoreModels.ImageInfo> _uploadImageByUrlCommandHandler;
+    private readonly IQueryHandler<RequestImagesQuery, CoreModels.ImagesSearchResult> _requestImagesQueryHandler;
+    private readonly ICommandHandler<DeleteImageMetadataCommand, bool> _deleteImageMetadataCommandHandler;
     private const string ImageNotFound = "Requested image with id {0} was not found";
 
     /// <inheritdoc />
-    public ImagesController(IMediator mediator, IMapper mapper)
+    public ImagesController(
+        ICommandHandler<UploadImageCommand, CoreModels.ImageInfo> uploadImageCommandHandler,
+        ICommandHandler<UploadImageByUrlCommand, CoreModels.ImageInfo> uploadImageByUrlCommandHandler,
+        IQueryHandler<RequestImagesQuery, CoreModels.ImagesSearchResult> requestImagesQueryHandler,
+        ICommandHandler<DeleteImageMetadataCommand, bool> deleteImageMetadataCommandHandler)
     {
-        _mediator = mediator;
-        _mapper = mapper;
+        _uploadImageCommandHandler = uploadImageCommandHandler;
+        _uploadImageByUrlCommandHandler = uploadImageByUrlCommandHandler;
+        _requestImagesQueryHandler = requestImagesQueryHandler;
+        _deleteImageMetadataCommandHandler = deleteImageMetadataCommandHandler;
     }
 
     /// <summary>
@@ -35,6 +45,7 @@ public class ImagesController : ControllerBase
     /// Thumbnails for the given image are available after a short delay - initially image is returned without any thumbnails.
     /// </summary>
     /// <param name="imageFileRequest"></param>
+    /// <param name="cancellationToken"></param>
     /// <returns>A model with information about just uploaded image</returns>
     /// <response code="200">Returns the newly added image info</response>
     /// <response code="400">If the image size is greater or smaller then the system threshold values.
@@ -44,10 +55,11 @@ public class ImagesController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [Consumes("multipart/form-data")]
-    public async Task<ActionResult<ImageInfo>> Post([FromForm]UploadImageFileRequest imageFileRequest)
+    public async Task<ActionResult<ImageInfo>> Post([FromForm]UploadImageFileRequest imageFileRequest, CancellationToken cancellationToken)
     {
-        var uploadImageResult = await _mediator.Send(new UploadImageCommand(imageFileRequest.File.OpenReadStream(), imageFileRequest.ImageGroup));
-        return _mapper.Map<ImageInfo>(uploadImageResult);
+        var uploadImageResult = await _uploadImageCommandHandler.Handle(
+            new UploadImageCommand(imageFileRequest.File.OpenReadStream(), imageFileRequest.ImageGroup), cancellationToken);
+        return uploadImageResult.ToContract();
     }
 
     /// <summary>
@@ -56,6 +68,7 @@ public class ImagesController : ControllerBase
     /// Thumbnails for the given image are available after a short delay - initially image is returned to the client without any thumbnails.
     /// </summary>
     /// <param name="uploadImageRequest">Image upload request model</param>
+    /// <param name="cancellationToken"></param>
     /// <returns>A model with information about just uploaded image</returns>
     /// <response code="200">Returns the newly added image info</response>
     /// <response code="400">If the given image url is empty.
@@ -67,16 +80,18 @@ public class ImagesController : ControllerBase
     [Route("UploadByUrl")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<ImageInfo>> PostByUrl(UploadImageRequest uploadImageRequest)
+    public async Task<ActionResult<ImageInfo>> PostByUrl(UploadImageRequest uploadImageRequest, CancellationToken cancellationToken)
     {
-        var uploadImageResult = await _mediator.Send(new UploadImageByUrlCommand(uploadImageRequest.ImageUrl, uploadImageRequest.ImageGroup));
-        return _mapper.Map<ImageInfo>(uploadImageResult);
+        var uploadImageResult = await _uploadImageByUrlCommandHandler.Handle(
+            new UploadImageByUrlCommand(uploadImageRequest.ImageUrl, uploadImageRequest.ImageGroup), cancellationToken);
+        return uploadImageResult.ToContract();
     }
         
     /// <summary>
     /// Search for set of images by image ids
     /// </summary>
     /// <param name="searchImagesByIdRequest">Search image request model</param>
+    /// <param name="cancellationToken"></param>
     /// <returns>A model with full info about just found images. Each image is represented with the nested object.
     /// These objects are returned in the same order as they were requested.
     /// If some image is not found, this image is returned as null object.</returns>
@@ -87,10 +102,11 @@ public class ImagesController : ControllerBase
     [Route("Search")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<ImagesSearchResult>> Post(SearchImagesByIdRequest searchImagesByIdRequest)
+    public async Task<ActionResult<ImagesSearchResult>> Post(SearchImagesByIdRequest searchImagesByIdRequest, CancellationToken cancellationToken)
     {
-        var uploadImageResult = await _mediator.Send(new RequestImagesQuery(searchImagesByIdRequest.ImageIds, searchImagesByIdRequest.ImageGroup));
-        return _mapper.Map<ImagesSearchResult>(uploadImageResult);
+        var searchResult = await _requestImagesQueryHandler.Handle(
+            new RequestImagesQuery(searchImagesByIdRequest.ImageIds, searchImagesByIdRequest.ImageGroup), cancellationToken);
+        return searchResult.ToContract();
     }
         
     /// <summary>
@@ -106,9 +122,10 @@ public class ImagesController : ControllerBase
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> Delete(DeleteImageRequest deleteImageRequest)
+    public async Task<IActionResult> Delete(DeleteImageRequest deleteImageRequest, CancellationToken cancellationToken)
     {
-        var imageDeleted = await _mediator.Send(new DeleteImageMetadataCommand(deleteImageRequest.ImageId, deleteImageRequest.ImageGroup));
+        var imageDeleted = await _deleteImageMetadataCommandHandler.Handle(
+            new DeleteImageMetadataCommand(deleteImageRequest.ImageId, deleteImageRequest.ImageGroup), cancellationToken);
         if (!imageDeleted)
             return NotFound(string.Format(ImageNotFound, deleteImageRequest.ImageId));
 

@@ -1,34 +1,40 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Reflection;
-using FluentValidation.AspNetCore;
+using Azure.Storage.Blobs;
+using FluentValidation;
+using HealthChecks.Azure.Storage.Blobs;
+using HealthChecks.CosmosDb;
 using HealthChecks.UI.Client;
+using IK.Imager.Api.DomainEventHandlers;
 using IK.Imager.Api.Filters;
 using IK.Imager.Api.IntegrationEvents;
 using IK.Imager.Api.IntegrationEvents.EventHandling;
 using IK.Imager.Api.IntegrationEvents.Events;
 using IK.Imager.Api.Middleware;
 using IK.Imager.Core;
+using IK.Imager.Core.Abstractions.Messaging;
 using IK.Imager.Core.Abstractions.Validation;
+using IK.Imager.Core.ImageDeleting;
+using IK.Imager.Core.ImageUploading;
 using IK.Imager.Core.Validation;
 using IK.Imager.ImageMetadataStorage.CosmosDB;
 using IK.Imager.ImageBlobStorage.AzureFiles;
 using IK.Imager.Storage.Abstractions.Repositories;
 using MassTransit;
-using MediatR;
-using MicroElements.Swashbuckle.FluentValidation;
 using MicroElements.Swashbuckle.FluentValidation.AspNetCore;
 using Microsoft.ApplicationInsights.AspNetCore.Extensions;
 using Microsoft.ApplicationInsights.Extensibility.PerfCounterCollector.QuickPulse;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 using Polly;
 using OriginalImageUploadedIntegrationEvent = IK.Imager.Api.IntegrationEvents.Events.OriginalImageUploadedIntegrationEvent;
 
@@ -51,8 +57,12 @@ public class Startup
     // This method gets called by the runtime. Use this method to add services to the container.
     public void ConfigureServices(IServiceCollection services)
     {
-        services.AddControllers(options => { options.Filters.Add(typeof(GlobalExceptionFilter)); });
-            
+        services.AddControllers(options =>
+        {
+            options.Filters.Add(typeof(GlobalExceptionFilter));
+            options.Filters.Add(typeof(FluentValidationActionFilter));
+        });
+
         services.AddSwaggerGen(options =>
         {
             options.SwaggerDoc(CurrentVersion, new OpenApiInfo {Title = ApiTitle, Version = CurrentVersion});
@@ -60,10 +70,8 @@ public class Startup
                 options.IncludeXmlComments(contractFile);
         });
 
-        services.AddAutoMapper(c => c.AddProfile<MappingProfile>(), typeof(Startup));
-
         RegisterConfigurations(services);
-            
+
         services.AddSingleton<ICosmosDbClient, CosmosDbClient>();
         services.AddSingleton<IAzureBlobClient, AzureBlobClient>(s =>
         {
@@ -72,27 +80,25 @@ public class Startup
         });
 
         services.RegisterCoreServices(Configuration);
-        
+
         services.AddScoped<IImageBlobRepository, ImageBlobAzureRepository>();
         services.AddScoped<IImageMetadataRepository, ImageMetadataCosmosDbRepository>();
         services.AddScoped<IImageValidator, ImageValidator>();
 
+        //Domain events raised by the core handlers are translated into Service Bus integration events here
+        services.AddScoped<IDomainEventHandler<ImageUploadedDomainEvent>, ImageUploadedDomainEventHandler>();
+        services.AddScoped<IDomainEventHandler<ImageMetadataDeletedDomainEvent>, ImageMetadataDeletedDomainEventHandler>();
+
         services.AddHttpClient<ImageDownloadClient>()
             .AddTransientHttpErrorPolicy(p =>
                 p.WaitAndRetryAsync(3, _ => TimeSpan.FromMilliseconds(500)));
-            
-        services.AddMediatR(typeof(Startup).Assembly);  
-            
-        services.AddFluentValidation(fv =>
-        {
-            fv.RegisterValidatorsFromAssemblyContaining<Startup>();
-            fv.ValidatorFactoryType = typeof(HttpContextServiceProviderValidatorFactory);
-        });
+
+        services.AddValidatorsFromAssemblyContaining<Startup>();
         services.AddFluentValidationRulesToSwagger();
-            
+
         services.AddHealthChecks(Configuration);
         services.SetupAppInsights(Configuration);
-            
+
         services.AddMassTransit(x =>
         {
             x.AddConsumers(Assembly.GetExecutingAssembly());
@@ -104,13 +110,13 @@ public class Startup
 
                 var topicsConfiguration = context.GetRequiredService<IOptions<TopicsConfiguration>>();
 
-                cfg.Message<OriginalImageUploadedIntegrationEvent>(c => 
+                cfg.Message<OriginalImageUploadedIntegrationEvent>(c =>
                     c.SetEntityName(topicsConfiguration.Value.UploadedImagesTopicName));
-                cfg.Message<ImageMetadataDeletedIntegrationEvent>(c => 
+                cfg.Message<ImageMetadataDeletedIntegrationEvent>(c =>
                     c.SetEntityName(topicsConfiguration.Value.DeletedImagesTopicName));
 
-                cfg.MaxConcurrentCalls = topicsConfiguration.Value.MaxConcurrentCalls;
-                    
+                cfg.ConcurrentMessageLimit = topicsConfiguration.Value.MaxConcurrentCalls;
+
                 cfg.SubscriptionEndpoint<OriginalImageUploadedIntegrationEvent>(topicsConfiguration.Value.SubscriptionName,
                     configurator =>
                     {
@@ -141,14 +147,14 @@ public class Startup
         app.UseRouting();
 
         app.UseSwagger();
-    
+
         app.UseSwaggerUI(c =>
             {
                 c.SwaggerEndpoint($"/swagger/{CurrentVersion}/swagger.json", ApiTitle);
                 c.RoutePrefix = string.Empty;
             }
         );
-            
+
         app.UseMiddleware<ServiceFabricResourceNotFoundMiddleware>();
 
         app.UseEndpoints(endpoints =>
@@ -166,7 +172,7 @@ public class Startup
         });
     }
 }
- 
+
 public static class CustomExtensionsMethods
 {
     public static void AddHealthChecks(this IServiceCollection services, IConfiguration configuration)
@@ -174,16 +180,22 @@ public static class CustomExtensionsMethods
         var hcBuilder = services.AddHealthChecks();
 
         hcBuilder.AddCheck("self", () => HealthCheckResult.Healthy());
-            
+
         var cosmosDbConnectionString = configuration["CosmosDb:ConnectionString"];
         var cosmosDbDatabase = configuration["CosmosDb:DatabaseId"];
-        hcBuilder.AddCosmosDb(cosmosDbConnectionString, cosmosDbDatabase, "ik.imager-cosmossdb-check", tags: new [] { "cosmosdb" });
+        hcBuilder.AddAzureCosmosDB(
+            _ => new CosmosClient(cosmosDbConnectionString),
+            _ => new AzureCosmosDbHealthCheckOptions { DatabaseId = cosmosDbDatabase },
+            "ik.imager-cosmossdb-check", tags: new[] { "cosmosdb" });
 
         var azureConnectionString = configuration["AzureStorage:ConnectionString"];
         var azureContainerName = configuration["AzureStorage:ImagesContainerName"];
-        hcBuilder.AddAzureBlobStorage(azureConnectionString, azureContainerName, name: "ik.imager-blobstorage-check", tags: new [] { "blobstorage" });
+        hcBuilder.AddAzureBlobStorage(
+            _ => new BlobServiceClient(azureConnectionString),
+            _ => new AzureBlobStorageHealthCheckOptions { ContainerName = azureContainerName },
+            "ik.imager-blobstorage-check", tags: new[] { "blobstorage" });
     }
-        
+
     public static void SetupAppInsights(this IServiceCollection services, IConfiguration configuration)
     {
         ApplicationInsightsServiceOptions aiOptions = new ApplicationInsightsServiceOptions();

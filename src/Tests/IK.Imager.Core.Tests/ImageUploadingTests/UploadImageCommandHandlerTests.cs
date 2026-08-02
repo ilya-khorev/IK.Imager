@@ -1,9 +1,9 @@
 ﻿using System.Threading.Tasks;
 using IK.Imager.Core.Abstractions;
+using IK.Imager.Core.Abstractions.Messaging;
 using IK.Imager.Core.Abstractions.Validation;
 using IK.Imager.Core.ImageUploading;
 using IK.Imager.Storage.Abstractions.Repositories;
-using MediatR;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
@@ -18,7 +18,7 @@ public class UploadImageCommandHandlerTests
     private readonly Mock<IImageMetadataReader> _metadataReadeMock;
     private readonly Mock<IImageValidator> _imageValidatorMock;
     private readonly Mock<IImageIdentifierProvider> _imageIdentifierProvider;
-    private readonly Mock<IMediator> _mediatorMock;
+    private readonly Mock<IDomainEventDispatcher> _domainEventDispatcherMock;
     private readonly ILogger<UploadImageCommandHandler> _logger;
 
     public UploadImageCommandHandlerTests(ITestOutputHelper output)
@@ -29,7 +29,7 @@ public class UploadImageCommandHandlerTests
         _metadataReadeMock = new Mock<IImageMetadataReader>();
         _imageValidatorMock = new Mock<IImageValidator>();
         _imageIdentifierProvider = new Mock<IImageIdentifierProvider>();
-        _mediatorMock = new Mock<IMediator>();
+        _domainEventDispatcherMock = new Mock<IDomainEventDispatcher>();
     }
 
     [Fact]
@@ -37,7 +37,7 @@ public class UploadImageCommandHandlerTests
     {
         //TODO
         UploadImageCommandHandler handler = new UploadImageCommandHandler(_logger, _metadataReadeMock.Object, _blobRepositoryMock.Object,
-            _metadataRepositoryMock.Object, _imageValidatorMock.Object, _imageIdentifierProvider.Object, _mediatorMock.Object);
+            _metadataRepositoryMock.Object, _imageValidatorMock.Object, _imageIdentifierProvider.Object, _domainEventDispatcherMock.Object);
         await Task.CompletedTask;
     }
 }

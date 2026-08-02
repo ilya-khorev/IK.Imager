@@ -1,14 +1,14 @@
 ﻿using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using IK.Imager.Core.Abstractions.Messaging;
 using IK.Imager.Storage.Abstractions.Models;
 using IK.Imager.Storage.Abstractions.Repositories;
-using MediatR;
 using Microsoft.Extensions.Logging;
 
 namespace IK.Imager.Core.ImageDeleting;
 
-public class DeleteImageCommandHandler: IRequestHandler<DeleteImageCommand>
+public class DeleteImageCommandHandler: ICommandHandler<DeleteImageCommand>
 {
     private readonly ILogger<DeleteImageCommandHandler> _logger;
     private readonly IImageBlobRepository _blobRepository;
@@ -23,7 +23,7 @@ public class DeleteImageCommandHandler: IRequestHandler<DeleteImageCommand>
         _blobRepository = blobRepository;
     }
     
-    public async Task<Unit> Handle(DeleteImageCommand request, CancellationToken cancellationToken)
+    public async Task Handle(DeleteImageCommand request, CancellationToken cancellationToken)
     {
         _logger.LogDebug(Removing, request);
             
@@ -42,6 +42,5 @@ public class DeleteImageCommandHandler: IRequestHandler<DeleteImageCommand>
 
         stringBuilder.AppendFormat(ThumbnailsDeleted, request.ThumbnailNames.Length, deletedThumbnails);
         _logger.LogInformation(stringBuilder.ToString());
-        return Unit.Value;
     }
 }

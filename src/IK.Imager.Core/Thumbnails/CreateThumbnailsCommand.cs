@@ -1,5 +1,3 @@
-﻿using MediatR;
+﻿namespace IK.Imager.Core.Thumbnails;
 
-namespace IK.Imager.Core.Thumbnails;
-
-public record CreateThumbnailsCommand(string ImageId, string ImageGroup) : IRequest;
+public record CreateThumbnailsCommand(string ImageId, string ImageGroup);

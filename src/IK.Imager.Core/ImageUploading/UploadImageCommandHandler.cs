@@ -2,18 +2,18 @@
 using System.Threading;
 using System.Threading.Tasks;
 using IK.Imager.Core.Abstractions;
+using IK.Imager.Core.Abstractions.Messaging;
 using IK.Imager.Core.Abstractions.Models;
 using IK.Imager.Core.Abstractions.Validation;
 using IK.Imager.Storage.Abstractions.Models;
 using IK.Imager.Storage.Abstractions.Repositories;
 using Microsoft.Extensions.Logging;
-using MediatR;
 
 #pragma warning disable 1591
 
 namespace IK.Imager.Core.ImageUploading;
 
-public class UploadImageCommandHandler: IRequestHandler<UploadImageCommand, ImageInfo>
+public class UploadImageCommandHandler: ICommandHandler<UploadImageCommand, ImageInfo>
 {
     private readonly ILogger<UploadImageCommandHandler> _logger;
     private readonly IImageMetadataReader _metadataReader;
@@ -21,14 +21,14 @@ public class UploadImageCommandHandler: IRequestHandler<UploadImageCommand, Imag
     private readonly IImageMetadataRepository _metadataRepository;
     private readonly IImageValidator _imageValidator;
     private readonly IImageIdentifierProvider _imageIdentifierProvider;
-    private readonly IMediator _mediator;
+    private readonly IDomainEventDispatcher _domainEventDispatcher;
 
     private const string CheckingImage = "Starting to check the image.";
     private const string UploadedToBlobStorage = "Uploaded the image to the blob storage, imageId={0}.";
     private const string UploadingFinished = "Image with id={0} and its metadata have been saved.";
     
     public UploadImageCommandHandler(ILogger<UploadImageCommandHandler> logger, IImageMetadataReader metadataReader, IImageBlobRepository blobRepository, 
-        IImageMetadataRepository metadataRepository, IImageValidator imageValidator, IImageIdentifierProvider imageIdentifierProvider, IMediator mediator)
+        IImageMetadataRepository metadataRepository, IImageValidator imageValidator, IImageIdentifierProvider imageIdentifierProvider, IDomainEventDispatcher domainEventDispatcher)
     {
         _logger = logger;
         _metadataReader = metadataReader;
@@ -36,7 +36,7 @@ public class UploadImageCommandHandler: IRequestHandler<UploadImageCommand, Imag
         _metadataRepository = metadataRepository;
         _imageValidator = imageValidator;
         _imageIdentifierProvider = imageIdentifierProvider;
-        _mediator = mediator;
+        _domainEventDispatcher = domainEventDispatcher;
     }
         
     //todo too many dependencies, split into several classes
@@ -96,7 +96,7 @@ public class UploadImageCommandHandler: IRequestHandler<UploadImageCommand, Imag
             
         _logger.LogInformation(string.Format(UploadingFinished, imageId));
 
-        await _mediator.Publish(new ImageUploadedDomainEvent(imageId, request.ImageGroup));
+        await _domainEventDispatcher.Publish(new ImageUploadedDomainEvent(imageId, request.ImageGroup));
         
         return new ImageInfo
         {

@@ -3,11 +3,11 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using IK.Imager.Core.Abstractions;
+using IK.Imager.Core.Abstractions.Messaging;
 using IK.Imager.Core.Abstractions.Thumbnails;
 using IK.Imager.Core.Settings;
 using IK.Imager.Storage.Abstractions.Models;
 using IK.Imager.Storage.Abstractions.Repositories;
-using MediatR;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using ImageType = IK.Imager.Core.Abstractions.Models.ImageType;
@@ -15,7 +15,7 @@ using StorageImageType = IK.Imager.Storage.Abstractions.Models.ImageType;
 
 namespace IK.Imager.Core.Thumbnails;
 
-public class CreateThumbnailsCommandHandler : IRequestHandler<CreateThumbnailsCommand>
+public class CreateThumbnailsCommandHandler : ICommandHandler<CreateThumbnailsCommand>
 {
     private readonly ILogger<CreateThumbnailsCommandHandler> _logger;
     private readonly IImageResizing _imageResizing;
@@ -51,14 +51,14 @@ public class CreateThumbnailsCommandHandler : IRequestHandler<CreateThumbnailsCo
         _thumbnailTargetWidths = imageThumbnailsSettings.Value.TargetWidth.OrderByDescending(x => x).ToList();
     }
 
-    public async Task<Unit> Handle(CreateThumbnailsCommand request, CancellationToken cancellationToken)
+    public async Task Handle(CreateThumbnailsCommand request, CancellationToken cancellationToken)
     {
         //firstly, receiving image metadata of the given image
         var imageMetadataList = await _metadataRepository.GetMetadata(new List<string> { request.ImageId }, request.ImageGroup, CancellationToken.None);
         if (imageMetadataList == null || !imageMetadataList.Any())
         {
             _logger.LogInformation(ImageNotFound, request.ImageId);
-            return Unit.Value;
+            return;
         }
 
         var imageMetadata = imageMetadataList[0];
@@ -67,7 +67,7 @@ public class CreateThumbnailsCommandHandler : IRequestHandler<CreateThumbnailsCo
         if (imageMetadata.Width <= _thumbnailTargetWidths.Last())
         {
             _logger.LogInformation(ImageSmallerThanTargetWidth, imageMetadata.Id, imageMetadata.Width);
-            return Unit.Value;
+            return;
         }
 
         await using var originalImageStream = await _blobRepository.DownloadImage(imageMetadata.Name, ImageSizeType.Original, CancellationToken.None);
@@ -122,6 +122,5 @@ public class CreateThumbnailsCommandHandler : IRequestHandler<CreateThumbnailsCo
         imageMetadata.Thumbnails.Reverse(); //smaller thumbnails come first
         await _metadataRepository.SetMetadata(imageMetadata, CancellationToken.None);
         _logger.LogInformation(ThumbnailsGenerated, imageMetadata.Thumbnails.Count, request.ImageId);
-        return Unit.Value;
     }
 }

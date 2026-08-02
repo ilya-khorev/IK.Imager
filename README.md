@@ -92,5 +92,5 @@ The long-running operations are not performed within the original request. Inste
 2) Azure Cosmos DB - used for storing metadata objects.
 3) Azure ServiceBus - used for passing events to the background processing.
 4) Azure Application Insights - used as a storage of application logs.
-4) The service is written using .NET 6
+4) The service is written using .NET 10
 5) Docker - the service is available as a docker image on Docker Hub (see link above)
