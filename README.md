@@ -50,15 +50,14 @@ PartitionKey is an optional parameter in this request. However, if you search fo
 Image removal is available via a simple API request. The system will clear up all related metadata and thumbnails objects.
 
 ## Docker images
-[ilyakhorev/ik-imager-api](https://hub.docker.com/r/ilyakhorev/ik-imager-api)  
-[ilyakhorev/ik-imager-backgroundservice](https://hub.docker.com/r/ilyakhorev/ik-imager-backgroundservice)
+[ilyakhorev/ik-imager-api](https://hub.docker.com/r/ilyakhorev/ik-imager-api)
 
 ### Environment Variables
 Connections strings and behaviour settings, defined in the configuration file, can also be passed via the following environment variables.
 
 #### Mandatory Parameters
 
-Below are the required parameters needed for both microservices:  
+Below are the required parameters needed to run the service:  
 
 Parameter  |   Description
 :--- | :--- 
@@ -74,27 +73,24 @@ Parameter  |   Default value   |   Description
 Logging__LogLevel__Default   |   Information   |   Minimum log level, from which logs are passed to logger providers. Only 2 logger providers are added: Console and Application Insights
 Logging__ApplicationInsights__LogLevel__Default   |   Information   |   Minimum log level, from which logs are sent to Application Insights
 
-The full list of configuration parameters can be found in the corresponding appsettings files   
+The full list of configuration parameters can be found in the appsettings file   
 
-[API appsettings](../master/src/IK.Imager.Api/appsettings.json)   
-[BackgroundService appsettings](../master/src/IK.Imager.BackgroundService/appsettings.json)
+[API appsettings](../master/src/IK.Imager.Api/appsettings.json)
 
 ## Architecture Overview
 ![](docs/Architecture.svg)
 
-The application consists of 2 microservices:
-1) API microservice.
-This microservice takes all responsibility for storing, removing, validating, searching images and their metadata.
+The application is a single service, which takes all responsibility for storing, removing, validating, searching images and their metadata.
 Internally it communicates with Azure Blob Storage for storing image files and with Cosmos DB for storing metadata of images.
 
-2) Background microservice. 
-Main resposiblity is thumbnails generating. This process happens right after the original image is uploaded via API microservice.  
-Another key functionality of the service is image removal. When removal request comes to the API, it just clears up the related metadata object, whereas the blob files of the image and its thumbnails are removed later within the background microservice.
+The long-running operations are not performed within the original request. Instead, the service publishes an event to Azure Service Bus and handles it asynchronously in the background:
+1) Thumbnails generating. This process starts right after the original image is uploaded.
+2) Image files removal. When a removal request comes in, the service just clears up the related metadata object, whereas the blob files of the image and its thumbnails are removed later in the background.
 
 ### Technologies used
 1) Azure Blob Storage. This is where image files are stored.
 2) Azure Cosmos DB - used for storing metadata objects.
-3) Azure ServiceBus - used for passing some events from API to the Background Service.
+3) Azure ServiceBus - used for passing events to the background processing.
 4) Azure Application Insights - used as a storage of application logs.
-4) The microservices are written using .NET 6
-5) Docker - both microservices are available as docker images on Docker Hub (see links above)
+4) The service is written using .NET 6
+5) Docker - the service is available as a docker image on Docker Hub (see link above)
