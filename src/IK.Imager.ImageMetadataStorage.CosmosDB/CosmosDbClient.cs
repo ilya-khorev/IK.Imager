@@ -11,10 +11,17 @@ namespace IK.Imager.ImageMetadataStorage.CosmosDB
         private readonly CosmosClient _client;
         private Container _imageContainer;
         
-        public CosmosDbClient(IOptions<ImageMetadataCosmosDbStorageSettings> settings)
+        /// <param name="settings">Cosmos DB connection settings.</param>
+        /// <param name="clientOptions">
+        /// Optional SDK options. Production leaves this null and gets the SDK defaults.
+        /// The integration tests pass emulator specific options - the containerized emulator only
+        /// speaks gateway mode and advertises its container-internal endpoint, so the client has to
+        /// be told to stay on the endpoint it was given.
+        /// </param>
+        public CosmosDbClient(IOptions<ImageMetadataCosmosDbStorageSettings> settings, CosmosClientOptions clientOptions = null)
         {
             _settings = settings;
-            _client = new CosmosClient(_settings.Value.ConnectionString);
+            _client = new CosmosClient(_settings.Value.ConnectionString, clientOptions);
         }
         
         public async Task<Container> CreateImagesContainerIfNotExists()

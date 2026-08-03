@@ -7,9 +7,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 All projects are .NET 10 (except `IK.Imager.Api.Contract`, see below); the solution is `src/IK.Imager.sln`.
 
 ```powershell
-dotnet build src\IK.Imager.sln --configuration Release   # what CI runs (.github/workflows/dotnetcore.yml)
-dotnet test src\IK.Imager.sln                            # all tests (integration tests need emulators, see below)
-dotnet test src\Tests\IK.Imager.Core.Tests\IK.Imager.Core.Tests.csproj   # unit tests only — no emulators needed
+dotnet build src\IK.Imager.sln --configuration Release   # what CI builds (.github/workflows/dotnetcore.yml)
+dotnet test src\IK.Imager.sln                            # all tests (integration tests need Docker, see below)
+dotnet test src\IK.Imager.sln --filter "Category!=Integration"           # everything that runs without Docker
+dotnet test src\Tests\IK.Imager.Core.Tests\IK.Imager.Core.Tests.csproj   # unit tests only — no Docker needed
 dotnet test src\Tests\IK.Imager.Core.Tests --filter "FullyQualifiedName~ThumbnailsGeneratingTests"
 dotnet test src\Tests\IK.Imager.Core.Tests --filter "DisplayName~CreateThumbnails_ImageMetadataNotFound"
 dotnet run --project src\IK.Imager.Api                   # http://localhost:5000, Swagger UI at the root path
@@ -19,10 +20,15 @@ dotnet run --project src\IK.Imager.Api                   # http://localhost:5000
 
 ### Test prerequisites
 
-- `IK.Imager.Core.Tests` — xUnit + Moq + AutoFixture, fully in-memory (`Tests/IK.Imager.Core.Tests/Mocks/`). Sample images under `Images/` are copied to the output dir.
-- `IK.Imager.ImageBlobStorage.AzureFiles.Tests` — requires the **Azure Storage Emulator / Azurite** on the default endpoint.
-- `IK.Imager.ImageMetadataStorage.CosmosDB.Tests` — requires the **Cosmos DB Emulator** at `https://localhost:8081`.
-  Both use the well-known emulator credentials hardcoded in `Tests/IK.Imager.TestsBase/Constants.cs`, create their own `Test*` containers via an `IClassFixture`, and drop them on dispose.
+- `IK.Imager.Core.Tests` — xUnit + Moq + AutoFixture, fully in-memory (`Tests/IK.Imager.Core.Tests/Mocks/`). Sample images under `Images/` are copied to the output dir. **No Docker needed.**
+- `IK.Imager.ImageBlobStorage.AzureFiles.Tests` and `IK.Imager.ImageMetadataStorage.CosmosDB.Tests` — **require a running Docker daemon**, and nothing else. [Testcontainers](https://dotnet.testcontainers.org/) starts [Azurite](https://learn.microsoft.com/azure/storage/common/storage-use-azurite) and the [Linux Cosmos DB emulator](https://learn.microsoft.com/azure/cosmos-db/emulator-linux) on randomly mapped host ports and tears them down afterwards; both classes are tagged `[Trait("Category", "Integration")]`.
+  - Image tags are pinned in `Tests/IK.Imager.TestsBase/Constants.cs`, which now holds only names and tags — connection strings exist only at runtime, built from the mapped ports.
+  - Each project starts **one** container per test assembly via an `ICollectionFixture` (`AzuriteCollection` / `CosmosDbCollection`); the fixtures are `IAsyncLifetime`. Neither drops its blob/Cosmos containers — the emulator itself is thrown away.
+  - Azurite runs with `--skipApiVersionCheck` because `Azure.Storage.Blobs` sends a newer `x-ms-version` than Azurite recognises.
+  - The Cosmos emulator serves plain HTTP in gateway mode and advertises its container-internal endpoint, so `CosmosDbClient` takes an **optional `CosmosClientOptions`** purely so the fixture can pass `ConnectionMode.Gateway` + `LimitToEndpoint` + the module's URI-rewriting `HttpClientFactory`. Production passes nothing and keeps the SDK defaults (hence the explicit factory registration in `Startup`). Do not set `Serializer` — `ImageMetadata.Id` relies on Newtonsoft's `[JsonProperty("id")]`.
+  - The Cosmos emulator image is ~1 GB; the first run pulls it. Pre-pull with `docker pull` to keep it out of the Testcontainers startup timeout.
+
+CI (`.github/workflows/dotnetcore.yml`) runs on `ubuntu-latest` and now builds **and** tests — the hosted Windows runners cannot run Linux containers.
 
 Test naming convention (stated in `ImageAzureBlobRepositoryEmulatorTests`): `MethodUnderTest_Scenario_ExpectedBehavior`.
 

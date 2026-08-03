@@ -72,7 +72,9 @@ public class Startup
 
         RegisterConfigurations(services);
 
-        services.AddSingleton<ICosmosDbClient, CosmosDbClient>();
+        //CosmosDbClient takes an optional CosmosClientOptions, which the DI container cannot bind - register it explicitly
+        services.AddSingleton<ICosmosDbClient>(s =>
+            new CosmosDbClient(s.GetRequiredService<IOptions<ImageMetadataCosmosDbStorageSettings>>()));
         services.AddSingleton<IAzureBlobClient, AzureBlobClient>(s =>
         {
             var settings = s.GetRequiredService<IOptions<ImageAzureStorageSettings>>();
