@@ -30,7 +30,8 @@ public class FluentValidationActionFilter : IAsyncActionFilter
                 continue;
 
             var validationContextType = typeof(ValidationContext<>).MakeGenericType(argument.Value.GetType());
-            var validationContext = (IValidationContext)Activator.CreateInstance(validationContextType, argument.Value);
+            // CreateInstance only returns null for Nullable<T>; validationContextType is always a class here.
+            var validationContext = (IValidationContext)Activator.CreateInstance(validationContextType, argument.Value)!;
 
             var validationResult = await validator.ValidateAsync(validationContext, context.HttpContext.RequestAborted);
             if (validationResult.IsValid)

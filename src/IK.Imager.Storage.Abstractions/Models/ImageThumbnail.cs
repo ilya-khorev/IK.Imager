@@ -5,15 +5,16 @@ namespace IK.Imager.Storage.Abstractions.Models
 {
     public class ImageThumbnail: IImageBasicDetails, IEquatable<ImageThumbnail>
     {
-        public string Id { get; set; }
-        public string Name { get; set; }
+        public string Id { get; set; } = null!;
+        public string Name { get; set; } = null!;
         public long SizeBytes { get; set; }
-        public string MD5Hash { get; set; }
+        public string MD5Hash { get; set; } = null!;
         public int Width { get; set; }
         public int Height { get; set; }
         public DateTime DateAddedUtc { get; set; }
-        public string MimeType { get; set; } 
-        public bool Equals(ImageThumbnail other)
+        public string MimeType { get; set; } = null!;
+
+        public bool Equals(ImageThumbnail? other)
         {
             if (ReferenceEquals(null, other))
                 return false;
@@ -30,7 +31,7 @@ namespace IK.Imager.Storage.Abstractions.Models
                    && DateAddedUtc.Equals(other.DateAddedUtc);
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             if (ReferenceEquals(null, obj)) 
                 return false;

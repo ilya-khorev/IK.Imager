@@ -134,7 +134,7 @@ namespace IK.Imager.Core.Tests.ThumbnailsTests
                 IK.Imager.Core.Abstractions.Models.ImageType.PNG, It.IsAny<int>()), Times.Exactly(3));
 
             _metadataRepositoryMock.Verify(x => x.SetMetadata(It.Is<ImageMetadata>(i =>
-                    i.Thumbnails.Count == 3), It.IsAny<CancellationToken>()), Times.Once);
+                    i.Thumbnails!.Count == 3), It.IsAny<CancellationToken>()), Times.Once);
         }
         
         private async Task MockForPositiveFlow(ImageMetadata imageMetadata)

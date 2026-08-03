@@ -25,7 +25,7 @@ namespace IK.Imager.Core
         /// </summary>
         /// <param name="url"></param>
         /// <returns></returns>
-        public async Task<MemoryStream> GetMemoryStream(string url)
+        public async Task<MemoryStream?> GetMemoryStream(string url)
         {
             MemoryStream imageStream = new MemoryStream();
             try

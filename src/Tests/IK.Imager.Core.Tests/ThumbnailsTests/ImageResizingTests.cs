@@ -91,7 +91,7 @@ namespace IK.Imager.Core.Tests.ThumbnailsTests
         
         class ImageInfo
         {
-            public string FilePath { get; set; }
+            public string FilePath { get; set; } = null!;
             public int Width { get; set; }
             public int Height { get; set; }
         }

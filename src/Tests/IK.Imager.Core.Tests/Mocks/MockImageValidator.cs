@@ -5,7 +5,7 @@ namespace IK.Imager.Core.Tests.Mocks
 {
     public class MockImageValidator: IImageValidator
     {
-        public ValidationResult CheckFormat(ImageFormat imageFormat)
+        public ValidationResult CheckFormat(ImageFormat? imageFormat)
         {
             return ValidationResult.Success;
         }

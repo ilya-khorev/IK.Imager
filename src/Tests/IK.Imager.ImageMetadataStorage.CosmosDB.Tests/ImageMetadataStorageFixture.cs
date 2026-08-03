@@ -17,19 +17,19 @@ public sealed class ImageMetadataStorageFixture : IAsyncLifetime
 {
     private readonly CosmosDbContainer _emulator = new CosmosDbBuilder(Constants.CosmosDb.EmulatorImage).Build();
 
-    private CosmosClient _client;
+    private CosmosClient _client = null!;
 
     /// <summary>
     /// The system under test.
     /// </summary>
-    public ImageMetadataCosmosDbRepository MetadataImageRepository { get; private set; }
+    public ImageMetadataCosmosDbRepository MetadataImageRepository { get; private set; } = null!;
 
     /// <summary>
     /// A raw client, for the assertions that need to look at the account without going through the repository.
     /// </summary>
     public CosmosClient CosmosClient => _client;
 
-    public ImageMetadataCosmosDbStorageSettings Settings { get; private set; }
+    public ImageMetadataCosmosDbStorageSettings Settings { get; private set; } = null!;
 
     public async Task InitializeAsync()
     {

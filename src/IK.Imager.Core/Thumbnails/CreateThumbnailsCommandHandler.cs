@@ -83,7 +83,8 @@ public class CreateThumbnailsCommandHandler : ICommandHandler<CreateThumbnailsCo
             fileExtension = PngFileExtension;
         }
 
-        var imageStream = originalImageStream;
+        //a blob is expected to exist for metadata that exists; a missing one still fails loudly below, as before
+        var imageStream = originalImageStream!;
         foreach (var targetWidth in _thumbnailTargetWidths)
         {
             //the current image width is smaller than the target thumbnail width, so just ignoring it 

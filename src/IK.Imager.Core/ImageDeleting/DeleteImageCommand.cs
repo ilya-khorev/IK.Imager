@@ -1,6 +1,5 @@
 ﻿// ReSharper disable InconsistentNaming
 
-#pragma warning disable 8632
 #pragma warning disable 1591
 
 namespace IK.Imager.Core.ImageDeleting;

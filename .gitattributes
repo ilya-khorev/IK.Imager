@@ -1,0 +1,37 @@
+# Normalise everything git detects as text to LF in the repository. The whole index is already
+# LF, so this changes nothing that is committed today - it only stops a Windows checkout from
+# introducing CRLF into the index later, given CI runs on ubuntu-latest.
+* text=auto
+
+*.cs      text diff=csharp
+*.csproj  text
+*.props   text
+*.targets text
+*.sln     text eol=crlf
+*.config  text
+*.json    text
+*.md      text
+*.yml     text
+*.yaml    text
+*.svg     text
+*.editorconfig    text
+*.gitattributes   text
+*.gitignore       text
+*.DotSettings     text
+.dockerignore     text
+Dockerfile        text eol=lf
+
+# Read by PowerShell on Windows only.
+*.ps1 text eol=crlf
+
+# Test fixtures - never touch these.
+*.jpg  binary
+*.jpeg binary
+*.png  binary
+*.gif  binary
+*.bmp  binary
+*.webp binary
+*.tga  binary
+*.ico  binary
+*.snk  binary
+*.pfx  binary

@@ -2,4 +2,4 @@
 
 namespace IK.Imager.Core.ImageSearch;
 
-public record RequestImagesQuery(string[] ImageIds, string ImageGroup);
+public record RequestImagesQuery(string[] ImageIds, string? ImageGroup);

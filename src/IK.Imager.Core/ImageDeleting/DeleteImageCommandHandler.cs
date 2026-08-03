@@ -27,7 +27,8 @@ public class DeleteImageCommandHandler: ICommandHandler<DeleteImageCommand>
     {
         _logger.LogDebug(Removing, request);
             
-        bool originalImageDeleted = await _blobRepository.TryDeleteImage(request.ImageName, ImageSizeType.Original, CancellationToken.None);
+        //a null image name is rejected by the repository's own argument check, as it was before
+        bool originalImageDeleted = await _blobRepository.TryDeleteImage(request.ImageName!, ImageSizeType.Original, CancellationToken.None);
         int deletedThumbnails = 0; 
         foreach (var thumbnailName in request.ThumbnailNames)
         {

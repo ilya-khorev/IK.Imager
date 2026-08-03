@@ -9,7 +9,7 @@ namespace IK.Imager.ImageMetadataStorage.CosmosDB
     {
         private readonly IOptions<ImageMetadataCosmosDbStorageSettings> _settings;
         private readonly CosmosClient _client;
-        private Container _imageContainer;
+        private Container? _imageContainer;
         
         /// <param name="settings">Cosmos DB connection settings.</param>
         /// <param name="clientOptions">
@@ -18,7 +18,7 @@ namespace IK.Imager.ImageMetadataStorage.CosmosDB
         /// speaks gateway mode and advertises its container-internal endpoint, so the client has to
         /// be told to stay on the endpoint it was given.
         /// </param>
-        public CosmosDbClient(IOptions<ImageMetadataCosmosDbStorageSettings> settings, CosmosClientOptions clientOptions = null)
+        public CosmosDbClient(IOptions<ImageMetadataCosmosDbStorageSettings> settings, CosmosClientOptions? clientOptions = null)
         {
             _settings = settings;
             _client = new CosmosClient(_settings.Value.ConnectionString, clientOptions);

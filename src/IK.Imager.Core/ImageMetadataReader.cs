@@ -17,7 +17,7 @@ namespace IK.Imager.Core
 {
     public class ImageMetadataReader: IImageMetadataReader    
     {
-        public ImageFormat DetectFormat(Stream imageStream)
+        public ImageFormat? DetectFormat(Stream imageStream)
         {
             ArgumentHelper.AssertNotNull(nameof(imageStream), imageStream);
 
@@ -54,7 +54,7 @@ namespace IK.Imager.Core
             return new ImageFormat(imageFormat.DefaultMimeType, imageFormat.FileExtensions.First(), imageType);
         }
 
-        public ImageSize ReadSize(Stream imageStream)
+        public ImageSize? ReadSize(Stream imageStream)
         {
             ArgumentHelper.AssertNotNull(nameof(imageStream), imageStream);
 

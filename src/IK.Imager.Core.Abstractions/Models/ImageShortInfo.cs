@@ -2,9 +2,9 @@
 {
     public class ImageShortInfo
     {
-        public string ImageId { get; set; }
-        public string ImageName { get; set; }
-        public string[] ThumbnailNames { get; set; }
+        public string ImageId { get; set; } = null!;
+        public string ImageName { get; set; } = null!;
+        public string[] ThumbnailNames { get; set; } = [];
 
         public override string ToString()
         {

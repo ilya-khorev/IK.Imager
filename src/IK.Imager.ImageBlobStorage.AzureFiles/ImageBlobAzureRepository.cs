@@ -45,7 +45,7 @@ namespace IK.Imager.ImageBlobStorage.AzureFiles
         }
 
         /// <inheritdoc />
-        public async Task<MemoryStream> DownloadImage(string imageName, ImageSizeType imageSizeType,
+        public async Task<MemoryStream?> DownloadImage(string imageName, ImageSizeType imageSizeType,
             CancellationToken cancellationToken)
         {
             ArgumentHelper.AssertNotNullOrEmpty(nameof(imageName), imageName);

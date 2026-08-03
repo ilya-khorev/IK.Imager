@@ -27,6 +27,7 @@ namespace IK.Imager.Core.Tests
                 await using var fileStream = ImageTestsHelper.OpenFileForReading(file);
                 var imageFormat = _imageMetadataReader.DetectFormat(fileStream);
 
+                Assert.NotNull(imageFormat);
                 Assert.Equal(expectedType, imageFormat.ImageType);
             }
         }
@@ -59,6 +60,7 @@ namespace IK.Imager.Core.Tests
         {
             await using var fileStream = ImageTestsHelper.OpenFileForReading(imagePath);
             var imageSize = _imageMetadataReader.ReadSize(fileStream);
+            Assert.NotNull(imageSize);
             Assert.Equal(expectedWidth, imageSize.Width);
             Assert.Equal(expectedHeight, imageSize.Height);
             Assert.Equal(expectedSize, imageSize.Bytes);

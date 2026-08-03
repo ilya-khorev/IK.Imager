@@ -27,7 +27,7 @@ namespace IK.Imager.Core.Validation
             _limitationSettings = limitationSettings;
         }
 
-        public ValidationResult CheckFormat(ImageFormat imageFormat)
+        public ValidationResult CheckFormat(ImageFormat? imageFormat)
         {
             var limits = _limitationSettings.Value;
 

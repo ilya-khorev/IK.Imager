@@ -10,22 +10,22 @@ namespace IK.Imager.Core.Abstractions.Models
         /// <summary>
         /// Unique image identifier
         /// </summary>
-        public string Id { get; set; }
-        
+        public string Id { get; set; } = null!;
+
         /// <summary>
         /// Unique image name
         /// </summary>
-        public string Name { get; set; }
-        
+        public string Name { get; set; } = null!;
+
         /// <summary>
         /// Image https url
         /// </summary>
-        public Uri Url { get; set; }
-        
+        public Uri Url { get; set; } = null!;
+
         /// <summary>
         /// Image hashcode
         /// </summary>
-        public string Hash { get; set; }
+        public string Hash { get; set; } = null!;
         
         /// <summary>
         /// Timestamp when the image has been saved in the system
@@ -51,6 +51,6 @@ namespace IK.Imager.Core.Abstractions.Models
         /// Standard that indicates the nature and format of a file.
         /// E.g. 'image/jpeg', 'image/png', 'image/bmp', 'image/gif'
         /// </summary>
-        public string MimeType { get; set;}
+        public string MimeType { get; set; } = null!;
     }
 }

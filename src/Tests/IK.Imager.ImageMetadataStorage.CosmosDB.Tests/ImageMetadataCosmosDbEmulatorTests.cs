@@ -119,7 +119,7 @@ public class ImageMetadataCosmosDbEmulatorTests
     public async Task GetMetadata_NullIdCollection_ThrowsArgumentNullException()
     {
         await Assert.ThrowsAsync<ArgumentNullException>(() =>
-            _imageMetadataCosmosDbRepository.GetMetadata(null, CancellationToken.None));
+            _imageMetadataCosmosDbRepository.GetMetadata(null!, CancellationToken.None));
     }
 
     [Fact]
@@ -133,7 +133,7 @@ public class ImageMetadataCosmosDbEmulatorTests
     public async Task SetMetadata_NullMetadata_ThrowsArgumentNullException()
     {
         await Assert.ThrowsAsync<ArgumentNullException>(() =>
-            _imageMetadataCosmosDbRepository.SetMetadata(null, CancellationToken.None));
+            _imageMetadataCosmosDbRepository.SetMetadata(null!, CancellationToken.None));
     }
 
     [Theory]
