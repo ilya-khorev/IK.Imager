@@ -33,7 +33,7 @@ public class DeleteImageCommandTests
         var commandHandler = new DeleteImageCommandHandler(_logger, _blobRepositoryMock.Object);
         await commandHandler.Handle(request, CancellationToken.None);
         
-        _blobRepositoryMock.Verify(x => x.TryDeleteImage(request.ImageName, ImageSizeType.Original, CancellationToken.None), Times.Once);
+        _blobRepositoryMock.Verify(x => x.TryDeleteImage(request.ImageName!, ImageSizeType.Original, CancellationToken.None), Times.Once);
         foreach (var thumbnailName in request.ThumbnailNames)
         {
             _blobRepositoryMock.Verify(x => x.TryDeleteImage(thumbnailName, ImageSizeType.Thumbnail, CancellationToken.None), Times.Once);
@@ -51,7 +51,7 @@ public class DeleteImageCommandTests
         var commandHandler = new DeleteImageCommandHandler(_logger, _blobRepositoryMock.Object);
         await commandHandler.Handle(request, CancellationToken.None);
         
-        _blobRepositoryMock.Verify(x => x.TryDeleteImage(request.ImageName, ImageSizeType.Original, CancellationToken.None), Times.Once);
+        _blobRepositoryMock.Verify(x => x.TryDeleteImage(request.ImageName!, ImageSizeType.Original, CancellationToken.None), Times.Once);
         _blobRepositoryMock.Verify(x => x.TryDeleteImage(It.IsAny<string>(), ImageSizeType.Thumbnail, CancellationToken.None), Times.Never);
     }
 }

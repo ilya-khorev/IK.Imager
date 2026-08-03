@@ -8,5 +8,5 @@ public class UploadImageRequest: UploadImageRequestBase
     /// <summary>
     /// Absolute image url
     /// </summary>
-    public string ImageUrl { get; set; }
+    public string ImageUrl { get; set; } = null!;
 }

@@ -10,5 +10,5 @@ public class UploadImageFileRequest: UploadImageRequestBase
     /// <summary>
     /// File sent as a part of form
     /// </summary>
-    public IFormFile File { get; set; }
+    public IFormFile File { get; set; } = null!;
 }

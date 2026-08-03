@@ -29,7 +29,7 @@ public class RequestImagesQueryCdnDecorator : IQueryHandler<RequestImagesQuery, 
     {
         var response = await _inner.Handle(query, cancellationToken);
 
-        if (response == null || !response.Images.Any())
+        if (!response.Images.Any())
             return response;
 
         foreach (var image in response.Images)
@@ -57,8 +57,7 @@ public class UploadImageByUrlCommandCdnDecorator : ICommandHandler<UploadImageBy
     public async Task<ImageInfo> Handle(UploadImageByUrlCommand command, CancellationToken cancellationToken)
     {
         var response = await _inner.Handle(command, cancellationToken);
-        if (response != null)
-            response.Url = _cdnService.TryTransformToCdnUri(response.Url);
+        response.Url = _cdnService.TryTransformToCdnUri(response.Url);
 
         return response;
     }
@@ -78,8 +77,7 @@ public class UploadImageCommandCdnDecorator : ICommandHandler<UploadImageCommand
     public async Task<ImageInfo> Handle(UploadImageCommand command, CancellationToken cancellationToken)
     {
         var response = await _inner.Handle(command, cancellationToken);
-        if (response != null)
-            response.Url = _cdnService.TryTransformToCdnUri(response.Url);
+        response.Url = _cdnService.TryTransformToCdnUri(response.Url);
 
         return response;
     }

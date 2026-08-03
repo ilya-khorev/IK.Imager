@@ -7,7 +7,7 @@ namespace IK.Imager.Core.Abstractions.Models
         /// <summary>
         /// Set of images
         /// </summary>
-        public List<ImageFullInfoWithThumbnails> Images { get; set; }
+        public List<ImageFullInfoWithThumbnails> Images { get; set; } = new();
     }
     
     /// <summary>
@@ -16,13 +16,15 @@ namespace IK.Imager.Core.Abstractions.Models
     public class ImageFullInfoWithThumbnails: ImageInfo
     {
         /// <summary>
-        /// Additional information associated with an image in arbitrary form of key-value dictionary
+        /// Additional information associated with an image in arbitrary form of key-value dictionary.
+        /// Optional: an image may carry no tags at all.
         /// </summary>
-        public IDictionary<string, string> Tags { get; set; }
-        
+        public IDictionary<string, string>? Tags { get; set; }
+
         /// <summary>
-        /// Image thumbnails sorted by smallest to the biggest
+        /// Image thumbnails sorted by smallest to the biggest.
+        /// Empty while thumbnail generation is still in flight.
         /// </summary>
-        public List<ImageInfo> Thumbnails { get; set; } 
+        public List<ImageInfo> Thumbnails { get; set; } = new();
     }
 }

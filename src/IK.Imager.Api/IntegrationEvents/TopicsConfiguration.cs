@@ -3,8 +3,8 @@ namespace IK.Imager.Api.IntegrationEvents;
 
 public class TopicsConfiguration
 {
-    public string UploadedImagesTopicName { get; set; }
-    public string DeletedImagesTopicName { get; set; }
-    public string SubscriptionName { get; set; }
+    public string UploadedImagesTopicName { get; set; } = null!;
+    public string DeletedImagesTopicName { get; set; } = null!;
+    public string SubscriptionName { get; set; } = null!;
     public int MaxConcurrentCalls { get; set; }
 }

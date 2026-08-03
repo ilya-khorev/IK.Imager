@@ -2,9 +2,9 @@
 {
     public class ImageMetadataCosmosDbStorageSettings
     {
-        public string ConnectionString { get; set; }
-        public string DatabaseId { get; set; }
-        public string ContainerId { get; set; }
+        public string ConnectionString { get; set; } = null!;
+        public string DatabaseId { get; set; } = null!;
+        public string ContainerId { get; set; } = null!;
         public int ContainerThroughPutOnCreation { get; set; }
     }
 }

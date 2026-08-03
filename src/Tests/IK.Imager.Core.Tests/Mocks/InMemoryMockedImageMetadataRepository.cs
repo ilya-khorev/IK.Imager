@@ -16,7 +16,7 @@ namespace IK.Imager.Core.Tests.Mocks
             return Task.CompletedTask;
         }
 
-        public Task<List<ImageMetadata>> GetMetadata(ICollection<string> imageIds, string imageGroup, CancellationToken cancellationToken)
+        public Task<List<ImageMetadata>> GetMetadata(ICollection<string> imageIds, string? imageGroup, CancellationToken cancellationToken)
         {
             List<ImageMetadata> result = new List<ImageMetadata>();
             foreach (var imageId in imageIds)

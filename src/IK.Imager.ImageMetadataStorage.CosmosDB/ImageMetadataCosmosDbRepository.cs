@@ -48,7 +48,7 @@ namespace IK.Imager.ImageMetadataStorage.CosmosDB
          */
         
         /// <inheritdoc />
-        public async Task<List<ImageMetadata>> GetMetadata(ICollection<string> imageIds, string imageGroup,
+        public async Task<List<ImageMetadata>> GetMetadata(ICollection<string> imageIds, string? imageGroup,
             CancellationToken cancellationToken)
         {
             ArgumentHelper.AssertNotNull(nameof(imageIds), imageIds);
@@ -57,7 +57,7 @@ namespace IK.Imager.ImageMetadataStorage.CosmosDB
 
             var container = await _cosmosDbClient.CreateImagesContainerIfNotExists();
 
-            QueryRequestOptions queryRequestOptions = null;
+            QueryRequestOptions? queryRequestOptions = null;
             if (!string.IsNullOrEmpty(imageGroup))
                 queryRequestOptions = new QueryRequestOptions
                 {

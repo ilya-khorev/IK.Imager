@@ -30,7 +30,7 @@ namespace IK.Imager.Core.Tests.Mocks
             };
         }
 
-        public async Task<MemoryStream> DownloadImage(string imageName, ImageSizeType imageSizeType, CancellationToken cancellationToken)
+        public async Task<MemoryStream?> DownloadImage(string imageName, ImageSizeType imageSizeType, CancellationToken cancellationToken)
         {
             if (_imagesDictionary.TryGetValue(imageName, out var value))
             {

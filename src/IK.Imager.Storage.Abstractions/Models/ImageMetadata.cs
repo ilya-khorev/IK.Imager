@@ -11,15 +11,15 @@ namespace IK.Imager.Storage.Abstractions.Models
         /// <summary>
         /// Image group which also used to partition data
         /// </summary>
-        public string ImageGroup { get; set; }
-        
+        public string ImageGroup { get; set; } = null!;
+
         /// <summary>
         /// Image id
         /// </summary>
         [JsonProperty("id")]
-        public string Id { get; set; }
+        public string Id { get; set; } = null!;
         public long SizeBytes { get; set; }
-        public string MD5Hash { get; set; }
+        public string MD5Hash { get; set; } = null!;
         public int Width { get; set; }
         public int Height { get; set; }
         public DateTime DateAddedUtc { get; set; }
@@ -27,13 +27,13 @@ namespace IK.Imager.Storage.Abstractions.Models
         /// <summary>
         /// Image name
         /// </summary>
-        public string Name { get; set; }
-        
+        public string Name { get; set; } = null!;
+
         /// <summary>
         /// Standard that indicates the nature and format of a file.
         /// E.g. 'image/jpeg', 'image/png', 'image/bmp', 'image/gif'
         /// </summary>
-        public string MimeType { get; set; } 
+        public string MimeType { get; set; } = null!;
         
         /// <summary>
         /// Image type
@@ -43,21 +43,22 @@ namespace IK.Imager.Storage.Abstractions.Models
         /// <summary>
         /// File extensions, e.g. '.jpeg', '.png', etc
         /// </summary>
-        public string FileExtension { get; set; }
-        
+        public string FileExtension { get; set; } = null!;
+
         /// <summary>
-        /// Additional information associated with an image in arbitrary form of key-value dictionary
+        /// Additional information associated with an image in arbitrary form of key-value dictionary.
+        /// Optional: an image may carry no tags at all.
         /// </summary>
-        public IDictionary<string, string> Tags { get; set; }
-        
+        public IDictionary<string, string>? Tags { get; set; }
+
         /// <summary>
         /// Thumbnails of an image.
         /// Sorted by dimensions descending, so that the biggest thumbnail is the last element in the array.
         /// Optional property: sometimes an image either doesn't have any thumbnails at all or they are not prepared yet.
         /// </summary>
-        public List<ImageThumbnail> Thumbnails { get; set; }
-        
-        public bool Equals(ImageMetadata other)
+        public List<ImageThumbnail>? Thumbnails { get; set; }
+
+        public bool Equals(ImageMetadata? other)
         {
             if (ReferenceEquals(null, other)) 
                 return false;
@@ -116,7 +117,7 @@ namespace IK.Imager.Storage.Abstractions.Models
                    && thumbnailsEqual;
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             if (ReferenceEquals(null, obj)) 
                 return false;

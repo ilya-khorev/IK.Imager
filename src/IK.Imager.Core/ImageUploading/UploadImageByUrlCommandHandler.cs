@@ -36,7 +36,8 @@ public class UploadImageByUrlCommandHandler: ICommandHandler<UploadImageByUrlCom
             
         _logger.LogDebug(DownloadedByUrl, request.ImageUrl);
             
-        var uploadImageResult = await _uploadImageCommandHandler.Handle(new UploadImageCommand(imageStream, request.ImageGroup), cancellationToken);
+        //the null case above is still unhandled (see the todo); the ! preserves the existing behaviour of failing downstream
+        var uploadImageResult = await _uploadImageCommandHandler.Handle(new UploadImageCommand(imageStream!, request.ImageGroup), cancellationToken);
         return uploadImageResult;
     }
 }

@@ -2,6 +2,6 @@
 {
     public class ImageThumbnailsSettings
     {
-        public int[] TargetWidth { get; set; }
+        public int[] TargetWidth { get; set; } = null!;
     }
 }

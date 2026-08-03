@@ -46,16 +46,21 @@ public class UploadImageCommandHandler: ICommandHandler<UploadImageCommand, Imag
         _logger.LogDebug(CheckingImage);
         var imageFormat = _metadataReader.DetectFormat(request.ImageStream);
         var validationResult = _imageValidator.CheckFormat(imageFormat);
-        if (!validationResult.IsValid)
+        //CheckFormat already reports a null format as invalid; the explicit null test is what tells the compiler so
+        if (!validationResult.IsValid || imageFormat == null)
             throw new ValidationException(); //todo return error model instead of exception
-            
+
         _logger.LogDebug(imageFormat.ToString());
-            
+
+        //ReadSize only returns null for a stream ImageSharp cannot identify, which DetectFormat has just ruled out
         var imageSize = _metadataReader.ReadSize(request.ImageStream);
+        if (imageSize == null)
+            throw new ValidationException(); //todo return error model instead of exception
+
         validationResult = _imageValidator.CheckSize(imageSize);
         if (!validationResult.IsValid)
             throw new ValidationException(); //todo return error model instead of exception
-            
+
         _logger.LogDebug(imageSize.ToString());
 
         //Firstly, saving the image stream to the blob storage

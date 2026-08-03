@@ -11,9 +11,8 @@ namespace IK.Imager.Core.Abstractions.Validation
             if (isValid && validationErrors?.Count > 0)
                 throw new ArgumentException("ValidationErrors must be empty for valid result");
             
-            if (validationErrors != null)
-                ValidationErrors = new ReadOnlyCollection<ValidationError>(validationErrors);
-            
+            ValidationErrors = new ReadOnlyCollection<ValidationError>(validationErrors ?? new List<ValidationError>());
+
             IsValid = isValid;
         }
         

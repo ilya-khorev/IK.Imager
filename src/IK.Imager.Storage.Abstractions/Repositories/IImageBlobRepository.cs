@@ -35,7 +35,7 @@ namespace IK.Imager.Storage.Abstractions.Repositories
         /// <param name="imageSizeType">Original or thumbnail</param>
         /// <param name="cancellationToken">Cancellation token to stop operation</param>
         /// <returns>Image stream, or null if such image was not found</returns>
-        Task<MemoryStream> DownloadImage(string imageName, ImageSizeType imageSizeType, CancellationToken cancellationToken);
+        Task<MemoryStream?> DownloadImage(string imageName, ImageSizeType imageSizeType, CancellationToken cancellationToken);
 
         /// <summary>
         /// Attempts to delete an image by a given image name

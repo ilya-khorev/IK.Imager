@@ -69,7 +69,8 @@ public class RequestImagesQueryHandlerTests
         Assert.Equal(expectedImage.MimeType, actualImage.MimeType);
         Assert.NotNull(actualImage.Url);
         Assert.True(actualImage.Thumbnails.Any());
-    
+        Assert.NotNull(expectedImage.Thumbnails);
+
         foreach (var imageThumbnail in actualImage.Thumbnails)
         {
             var matchedThumbnail = expectedImage.Thumbnails.Single(x => x.Id == imageThumbnail.Id);

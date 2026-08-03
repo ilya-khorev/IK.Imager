@@ -1,20 +1,17 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net10.0</TargetFramework>
-
         <IsPackable>false</IsPackable>
-
-        <LangVersion>default</LangVersion>
     </PropertyGroup>
 
     <ItemGroup>
-        <!-- Used directly by ImageMetadataStorageFixture; version kept in sync with the production project -->
-        <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.62.0" />
-        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.8.1" />
-        <PackageReference Include="Testcontainers.CosmosDb" Version="4.13.0" />
-        <PackageReference Include="xunit" Version="2.9.3" />
-        <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5">
+        <!-- Used directly by ImageMetadataStorageFixture; the version is shared with the production
+             project through Directory.Packages.props. -->
+        <PackageReference Include="Microsoft.Azure.Cosmos" />
+        <PackageReference Include="Microsoft.NET.Test.Sdk" />
+        <PackageReference Include="Testcontainers.CosmosDb" />
+        <PackageReference Include="xunit" />
+        <PackageReference Include="xunit.runner.visualstudio">
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>

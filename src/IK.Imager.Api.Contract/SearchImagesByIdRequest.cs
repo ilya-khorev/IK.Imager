@@ -9,7 +9,7 @@ public class SearchImagesByIdRequest
     /// Image identifiers to search.
     /// Maximum 200 identifiers are allowed to be passed into one request.
     /// </summary>
-    public string[] ImageIds { get; set; }
+    public string[] ImageIds { get; set; } = null!;
         
     /// <summary>
     /// Image group, which was specified when uploading these images.

@@ -4,8 +4,8 @@ namespace IK.Imager.Storage.Abstractions.Models
 {
     public class UploadImageResult
     {
-        public string Hash { get; set; }
+        public string Hash { get; set; } = null!;
         public DateTimeOffset DateAdded { get; set; }
-        public Uri Url { get; set; }
+        public Uri Url { get; set; } = null!;
     }
 }

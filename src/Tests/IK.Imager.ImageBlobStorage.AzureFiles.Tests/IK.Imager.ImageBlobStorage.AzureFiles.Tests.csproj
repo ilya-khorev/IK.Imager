@@ -1,22 +1,18 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net10.0</TargetFramework>
-
         <IsPackable>false</IsPackable>
-
-        <LangVersion>default</LangVersion>
-
         <RootNamespace>IK.Imager.ImageStorage.AzureFiles.Tests</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
-        <!-- Used directly by ImageBlobsStorageFixture; version kept in sync with the production project -->
-        <PackageReference Include="Azure.Storage.Blobs" Version="12.29.1" />
-        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.8.1" />
-        <PackageReference Include="Testcontainers.Azurite" Version="4.13.0" />
-        <PackageReference Include="xunit" Version="2.9.3" />
-        <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5">
+        <!-- Used directly by ImageBlobsStorageFixture; the version is shared with the production
+             project through Directory.Packages.props. -->
+        <PackageReference Include="Azure.Storage.Blobs" />
+        <PackageReference Include="Microsoft.NET.Test.Sdk" />
+        <PackageReference Include="Testcontainers.Azurite" />
+        <PackageReference Include="xunit" />
+        <PackageReference Include="xunit.runner.visualstudio">
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>

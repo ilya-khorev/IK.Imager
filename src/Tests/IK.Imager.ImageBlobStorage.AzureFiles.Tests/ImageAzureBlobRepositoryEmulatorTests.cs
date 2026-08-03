@@ -102,7 +102,7 @@ public class ImageAzureBlobRepositoryEmulatorTests
     public async Task UploadImage_NullStream_ThrowsArgumentNullException(ImageSizeType imageType)
     {
         await Assert.ThrowsAsync<ArgumentNullException>(() =>
-            _imageBlobAzureRepository.UploadImage(GenerateUniqueImageName(), null, imageType, JpegType, CancellationToken.None));
+            _imageBlobAzureRepository.UploadImage(GenerateUniqueImageName(), null!, imageType, JpegType, CancellationToken.None));
     }
 
     [Theory]
@@ -153,6 +153,7 @@ public class ImageAzureBlobRepositoryEmulatorTests
 
         await using var downloadedImageStream = await _imageBlobAzureRepository.DownloadImage(imageName, imageType, CancellationToken.None);
 
+        Assert.NotNull(downloadedImageStream);
         Assert.True(CompareMemoryStreams(imageStream, downloadedImageStream));
     }
 
@@ -186,6 +187,8 @@ public class ImageAzureBlobRepositoryEmulatorTests
         await using var downloadedOriginal = await _imageBlobAzureRepository.DownloadImage(sharedImageName, ImageSizeType.Original, CancellationToken.None);
         await using var downloadedThumbnail = await _imageBlobAzureRepository.DownloadImage(sharedImageName, ImageSizeType.Thumbnail, CancellationToken.None);
 
+        Assert.NotNull(downloadedOriginal);
+        Assert.NotNull(downloadedThumbnail);
         Assert.Equal(originalBytes, downloadedOriginal.ToArray());
         Assert.Equal(thumbnailBytes, downloadedThumbnail.ToArray());
     }

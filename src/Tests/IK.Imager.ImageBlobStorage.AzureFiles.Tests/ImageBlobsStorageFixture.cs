@@ -27,15 +27,15 @@ public sealed class ImageBlobsStorageFixture : IAsyncLifetime
     /// <summary>
     /// The system under test.
     /// </summary>
-    public ImageBlobAzureRepository BlobImageRepository { get; private set; }
+    public ImageBlobAzureRepository BlobImageRepository { get; private set; } = null!;
 
     /// <summary>
     /// A raw client, for the assertions that need to look at the storage account
     /// without going through the repository.
     /// </summary>
-    public BlobServiceClient BlobServiceClient { get; private set; }
+    public BlobServiceClient BlobServiceClient { get; private set; } = null!;
 
-    public ImageAzureStorageSettings Settings { get; private set; }
+    public ImageAzureStorageSettings Settings { get; private set; } = null!;
 
     public async Task InitializeAsync()
     {

@@ -19,10 +19,11 @@ namespace IK.Imager.Storage.Abstractions.Repositories
         /// Returns a list of metadata object for a given set of image ids and a given image group
         /// </summary>
         /// <param name="imageIds">Image identifiers</param>
-        /// <param name="imageGroup">Image group to which the requested images belong</param>
+        /// <param name="imageGroup">Image group to which the requested images belong.
+        /// Optional - when null or empty the query runs across every partition instead of a single one.</param>
         /// <param name="cancellationToken">Cancellation token to stop operation</param>
         /// <returns></returns>
-        Task<List<ImageMetadata>> GetMetadata(ICollection<string> imageIds, string imageGroup, CancellationToken cancellationToken);
+        Task<List<ImageMetadata>> GetMetadata(ICollection<string> imageIds, string? imageGroup, CancellationToken cancellationToken);
         
         /// <summary>
         /// Returns a list of metadata object for a given set of image ids

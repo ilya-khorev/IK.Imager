@@ -9,7 +9,7 @@ namespace IK.Imager.Core.Abstractions.Validation
         /// </summary>
         /// <param name="imageFormat">A given image format</param>
         /// <returns>validation result</returns>
-        ValidationResult CheckFormat(ImageFormat imageFormat);
+        ValidationResult CheckFormat(ImageFormat? imageFormat);
 
         /// <summary>
         /// Checks whether the image size fits the the system settings

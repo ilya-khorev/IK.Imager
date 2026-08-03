@@ -12,28 +12,28 @@ namespace IK.Imager.Core.Settings
         /// <summary>
         /// Max and min image width in pixels 
         /// </summary>
-        public Range<int> Width { get; set; }
-        
+        public Range<int> Width { get; set; } = null!;
+
         /// <summary>
-        /// Max and min image height in pixels 
+        /// Max and min image height in pixels
         /// </summary>
-        public Range<int> Height { get; set; }
-        
+        public Range<int> Height { get; set; } = null!;
+
         /// <summary>
         /// Max and min image size in bytes
         /// </summary>
-        public Range<int> SizeBytes { get; set; }
-        
+        public Range<int> SizeBytes { get; set; } = null!;
+
         /// <summary>
         /// Max and min image aspect ratio
         /// Aspect ratio - the ratio of its width to its height
         /// </summary>
-        public Range<double> AspectRatio { get; set; }
-        
+        public Range<double> AspectRatio { get; set; } = null!;
+
         /// <summary>
-        /// Supported image types 
+        /// Supported image types
         /// </summary>
-        public List<string> Types { get; set; }
+        public List<string> Types { get; set; } = null!;
 
         public void MergeWith(ImageLimitationSettings settings)
         {
@@ -89,11 +89,11 @@ namespace IK.Imager.Core.Settings
         /// <summary>
         /// Min value
         /// </summary>
-        public T Min { get; set; }
-        
+        public T Min { get; set; } = default!;
+
         /// <summary>
         /// Max value
         /// </summary>
-        public T Max { get; set; }
+        public T Max { get; set; } = default!;
     }
 }
