@@ -9,7 +9,10 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <!-- Used directly by ImageMetadataStorageFixture; version kept in sync with the production project -->
+        <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.62.0" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.8.1" />
+        <PackageReference Include="Testcontainers.CosmosDb" Version="4.13.0" />
         <PackageReference Include="xunit" Version="2.9.3" />
         <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5">
           <PrivateAssets>all</PrivateAssets>

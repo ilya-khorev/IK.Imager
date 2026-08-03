@@ -2,20 +2,47 @@ name: Build
 
 on:
   push:
-    branches: [ master ]
+    branches: [ main, 'feature/**' ]
   pull_request:
-    branches: [ master ]
+    branches: [ main ]
 
 jobs:
   build:
+    name: Build and test
 
-    runs-on: windows-latest
+    # The integration tests start Azurite and the Cosmos DB emulator via Testcontainers,
+    # which requires a Linux container runtime - the hosted Windows runners cannot provide one.
+    runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v4
+
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 10.0.x
+
+    - name: Restore
+      run: dotnet restore src/IK.Imager.sln
+
     - name: Build with dotnet
-      run: dotnet build src\IK.Imager.sln --configuration Release
+      run: dotnet build src/IK.Imager.sln --configuration Release --no-restore
+
+    # Pulled up front so that a cold image download does not count against the Testcontainers
+    # startup timeout. Tags must match the ones in src/Tests/IK.Imager.TestsBase/Constants.cs
+    - name: Pull emulator images
+      run: |
+        docker pull mcr.microsoft.com/azure-storage/azurite:3.36.0
+        docker pull mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:vnext-EN20260706
+
+    # No LogFileName - the three test assemblies run in parallel and would otherwise
+    # all write to (and overwrite) the same trx file
+    - name: Test with dotnet
+      run: dotnet test src/IK.Imager.sln --configuration Release --no-build --logger trx --results-directory ${{ github.workspace }}/TestResults
+
+    - name: Upload test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: test-results
+        path: ${{ github.workspace }}/TestResults

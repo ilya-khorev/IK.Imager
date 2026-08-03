@@ -94,3 +94,6 @@ The long-running operations are not performed within the original request. Inste
 4) Azure Application Insights - used as a storage of application logs.
 4) The service is written using .NET 10
 5) Docker - the service is available as a docker image on Docker Hub (see link above)
+
+### Running the tests
+`dotnet test src/IK.Imager.sln` runs everything. The unit tests (`IK.Imager.Core.Tests`) are fully in-memory, whereas the storage integration tests need a running **Docker** daemon - [Testcontainers](https://dotnet.testcontainers.org/) starts Azurite and the Linux Cosmos DB emulator automatically, so no emulator has to be installed by hand. Use `dotnet test src/IK.Imager.sln --filter "Category!=Integration"` to skip them.

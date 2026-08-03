@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <TargetFramework>net10.0</TargetFramework>
@@ -21,49 +21,49 @@
     </ItemGroup>
 
     <ItemGroup>
-      <None Update="Images\jpeg\1043-1200x900.jpg">
+      <None Update="Images/jpeg/1043-1200x900.jpg">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
-      <None Update="Images\jpeg\1043-2400x1800.jpg">
+      <None Update="Images/jpeg/1043-2400x1800.jpg">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
-      <None Update="Images\jpeg\1043-800x600.jpg">
+      <None Update="Images/jpeg/1043-800x600.jpg">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
-      <None Update="Images\png\1060-1000x1000.png">
+      <None Update="Images/png/1060-1000x1000.png">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
-      <None Update="Images\png\1060-2000x2000.png">
+      <None Update="Images/png/1060-2000x2000.png">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
-      <None Update="Images\png\1060-800x800.png">
+      <None Update="Images/png/1060-800x800.png">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
-      <None Update="Images\bmp\1068-1000x2000.bmp">
+      <None Update="Images/bmp/1068-1000x2000.bmp">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
-      <None Update="Images\bmp\1068-500x1000.bmp">
+      <None Update="Images/bmp/1068-500x1000.bmp">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
-      <None Update="Images\bmp\1068-800x1600.bmp">
+      <None Update="Images/bmp/1068-800x1600.bmp">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
       <None Update="textFile.txt">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
-      <None Update="Images\gif\giphy_200x200.gif">
+      <None Update="Images/gif/giphy_200x200.gif">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
-      <None Update="Images\gif\giphy_400x400.gif">
+      <None Update="Images/gif/giphy_400x400.gif">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
-      <None Update="Images\gif\giphy_537x537.gif">
+      <None Update="Images/gif/giphy_537x537.gif">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
-      <None Update="Images\556-200x300.webp">
+      <None Update="Images/556-200x300.webp">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
-      <None Update="Images\sample_640×426.tga">
+      <None Update="Images/sample_640×426.tga">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
     </ItemGroup>
