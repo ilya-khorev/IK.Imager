@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <TargetFramework>net10.0</TargetFramework>
@@ -27,10 +27,10 @@
     </ItemGroup>
 
     <ItemGroup>
-      <None Update="Images\1018-800x800.jpg">
+      <None Update="Images/1018-800x800.jpg">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
-      <None Update="Images\1051-800x800.jpg">
+      <None Update="Images/1051-800x800.jpg">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
     </ItemGroup>

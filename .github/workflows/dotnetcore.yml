@@ -35,8 +35,10 @@ jobs:
         docker pull mcr.microsoft.com/azure-storage/azurite:3.36.0
         docker pull mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:vnext-EN20260706
 
+    # No LogFileName - the three test assemblies run in parallel and would otherwise
+    # all write to (and overwrite) the same trx file
     - name: Test with dotnet
-      run: dotnet test src/IK.Imager.sln --configuration Release --no-build --logger "trx;LogFileName=test-results.trx" --results-directory ${{ github.workspace }}/TestResults
+      run: dotnet test src/IK.Imager.sln --configuration Release --no-build --logger trx --results-directory ${{ github.workspace }}/TestResults
 
     - name: Upload test results
       uses: actions/upload-artifact@v4
