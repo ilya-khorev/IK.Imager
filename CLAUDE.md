@@ -57,17 +57,32 @@ Upload → `UploadImageCommandHandler` (validate format/size → blob storage �
 
 Delete → `DeleteImageMetadataCommandHandler` removes only the metadata (image disappears from search immediately) → `ImageMetadataDeletedDomainEvent` → `ImageMetadataDeletedIntegrationEvent` → `RemoveImageFilesHandler` → `DeleteImageCommand` deletes the original blob and thumbnail blobs.
 
-This **domain event (`IDomainEvent`, dispatched in-process) → integration event (MassTransit) → command** relay is the core pattern. Domain events stay in `IK.Imager.Core`; the translation to Service Bus lives entirely in `IK.Imager.Api/DomainEventHandlers` and `IK.Imager.Api/IntegrationEvents`, so `IK.Imager.Core` has no messaging dependency. `DomainEventDispatcher` (in `IK.Imager.Core/Messaging`) just resolves every `IDomainEventHandler<T>` from the container and awaits them in turn; handlers are registered in `Program.cs`.
+This **domain event (`IDomainEvent`, dispatched in-process) → integration event (MassTransit) → command** relay is the core pattern. Domain events stay in `IK.Imager.Core`; the translation to Service Bus lives entirely in `IK.Imager.Api/DomainEventHandlers` and `IK.Imager.Api/IntegrationEvents`, so `IK.Imager.Core` has no messaging dependency. `DomainEventDispatcher` (in `IK.Imager.Core/Messaging`) just resolves every `IDomainEventHandler<T>` from the container and awaits them in turn; handlers are registered by `AddIntegrationEventMessaging` (`IK.Imager.Api/Extensions/MessagingServiceCollectionExtensions.cs`), alongside the bus they publish onto.
 
-CDN rewriting is applied outside handlers, via decorators in `IK.Imager.Core/Cdn/CdnDecorators.cs` — a handler always returns the raw blob URL, and the decorator swaps in the CDN host when `Cdn:Uri` is configured. The decorators are wired in `RegisterCoreServices`: the concrete handler is registered by its own type, and the handler *interface* resolves to the decorator wrapping it. Add a decorator there rather than touching handlers when a new response needs URL rewriting.
+CDN rewriting is applied outside handlers, via decorators in `IK.Imager.Core/Cdn/CdnDecorators.cs` — a handler always returns the raw blob URL, and the decorator swaps in the CDN host when `Cdn:Uri` is configured. The decorators are wired in `AddImagerCore`: the concrete handler is registered by its own type, and the handler *interface* resolves to the decorator wrapping it. Add a decorator there rather than touching handlers when a new response needs URL rewriting.
 
 ### Project layout
 
-`IK.Imager.Api` (host, controllers, validators, event translation) → `IK.Imager.Core` (all handlers, thumbnail resizing via ImageSharp, validation, CDN) → `IK.Imager.Core.Abstractions` / `IK.Imager.Storage.Abstractions` (interfaces + models, no dependencies). Storage implementations (`ImageBlobStorage.AzureFiles`, `ImageMetadataStorage.CosmosDB`) depend only on the storage abstractions and are bound in `Program.cs`. `IK.Imager.Api.Contract` is the only `netstandard2.1` project — it's the public DTO contract, kept separately so clients can reference it.
+`IK.Imager.Api` (host, controllers, validators, event translation) → `IK.Imager.Core` (all handlers, thumbnail resizing via ImageSharp, validation, CDN) → `IK.Imager.Core.Abstractions` / `IK.Imager.Storage.Abstractions` (interfaces + models, no dependencies). Storage implementations (`ImageBlobStorage.AzureFiles`, `ImageMetadataStorage.CosmosDB`) depend only on the storage abstractions. `IK.Imager.Api.Contract` is the only `netstandard2.1` project — it's the public DTO contract, kept separately so clients can reference it.
 
-Core services register themselves through `IK.Imager.Core.ServiceCollectionExtensions.RegisterCoreServices`, which also binds the `Cdn`, `Thumbnails`, and `ImageLimitations` config sections. Add new core registrations there, not in `Program.cs`.
+### DI registration
 
-The host uses minimal hosting: `IK.Imager.Api/Program.cs` is a single top-level-statements file holding the whole composition root (configuration, logging, DI, MassTransit, HTTP pipeline) plus the `CustomExtensionsMethods` helpers for health checks and Application Insights. There is no `Startup` class.
+**Every module registers its own services** through a `ServiceCollectionExtensions` class in its own project. Add a new registration to the module it belongs to, never to `Program.cs`.
+
+| Method | Project | Binds |
+|---|---|---|
+| `AddImagerCore(IConfiguration, Action<IHttpClientBuilder>?)` | `IK.Imager.Core` | `Cdn`, `Thumbnails`, `ImageLimitations` |
+| `AddAzureImageBlobStorage(IConfiguration)` | `IK.Imager.ImageBlobStorage.AzureFiles` | `AzureStorage` |
+| `AddCosmosImageMetadataStorage(IConfiguration)` | `IK.Imager.ImageMetadataStorage.CosmosDB` | `CosmosDb` |
+| `AddApiServices()` / `AddSwaggerDocumentation()` / `AddIntegrationEventMessaging(IConfiguration)` / `AddObservability(IConfiguration)` | `IK.Imager.Api/Extensions` | `Topics` |
+
+The convention: each method takes the **configuration root** and owns its section name as a `public const SectionName` next to the settings class it binds — so the magic string never appears at the call site. All of them return `IServiceCollection` and chain.
+
+`AddImagerCore` takes an optional `Action<IHttpClientBuilder>` for the `ImageDownloadClient` typed client: Core owns *what* the client is, the host owns HTTP resilience, so `Microsoft.Extensions.Http.Polly` stays out of Core.
+
+Health checks stay in the host (`Extensions/ObservabilityExtensions.cs`) rather than moving into the storage modules — `AspNetCore.HealthChecks.*` is versioned independently and which endpoints get probed is an operational decision. They read the storage connection settings through `IOptions<T>` so a probe can never target a different database or container than the repositories do.
+
+The host uses minimal hosting: `IK.Imager.Api/Program.cs` is a top-level-statements file that only wires configuration and logging, then calls the module extensions and `UseImagerPipeline()`. There is no `Startup` class. It turns on `ValidateScopes` + `ValidateOnBuild` in every environment — nothing tests the container, so a captive dependency or a dropped registration should fail at `builder.Build()` rather than on the first request.
 
 ### Storage model
 
@@ -82,4 +97,6 @@ FluentValidation validators in `IK.Imager.Api/Validations` check the *request sh
 
 `src/IK.Imager.Api/appsettings.json` is the full parameter list. Environment variables override it with `__` as the section separator (`ServiceBus__ConnectionString`, `AzureStorage__ConnectionString`, `Logging__LogLevel__Default`). Defaults point at the local emulators, so the API starts against Azurite + Cosmos Emulator without changes — except `ServiceBus:ConnectionString`, which has no emulator and must be a real namespace or MassTransit startup fails.
 
-Health endpoints: `/hc` (Cosmos + blob storage) and `/liveness` (self only).
+**Do not re-register `appsettings.json` on `builder.Configuration`.** `WebApplication.CreateBuilder` already adds it (as *optional*) and then adds the environment variable provider on top. Calling `AddJsonFile("appsettings.json", optional: false)` afterwards appends a *second* JSON source at the end of the chain, where it wins over the env vars — which silently disables every `__` override for any key that exists in the file. `Program.cs` therefore asserts the file exists instead of re-adding it. Note that flipping `Optional` on the source `CreateBuilder` registered does not work either: `ConfigurationManager` builds its providers eagerly, so the mutation is a no-op.
+
+Health endpoints: `/hc` (Cosmos + blob storage + the MassTransit bus) and `/liveness` (self only).

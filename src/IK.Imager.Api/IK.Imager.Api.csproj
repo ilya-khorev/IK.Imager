@@ -30,9 +30,4 @@
       <ProjectReference Include="..\IK.Imager.Storage.Abstractions\IK.Imager.Storage.Abstractions.csproj" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="Services" />
-    </ItemGroup>
-
-
 </Project>

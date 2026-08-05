@@ -1,8 +1,10 @@
+using System;
 using IK.Imager.Core.Abstractions;
 using IK.Imager.Core.Abstractions.Cdn;
 using IK.Imager.Core.Abstractions.Messaging;
 using IK.Imager.Core.Abstractions.Models;
 using IK.Imager.Core.Abstractions.Thumbnails;
+using IK.Imager.Core.Abstractions.Validation;
 using IK.Imager.Core.Cdn;
 using IK.Imager.Core.ImageDeleting;
 using IK.Imager.Core.ImageSearch;
@@ -10,6 +12,7 @@ using IK.Imager.Core.ImageUploading;
 using IK.Imager.Core.Messaging;
 using IK.Imager.Core.Settings;
 using IK.Imager.Core.Thumbnails;
+using IK.Imager.Core.Validation;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -17,21 +20,39 @@ namespace IK.Imager.Core;
 
 public static class ServiceCollectionExtensions
 {
-    public static IServiceCollection RegisterCoreServices(this IServiceCollection services, IConfiguration namedConfigurationSection)
+    public const string CdnSectionName = "Cdn";
+    public const string ThumbnailsSectionName = "Thumbnails";
+    public const string ImageLimitationsSectionName = "ImageLimitations";
+
+    /// <summary>
+    /// Registers the core services - handlers, thumbnail resizing, validation, CDN - and binds their settings.
+    /// </summary>
+    /// <param name="services">The service collection to add the registrations to.</param>
+    /// <param name="configuration">The configuration root - this module locates its own sections within it.</param>
+    /// <param name="configureImageDownloadClient">
+    /// Optional hook over the <see cref="ImageDownloadClient"/> typed client. Core owns what the client is;
+    /// HTTP resilience is a host policy, so the host passes its retry handling in here.
+    /// </param>
+    public static IServiceCollection AddImagerCore(this IServiceCollection services, IConfiguration configuration,
+        Action<IHttpClientBuilder>? configureImageDownloadClient = null)
     {
+        services.Configure<CdnSettings>(configuration.GetSection(CdnSectionName));
+        services.Configure<ImageThumbnailsSettings>(configuration.GetSection(ThumbnailsSectionName));
+        services.Configure<ImageLimitationSettings>(configuration.GetSection(ImageLimitationsSectionName));
+
         services.AddSingleton<IImageMetadataReader, ImageMetadataReader>();
         services.AddSingleton<IImageIdentifierProvider, ImageIdentifierProvider>();
         services.AddSingleton<ICdnService, CdnService>();
         services.AddSingleton<IImageResizing, ImageResizing>();
 
-        //todo imageDownloadClient registration?
-
+        //ImageValidator takes IOptionsSnapshot, which is scoped - it cannot be a singleton
+        services.AddScoped<IImageValidator, ImageValidator>();
         services.AddScoped<IDomainEventDispatcher, DomainEventDispatcher>();
-        RegisterHandlers(services);
 
-        services.Configure<CdnSettings>(namedConfigurationSection.GetSection("Cdn") ?? namedConfigurationSection);
-        services.Configure<ImageThumbnailsSettings>(namedConfigurationSection.GetSection("Thumbnails") ?? namedConfigurationSection);
-        services.Configure<ImageLimitationSettings>(namedConfigurationSection.GetSection("ImageLimitations") ?? namedConfigurationSection);
+        var imageDownloadClientBuilder = services.AddHttpClient<ImageDownloadClient>();
+        configureImageDownloadClient?.Invoke(imageDownloadClientBuilder);
+
+        RegisterHandlers(services);
 
         return services;
     }
