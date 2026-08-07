@@ -9,15 +9,15 @@ namespace IK.Imager.Api.Extensions;
 public static class WebApplicationExtensions
 {
     /// <summary>
-    /// Builds the HTTP pipeline - developer diagnostics, Swagger UI, the Service Fabric middleware,
-    /// the controllers and the health endpoints.
+    /// Builds the HTTP pipeline - developer diagnostics, the OpenAPI document and its Swagger UI,
+    /// the Service Fabric middleware, the controllers and the health endpoints.
     /// </summary>
     public static WebApplication UseImagerPipeline(this WebApplication app)
     {
         if (app.Environment.IsDevelopment())
             app.UseDeveloperExceptionPage();
 
-        app.UseSwaggerDocumentation();
+        app.UseOpenApiDocumentation();
 
         app.UseMiddleware<ServiceFabricResourceNotFoundMiddleware>();
 

@@ -1,0 +1,58 @@
+using System.Threading.Tasks;
+using IK.Imager.Api.OpenApi;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.DependencyInjection;
+
+#pragma warning disable 1591
+
+namespace IK.Imager.Api.Extensions;
+
+public static class OpenApiServiceCollectionExtensions
+{
+    internal const string ApiTitle = "IK.Imager API";
+    internal const string DocumentName = "v1";
+    internal const string CurrentVersion = "v1.0";
+
+    private const string DocumentRoute = $"/openapi/{DocumentName}.json";
+
+    /// <summary>
+    /// Registers the OpenAPI document generator shipped with ASP.NET Core. The endpoint descriptions and
+    /// the schema descriptions come from the XML documentation of this assembly and of IK.Imager.Api.Contract,
+    /// which Microsoft.AspNetCore.OpenApi picks up at compile time; the constraints declared by the
+    /// FluentValidation validators are applied by <see cref="FluentValidationRules"/>. A form-bound model
+    /// gets neither and is repaired by <see cref="FormRequestOperationTransformer"/>.
+    /// </summary>
+    public static IServiceCollection AddOpenApiDocumentation(this IServiceCollection services)
+    {
+        services.AddOpenApi(DocumentName, options =>
+        {
+            options.AddDocumentTransformer((document, _, _) =>
+            {
+                document.Info.Title = ApiTitle;
+                document.Info.Version = CurrentVersion;
+                return Task.CompletedTask;
+            });
+
+            options.AddSchemaTransformer(new FluentValidationSchemaTransformer());
+            options.AddOperationTransformer(new FormRequestOperationTransformer(XmlPropertyDescriptions.LoadFromBaseDirectory()));
+        });
+
+        return services;
+    }
+
+    /// <summary>
+    /// Serves the OpenAPI document and hosts the Swagger UI at the root path.
+    /// </summary>
+    public static WebApplication UseOpenApiDocumentation(this WebApplication app)
+    {
+        app.MapOpenApi();
+
+        app.UseSwaggerUI(c =>
+        {
+            c.SwaggerEndpoint(DocumentRoute, ApiTitle);
+            c.RoutePrefix = string.Empty;
+        });
+
+        return app;
+    }
+}

@@ -35,7 +35,7 @@ builder.Host.UseDefaultServiceProvider(options =>
 //Every module registers its own services - see the ServiceCollectionExtensions of each project
 builder.Services
     .AddApiServices()
-    .AddSwaggerDocumentation()
+    .AddOpenApiDocumentation()
     .AddImagerCore(builder.Configuration, httpClient => httpClient.AddTransientHttpErrorPolicy(p =>
         p.WaitAndRetryAsync(3, _ => TimeSpan.FromMilliseconds(500))))
     .AddAzureImageBlobStorage(builder.Configuration)
