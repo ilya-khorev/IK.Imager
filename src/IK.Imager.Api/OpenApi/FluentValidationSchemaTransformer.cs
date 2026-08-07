@@ -9,7 +9,7 @@ namespace IK.Imager.Api.OpenApi;
 /// <summary>
 /// Applies <see cref="FluentValidationRules"/> to the schemas generated for the request models that are
 /// bound from the body. Form-bound models are flattened into individual fields before they reach a schema
-/// transformer and are handled by <see cref="FluentValidationOperationTransformer"/> instead.
+/// transformer and are handled by <see cref="FormRequestOperationTransformer"/> instead.
 /// </summary>
 internal sealed class FluentValidationSchemaTransformer : IOpenApiSchemaTransformer
 {

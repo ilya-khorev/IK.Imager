@@ -19,7 +19,8 @@ public static class OpenApiServiceCollectionExtensions
     /// Registers the OpenAPI document generator shipped with ASP.NET Core. The endpoint descriptions and
     /// the schema descriptions come from the XML documentation of this assembly and of IK.Imager.Api.Contract,
     /// which Microsoft.AspNetCore.OpenApi picks up at compile time; the constraints declared by the
-    /// FluentValidation validators are applied by <see cref="FluentValidationRules"/>.
+    /// FluentValidation validators are applied by <see cref="FluentValidationRules"/>. A form-bound model
+    /// gets neither and is repaired by <see cref="FormRequestOperationTransformer"/>.
     /// </summary>
     public static IServiceCollection AddOpenApiDocumentation(this IServiceCollection services)
     {
@@ -33,7 +34,7 @@ public static class OpenApiServiceCollectionExtensions
             });
 
             options.AddSchemaTransformer(new FluentValidationSchemaTransformer());
-            options.AddOperationTransformer(new FluentValidationOperationTransformer());
+            options.AddOperationTransformer(new FormRequestOperationTransformer(XmlPropertyDescriptions.LoadFromBaseDirectory()));
         });
 
         return services;
