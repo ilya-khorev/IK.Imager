@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -43,7 +43,7 @@ namespace IK.Imager.ImageMetadataStorage.CosmosDB
         }
 
         /*
-         * Using of partitions make search requests more efficient
+         * Using of partitions make lookup requests more efficient
          * https://docs.microsoft.com/en-us/azure/cosmos-db/partitioning-overview
          */
         

@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using IK.Imager.Api.Extensions;
+using IK.Imager.Api.Features;
 using IK.Imager.Core;
 using IK.Imager.ImageBlobStorage.AzureFiles;
 using IK.Imager.ImageMetadataStorage.CosmosDB;
@@ -45,6 +46,13 @@ builder.Services
 
 var app = builder.Build();
 
-app.UseImagerPipeline();
+//outermost, so it covers the endpoints and everything below alike. There is no developer exception page:
+//GlobalExceptionHandler already returns the full exception in the Development environment.
+app.UseExceptionHandler();
+
+app.UseOpenApiDocumentation();
+
+app.MapImagerEndpoints();
+app.MapImagerHealthChecks();
 
 await app.RunAsync();

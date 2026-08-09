@@ -1,7 +1,6 @@
-﻿using System.Threading.Tasks;
+using System.Threading.Tasks;
 using IK.Imager.Api.IntegrationEvents.Events;
-using IK.Imager.Core.Abstractions.Messaging;
-using IK.Imager.Core.ImageDeleting;
+using IK.Imager.Core.Abstractions.Deleting;
 using MassTransit;
 // ReSharper disable ClassNeverInstantiated.Global
 
@@ -15,17 +14,16 @@ namespace IK.Imager.Api.IntegrationEvents.EventHandling;
 /// </summary>
 public class RemoveImageFilesHandler: IConsumer<ImageMetadataDeletedIntegrationEvent>
 {
-    private readonly ICommandHandler<DeleteImageCommand> _deleteImageCommandHandler;
+    private readonly IImageDeleter _imageDeleter;
 
-    public RemoveImageFilesHandler(ICommandHandler<DeleteImageCommand> deleteImageCommandHandler)
+    public RemoveImageFilesHandler(IImageDeleter imageDeleter)
     {
-        _deleteImageCommandHandler = deleteImageCommandHandler;
+        _imageDeleter = imageDeleter;
     }
 
     public async Task Consume(ConsumeContext<ImageMetadataDeletedIntegrationEvent> context)
     {
-        await _deleteImageCommandHandler.Handle(
-            new DeleteImageCommand(context.Message.ImageId, context.Message.ImageName, context.Message.ThumbnailNames),
-            context.CancellationToken);
+        await _imageDeleter.DeleteFiles(context.Message.ImageId, context.Message.ImageName,
+            context.Message.ThumbnailNames, context.CancellationToken);
     }
 }

@@ -1,10 +1,7 @@
-using IK.Imager.Api.DomainEventHandlers;
 using IK.Imager.Api.IntegrationEvents;
 using IK.Imager.Api.IntegrationEvents.EventHandling;
 using IK.Imager.Api.IntegrationEvents.Events;
-using IK.Imager.Core.Abstractions.Messaging;
-using IK.Imager.Core.ImageDeleting;
-using IK.Imager.Core.ImageUploading;
+using IK.Imager.Core.Abstractions;
 using MassTransit;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -28,7 +25,10 @@ public static class MessagingServiceCollectionExtensions
     public static IServiceCollection AddIntegrationEventMessaging(this IServiceCollection services, IConfiguration configuration)
     {
         services.Configure<TopicsConfiguration>(configuration.GetSection(TopicsSectionName));
-        services.AddDomainEventTranslation();
+
+        //what the core announces becomes a message on the bus registered just below - so it is registered
+        //here rather than in AddImagerCore, which has no way to publish anything
+        services.AddScoped<IImageEvents, ImageEvents>();
 
         services.AddMassTransit(x =>
         {
@@ -58,19 +58,6 @@ public static class MessagingServiceCollectionExtensions
                     });
             });
         });
-
-        return services;
-    }
-
-    /// <summary>
-    /// Domain events raised by the core handlers are translated into Service Bus integration events here.
-    /// Deliberately private - these handlers publish onto the bus registered by
-    /// <see cref="AddIntegrationEventMessaging"/>, so they are never useful on their own.
-    /// </summary>
-    private static IServiceCollection AddDomainEventTranslation(this IServiceCollection services)
-    {
-        services.AddScoped<IDomainEventHandler<ImageUploadedDomainEvent>, ImageUploadedDomainEventHandler>();
-        services.AddScoped<IDomainEventHandler<ImageMetadataDeletedDomainEvent>, ImageMetadataDeletedDomainEventHandler>();
 
         return services;
     }

@@ -1,0 +1,23 @@
+using System.IO;
+using IK.Imager.Core.Abstractions.Models;
+
+namespace IK.Imager.Core.Abstractions.Uploading;
+
+public interface IImageMetadataReader
+{
+    /// <summary>
+    /// Detects the image format by reading its header
+    /// Returns null if the system cannot recognize the given stream as an image, or the image format is different from jpg, png, bmp, or gif.
+    /// </summary>
+    /// <param name="imageStream">Image stream</param>
+    /// <returns></returns>
+    ImageFormat? DetectFormat(Stream imageStream);
+
+    /// <summary>
+    /// Read image size and resolution by reading its header
+    /// Returns null if the system cannot recognize the given stream as an image
+    /// </summary>
+    /// <param name="imageStream">Image stream</param>
+    /// <returns></returns>
+    ImageSize? ReadSize(Stream imageStream);
+}

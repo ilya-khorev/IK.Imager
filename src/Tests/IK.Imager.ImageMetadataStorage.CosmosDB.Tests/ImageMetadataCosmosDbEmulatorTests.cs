@@ -52,7 +52,7 @@ public class ImageMetadataCosmosDbEmulatorTests
     }
 
     [Fact]
-    public async Task GetMetadata_SearchWithoutImageGroup_ReturnCorrectResults()
+    public async Task GetMetadata_LookupWithoutImageGroup_ReturnCorrectResults()
     {
         List<ImageMetadata> imagesMetadata = new List<ImageMetadata>();
         List<string> ids = new List<string>();
@@ -70,7 +70,7 @@ public class ImageMetadataCosmosDbEmulatorTests
     }
 
     [Fact]
-    public async Task GetMetadata_SearchWithImageGroup_ReturnsOnlyRequestedGroup()
+    public async Task GetMetadata_LookupWithImageGroup_ReturnsOnlyRequestedGroup()
     {
         List<ImageMetadata> imagesMetadata = new List<ImageMetadata>();
         List<string> ids = new List<string>();

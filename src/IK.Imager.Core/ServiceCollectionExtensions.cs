@@ -1,18 +1,15 @@
 using System;
 using IK.Imager.Core.Abstractions;
 using IK.Imager.Core.Abstractions.Cdn;
-using IK.Imager.Core.Abstractions.Messaging;
-using IK.Imager.Core.Abstractions.Models;
+using IK.Imager.Core.Abstractions.Deleting;
+using IK.Imager.Core.Abstractions.Lookup;
 using IK.Imager.Core.Abstractions.Thumbnails;
-using IK.Imager.Core.Abstractions.Validation;
+using IK.Imager.Core.Abstractions.Uploading;
 using IK.Imager.Core.Cdn;
-using IK.Imager.Core.ImageDeleting;
-using IK.Imager.Core.ImageSearch;
-using IK.Imager.Core.ImageUploading;
-using IK.Imager.Core.Messaging;
-using IK.Imager.Core.Settings;
+using IK.Imager.Core.Deleting;
+using IK.Imager.Core.Lookup;
 using IK.Imager.Core.Thumbnails;
-using IK.Imager.Core.Validation;
+using IK.Imager.Core.Uploading;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -25,7 +22,7 @@ public static class ServiceCollectionExtensions
     public const string ImageLimitationsSectionName = "ImageLimitations";
 
     /// <summary>
-    /// Registers the core services - handlers, thumbnail resizing, validation, CDN - and binds their settings.
+    /// Registers the core services - one per feature, plus the pieces they are built from - and binds their settings.
     /// </summary>
     /// <param name="services">The service collection to add the registrations to.</param>
     /// <param name="configuration">The configuration root - this module locates its own sections within it.</param>
@@ -47,33 +44,28 @@ public static class ServiceCollectionExtensions
 
         //ImageValidator takes IOptionsSnapshot, which is scoped - it cannot be a singleton
         services.AddScoped<IImageValidator, ImageValidator>();
-        services.AddScoped<IDomainEventDispatcher, DomainEventDispatcher>();
 
         var imageDownloadClientBuilder = services.AddHttpClient<ImageDownloadClient>();
         configureImageDownloadClient?.Invoke(imageDownloadClientBuilder);
 
-        RegisterHandlers(services);
+        RegisterFeatureServices(services);
 
         return services;
     }
 
-    private static void RegisterHandlers(IServiceCollection services)
+    private static void RegisterFeatureServices(IServiceCollection services)
     {
-        services.AddScoped<ICommandHandler<DeleteImageCommand>, DeleteImageCommandHandler>();
-        services.AddScoped<ICommandHandler<DeleteImageMetadataCommand, bool>, DeleteImageMetadataCommandHandler>();
-        services.AddScoped<ICommandHandler<CreateThumbnailsCommand>, CreateThumbnailsCommandHandler>();
+        services.AddScoped<IImageDeleter, ImageDeleter>();
+        services.AddScoped<IThumbnailGenerator, ThumbnailGenerator>();
 
-        //Handlers returning image urls are wrapped into a CDN decorator - see IK.Imager.Core/Cdn/CdnDecorators.cs
-        services.AddScoped<RequestImagesQueryHandler>();
-        services.AddScoped<IQueryHandler<RequestImagesQuery, ImagesSearchResult>>(s =>
-            new RequestImagesQueryCdnDecorator(s.GetRequiredService<RequestImagesQueryHandler>(), s.GetRequiredService<ICdnService>()));
+        //The two services returning image urls are wrapped into a CDN decorator, which is why they are
+        //registered by their own type first - see Lookup/CdnImageLookup.cs and Uploading/CdnImageUploader.cs
+        services.AddScoped<ImageLookup>();
+        services.AddScoped<IImageLookup>(s =>
+            new CdnImageLookup(s.GetRequiredService<ImageLookup>(), s.GetRequiredService<ICdnService>()));
 
-        services.AddScoped<UploadImageCommandHandler>();
-        services.AddScoped<ICommandHandler<UploadImageCommand, ImageInfo>>(s =>
-            new UploadImageCommandCdnDecorator(s.GetRequiredService<UploadImageCommandHandler>(), s.GetRequiredService<ICdnService>()));
-
-        services.AddScoped<UploadImageByUrlCommandHandler>();
-        services.AddScoped<ICommandHandler<UploadImageByUrlCommand, ImageInfo>>(s =>
-            new UploadImageByUrlCommandCdnDecorator(s.GetRequiredService<UploadImageByUrlCommandHandler>(), s.GetRequiredService<ICdnService>()));
+        services.AddScoped<ImageUploader>();
+        services.AddScoped<IImageUploader>(s =>
+            new CdnImageUploader(s.GetRequiredService<ImageUploader>(), s.GetRequiredService<ICdnService>()));
     }
 }

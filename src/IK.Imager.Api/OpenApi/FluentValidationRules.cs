@@ -7,9 +7,9 @@ using Microsoft.OpenApi;
 namespace IK.Imager.Api.OpenApi;
 
 /// <summary>
-/// Translates the constraints declared by the FluentValidation validators in IK.Imager.Api/Validations into
-/// their OpenAPI equivalents, so that the documented shape of a request matches what
-/// <see cref="Filters.FluentValidationActionFilter"/> actually enforces.
+/// Translates the constraints declared by the FluentValidation validators that sit next to each feature in
+/// IK.Imager.Api/Features into their OpenAPI equivalents, so that the documented shape of a request matches
+/// what <see cref="Validation.ValidationEndpointFilter{T}"/> actually enforces.
 ///
 /// This replaces MicroElements.Swashbuckle.FluentValidation, which only plugs into Swashbuckle's own schema
 /// generator and therefore cannot be used now that the document is produced by ASP.NET Core. Only the rule
