@@ -1,14 +1,15 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using IK.Imager.Api.Contract;
+using IK.Imager.Api.Contract.ImageLookup;
 using IK.Imager.Api.Validation;
 using IK.Imager.Core.Abstractions.Messaging;
-using IK.Imager.Core.ImageSearch;
+using IK.Imager.Core.ImageLookup;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Routing;
-using Contract = IK.Imager.Api.Contract;
 using CoreModels = IK.Imager.Core.Abstractions.Models;
 
 #pragma warning disable 1591
@@ -18,23 +19,23 @@ namespace IK.Imager.Api.Features.ImageLookup;
 /// <summary>
 /// Looking up images that are already in the system.
 /// </summary>
-public static class SearchImagesEndpoints
+public static class LookupImagesEndpoints
 {
     public static IEndpointRouteBuilder MapImageLookupEndpoints(this IEndpointRouteBuilder images)
     {
-        images.MapPost("/Search", SearchImagesById)
-            .WithName(nameof(SearchImagesById))
-            .WithValidation<Contract.SearchImagesByIdRequest>()
-            .Produces<Contract.ImagesSearchResult>();
+        images.MapPost("/Lookup", LookupImagesById)
+            .WithName(nameof(LookupImagesById))
+            .WithValidation<ImageLookupByIdRequest>()
+            .Produces<ImageLookupResult>();
 
         return images;
     }
 
     /// <summary>
-    /// Search for set of images by image ids
+    /// Look up a set of images by image ids
     /// </summary>
-    /// <param name="searchImagesByIdRequest">Search image request model</param>
-    /// <param name="requestImagesQueryHandler"></param>
+    /// <param name="imageLookupByIdRequest">Image lookup request model</param>
+    /// <param name="lookupImagesQueryHandler"></param>
     /// <param name="cancellationToken"></param>
     /// <returns>A model with full info about just found images. Each image is represented with the nested object.
     /// These objects are returned in the same order as they were requested.
@@ -42,25 +43,25 @@ public static class SearchImagesEndpoints
     /// <response code="200">Returns information about images.</response>
     /// <response code="400">If the image id is not specified.
     /// Or if it is requested for more than 200 images.</response>
-    internal static async Task<Ok<Contract.ImagesSearchResult>> SearchImagesById(
-        Contract.SearchImagesByIdRequest searchImagesByIdRequest,
-        IQueryHandler<RequestImagesQuery, CoreModels.ImagesSearchResult> requestImagesQueryHandler,
+    internal static async Task<Ok<ImageLookupResult>> LookupImagesById(
+        ImageLookupByIdRequest imageLookupByIdRequest,
+        IQueryHandler<LookupImagesQuery, CoreModels.ImageLookupResult> lookupImagesQueryHandler,
         CancellationToken cancellationToken)
     {
-        var searchResult = await requestImagesQueryHandler.Handle(
-            new RequestImagesQuery(searchImagesByIdRequest.ImageIds, searchImagesByIdRequest.ImageGroup), cancellationToken);
+        var lookupResult = await lookupImagesQueryHandler.Handle(
+            new LookupImagesQuery(imageLookupByIdRequest.ImageIds, imageLookupByIdRequest.ImageGroup), cancellationToken);
 
-        return TypedResults.Ok(searchResult.ToContract());
+        return TypedResults.Ok(lookupResult.ToContract());
     }
 
     //hand-written, there is no AutoMapper - and it stays inside the feature that returns the model
-    private static Contract.ImagesSearchResult ToContract(this CoreModels.ImagesSearchResult source) =>
+    private static ImageLookupResult ToContract(this CoreModels.ImageLookupResult source) =>
         new()
         {
             Images = source.Images.Select(ToContract).ToList()
         };
 
-    private static Contract.ImageFullInfoWithThumbnails ToContract(this CoreModels.ImageFullInfoWithThumbnails source) =>
+    private static ImageFullInfoWithThumbnails ToContract(this CoreModels.ImageFullInfoWithThumbnails source) =>
         new()
         {
             Id = source.Id,
@@ -77,7 +78,7 @@ public static class SearchImagesEndpoints
 
     //a thumbnail is the same shape as the model the upload feature returns, but mapping it here keeps this
     //endpoint readable on its own - a feature is not worth coupling to another one over eight assignments
-    private static Contract.ImageInfo ToThumbnailContract(CoreModels.ImageInfo source) =>
+    private static ImageInfo ToThumbnailContract(CoreModels.ImageInfo source) =>
         new()
         {
             Id = source.Id,

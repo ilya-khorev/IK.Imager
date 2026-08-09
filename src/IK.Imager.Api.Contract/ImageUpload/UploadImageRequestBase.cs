@@ -1,4 +1,4 @@
-﻿namespace IK.Imager.Api.Contract;
+namespace IK.Imager.Api.Contract.ImageUpload;
 
 /// <summary>
 /// Model that represent a request for uploading a new image
@@ -10,7 +10,7 @@ public abstract class UploadImageRequestBase
     /// It's recommended to use meaningful values, such as userId, businessUnitId, or combination of multiple parameters.
     /// For example, "user_1435", "unit_48", "products_store_11"
     /// 
-    /// Image group is also used as partition to evenly spread data, and to make search requests more efficient.
+    /// Image group is also used as partition to evenly spread data, and to make lookup requests more efficient.
     /// </summary>
     public string ImageGroup { get; set; } = null!;
         

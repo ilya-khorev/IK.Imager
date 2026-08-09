@@ -3,7 +3,7 @@
 ![](https://github.com/ilya-khorev/IK.Imager/workflows/Build/badge.svg)
 
 ## Functionality
-Quick and easy way to store, search, and manage image binary data and also image metadata, such as size, dimensions, thumbnails, and tags.
+Quick and easy way to store, look up, and manage image binary data and also image metadata, such as size, dimensions, thumbnails, and tags.
 Once a new image is uploaded, the system will automatically generate thumbnails for this image relying on the given parameters.
 
 ### Image Upload
@@ -36,13 +36,13 @@ The system also verifies the given image's size and compare it with the configur
 
 ### Image Thumbnails
 Once a new image is uploaded into the system, the background process starts to generate thumbnails, which will subsequently become available to the clients via the API. Thumbnails are generated for particular sizes specified in the configuration. An aspect ratio of an image is retained during this process.
-Thumbnails are returned as a part of the image search response, together with an original image's metadata.
+Thumbnails are returned as a part of the image lookup response, together with an original image's metadata.
 However, keep in mind, that there is a small delay before thumbnails are returned - the background process should generate them after an image is uploaded. Usually, it takes around 2 secs, which is absolutely fine for most use-cases. 
 
-### Image Search
+### Image Lookup
 A client is able to request a metadata object for any image uploaded earlier, providing an image identifier. 
 A metadata object will also contain an image URL, which leads directly to the image blob storage or CDN (depending on configuration settings).
-PartitionKey is an optional parameter in this request. However, if you search for objects located in one partition, it's highly recommended to pass the partition key, as it will significantly improve your search performance.
+PartitionKey is an optional parameter in this request. However, if you look up objects located in one partition, it's highly recommended to pass the partition key, as it will significantly improve this operation's performance.
 
 ![](docs/GetImageRequest.png)
 
@@ -80,7 +80,7 @@ The full list of configuration parameters can be found in the appsettings file
 ## Architecture Overview
 ![](docs/Architecture.svg)
 
-The application is a single service, which takes all responsibility for storing, removing, validating, searching images and their metadata.
+The application is a single service, which takes all responsibility for storing, removing, validating, looking up images and their metadata.
 Internally it communicates with Azure Blob Storage for storing image files and with Cosmos DB for storing metadata of images.
 
 The long-running operations are not performed within the original request. Instead, the service publishes an event to Azure Service Bus and handles it asynchronously in the background:

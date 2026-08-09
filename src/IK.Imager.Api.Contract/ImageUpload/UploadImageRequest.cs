@@ -1,4 +1,4 @@
-﻿namespace IK.Imager.Api.Contract;
+﻿namespace IK.Imager.Api.Contract.ImageUpload;
 
 /// <summary>
 /// Model that represent a request for uploading a new image

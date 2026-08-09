@@ -1,19 +1,19 @@
-﻿namespace IK.Imager.Api.Contract;
+namespace IK.Imager.Api.Contract.ImageLookup;
 
 /// <summary>
-/// Model with identifiers needed to search for images
+/// Model with identifiers needed to look up images
 /// </summary>
-public class SearchImagesByIdRequest
+public class ImageLookupByIdRequest
 {
     /// <summary>
-    /// Image identifiers to search.
+    /// Image identifiers to look up.
     /// Maximum 200 identifiers are allowed to be passed into one request.
     /// </summary>
     public string[] ImageIds { get; set; } = null!;
-        
+
     /// <summary>
     /// Image group, which was specified when uploading these images.
-    /// 
+    ///
     /// If the images belong to different image groups, you may split this request into several requests with unique image group.
     /// This parameter is optional. However, specifying this value will increase this operation performance.
     /// </summary>

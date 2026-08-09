@@ -59,9 +59,11 @@ There are no controllers and no MVC services — `IK.Imager.Api/Features` holds 
 
 A slice is kept self-contained rather than DRY: `ImageLookup` maps a thumbnail onto `Contract.ImageInfo` itself instead of reaching for the identical mapping in `ImageUpload`. Eight assignments are not worth coupling two features together — factor a mapping out only once a third feature needs it.
 
-`IK.Imager.Api.Contract` mirrors the same three folders, so a request model and the endpoint that binds it are found the same way from either side. Its **namespace stays flat `IK.Imager.Api.Contract`** for every file regardless of folder — it is the DTO package clients compile against, and moving types between namespaces breaks them for nothing.
+`IK.Imager.Api.Contract` mirrors the same three folders and the same namespaces — `IK.Imager.Api.Contract.ImageUpload` / `.ImageLookup` / `.ImageDeleting` — so a request model and the endpoint that binds it are found the same way from either side. `ImageInfo` is the exception: it is the response model both upload and lookup return, so it stays at the root in the flat `IK.Imager.Api.Contract`.
 
-Route paths are unchanged from the controller era: `POST /Images/Upload`, `POST /Images/UploadByUrl`, `POST /Images/Search`, `DELETE /Images`.
+The routes: `POST /Images/Upload`, `POST /Images/UploadByUrl`, `POST /Images/Lookup`, `DELETE /Images`.
+
+**"Lookup", never "search".** The operation fetches images by their ids — there is no querying or filtering — so `search` was retired everywhere: `LookupImagesQuery(Handler)` and `Core/ImageLookup` in the core, `ImageLookupByIdRequest` / `ImageLookupResult` in the contract, `POST /Images/Lookup` on the wire. Note `LookupImagesQuery` also brings the core messages into one shape: every one of them is now `VerbNounCommand`/`Query`.
 
 Handlers are named `internal static` methods rather than lambdas: the source generator in `Microsoft.AspNetCore.OpenApi` reads their XML documentation, so `<summary>`, `<param>` and `<response code="…">` land in the document exactly as the controller attributes used to. Return `TypedResults` (`Ok<T>`, `Results<NoContent, NotFound<string>>`) so the response types are inferred rather than declared twice.
 
@@ -69,9 +71,9 @@ Two things minimal APIs need that MVC did implicitly:
 - `POST /Images/Upload` calls `.DisableAntiforgery()`. Form endpoints require an antiforgery token by default, which only makes sense for a cookie-authenticated browser form; `[ApiController]` never enforced it.
 - `DELETE /Images` marks its request model `[FromBody]`. DELETE is one of the methods minimal APIs refuse to infer a body for, and the failure is a startup-time `InvalidOperationException` on first request rather than a compile error.
 
-Upload → `UploadImageCommandHandler` (validate format/size → blob storage → metadata) → publishes the **domain** event `ImageUploadedDomainEvent` → `ImageUploadedDomainEventHandler` (in the Api project) republishes it as the **integration** event `OriginalImageUploadedIntegrationEvent` on Service Bus → `CreateThumbnailsHandler` consumes it and sends `CreateThumbnailsCommand`. Hence the ~2s delay before thumbnails appear in search results.
+Upload → `UploadImageCommandHandler` (validate format/size → blob storage → metadata) → publishes the **domain** event `ImageUploadedDomainEvent` → `ImageUploadedDomainEventHandler` (in the Api project) republishes it as the **integration** event `OriginalImageUploadedIntegrationEvent` on Service Bus → `CreateThumbnailsHandler` consumes it and sends `CreateThumbnailsCommand`. Hence the ~2s delay before thumbnails appear in lookup results.
 
-Delete → `DeleteImageMetadataCommandHandler` removes only the metadata (image disappears from search immediately) → `ImageMetadataDeletedDomainEvent` → `ImageMetadataDeletedIntegrationEvent` → `RemoveImageFilesHandler` → `DeleteImageCommand` deletes the original blob and thumbnail blobs.
+Delete → `DeleteImageMetadataCommandHandler` removes only the metadata (image disappears from lookup results immediately) → `ImageMetadataDeletedDomainEvent` → `ImageMetadataDeletedIntegrationEvent` → `RemoveImageFilesHandler` → `DeleteImageCommand` deletes the original blob and thumbnail blobs.
 
 This **domain event (`IDomainEvent`, dispatched in-process) → integration event (MassTransit) → command** relay is the core pattern. Domain events stay in `IK.Imager.Core`; the translation to Service Bus lives entirely in `IK.Imager.Api/DomainEventHandlers` and `IK.Imager.Api/IntegrationEvents`, so `IK.Imager.Core` has no messaging dependency. `DomainEventDispatcher` (in `IK.Imager.Core/Messaging`) just resolves every `IDomainEventHandler<T>` from the container and awaits them in turn; handlers are registered by `AddIntegrationEventMessaging` (`IK.Imager.Api/Extensions/MessagingServiceCollectionExtensions.cs`), alongside the bus they publish onto.
 
@@ -117,7 +119,7 @@ The `[FromForm]` model of `POST /Images/Upload` needs nothing special. A minimal
 ### Storage model
 
 - **Blobs**: two Azure containers, originals (`AzureStorage:ImagesContainerName`) and thumbnails (`AzureStorage:ThumbnailsContainerName`), selected by `ImageSizeType`. Blob names are random GUID-derived (`ImageIdentifierProvider`) because blobs are publicly reachable by URL.
-- **Metadata**: one Cosmos container partitioned on `/ImageGroup`. `ImageGroup` is the partition key the README calls "partition key" — it is required on upload and optional-but-recommended on search/delete. Thumbnails are stored as a nested list on the parent `ImageMetadata` document, so thumbnail generation is an upsert of the whole document.
+- **Metadata**: one Cosmos container partitioned on `/ImageGroup`. `ImageGroup` is the partition key the README calls "partition key" — it is required on upload and optional-but-recommended on lookup/delete. Thumbnails are stored as a nested list on the parent `ImageMetadata` document, so thumbnail generation is an upsert of the whole document.
 
 ### Validation is two-layered
 

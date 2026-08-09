@@ -1,4 +1,14 @@
-namespace IK.Imager.Api.Contract.ImageLookup;
+using System.Collections.Generic;
+
+namespace IK.Imager.Core.Abstractions.Models;
+
+public class ImageLookupResult
+{
+    /// <summary>
+    /// Set of images
+    /// </summary>
+    public List<ImageFullInfoWithThumbnails> Images { get; set; } = new();
+}
 
 /// <summary>
 /// Model containing information about image and its thumbnails

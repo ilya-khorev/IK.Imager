@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using IK.Imager.Core.Abstractions.Messaging;
@@ -9,27 +9,27 @@ using Microsoft.Extensions.Logging;
 
 #pragma warning disable 1591
 
-namespace IK.Imager.Core.ImageSearch;
+namespace IK.Imager.Core.ImageLookup;
 
-public class RequestImagesQueryHandler: IQueryHandler<RequestImagesQuery, ImagesSearchResult>
+public class LookupImagesQueryHandler: IQueryHandler<LookupImagesQuery, ImageLookupResult>
 {
-    private readonly ILogger<RequestImagesQueryHandler> _logger;
+    private readonly ILogger<LookupImagesQueryHandler> _logger;
     private readonly IImageMetadataRepository _metadataRepository;
     private readonly IImageBlobRepository _blobRepository;
     private const string FoundImages = "Found {0} image(s) for requested {1} image id(s)";
     
-    public RequestImagesQueryHandler(ILogger<RequestImagesQueryHandler> logger, IImageMetadataRepository metadataRepository, IImageBlobRepository blobRepository)
+    public LookupImagesQueryHandler(ILogger<LookupImagesQueryHandler> logger, IImageMetadataRepository metadataRepository, IImageBlobRepository blobRepository)
     {
         _logger = logger;
         _metadataRepository = metadataRepository;
         _blobRepository = blobRepository;
     }
         
-    public async Task<ImagesSearchResult> Handle(RequestImagesQuery request, CancellationToken cancellationToken)
+    public async Task<ImageLookupResult> Handle(LookupImagesQuery request, CancellationToken cancellationToken)
     {
         var imagesMetadata = await _metadataRepository.GetMetadata(request.ImageIds, request.ImageGroup, CancellationToken.None);
 
-        ImagesSearchResult result = new ImagesSearchResult
+        ImageLookupResult result = new ImageLookupResult
         {
             Images = new List<ImageFullInfoWithThumbnails>(imagesMetadata.Count)
         };

@@ -1,4 +1,4 @@
-using IK.Imager.Api.Contract;
+using IK.Imager.Api.Contract.ImageUpload;
 using Microsoft.AspNetCore.Http;
 
 namespace IK.Imager.Api.Features.ImageUpload;

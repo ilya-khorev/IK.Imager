@@ -1,5 +1,6 @@
 using System.Threading;
 using System.Threading.Tasks;
+using IK.Imager.Api.Contract.ImageDeleting;
 using IK.Imager.Api.Validation;
 using IK.Imager.Core.Abstractions.Messaging;
 using IK.Imager.Core.ImageDeleting;
@@ -8,7 +9,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
-using Contract = IK.Imager.Api.Contract;
 
 #pragma warning disable 1591
 
@@ -25,7 +25,7 @@ public static class DeleteImageEndpoints
     {
         images.MapDelete("/", DeleteImage)
             .WithName(nameof(DeleteImage))
-            .WithValidation<Contract.DeleteImageRequest>();
+            .WithValidation<DeleteImageRequest>();
 
         return images;
     }
@@ -33,7 +33,7 @@ public static class DeleteImageEndpoints
     /// <summary>
     /// Register the image removal by the given image id.
     /// The system will remove the original image and thumbnail files after a short delay.
-    /// However, the image itself will stop to return in search results immediately after this call.
+    /// However, the image itself will stop to return in lookup results immediately after this call.
     /// </summary>
     /// <param name="deleteImageRequest">Image removal request model</param>
     /// <param name="deleteImageMetadataCommandHandler"></param>
@@ -44,7 +44,7 @@ public static class DeleteImageEndpoints
     /// <response code="404">The requested image was not found.</response>
     //DELETE is one of the methods minimal APIs refuse to infer a body for, so the source is explicit here
     internal static async Task<Results<NoContent, NotFound<string>>> DeleteImage(
-        [FromBody] Contract.DeleteImageRequest deleteImageRequest,
+        [FromBody] DeleteImageRequest deleteImageRequest,
         ICommandHandler<DeleteImageMetadataCommand, bool> deleteImageMetadataCommandHandler,
         CancellationToken cancellationToken)
     {

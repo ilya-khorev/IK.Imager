@@ -1,11 +1,11 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using AutoFixture;
 using IK.Imager.Core.Abstractions.Models;
-using IK.Imager.Core.ImageSearch;
+using IK.Imager.Core.ImageLookup;
 using IK.Imager.Storage.Abstractions.Models;
 using IK.Imager.Storage.Abstractions.Repositories;
 using Microsoft.Extensions.Logging;
@@ -13,17 +13,17 @@ using Moq;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace IK.Imager.Core.Tests.ImageSearchTests;
+namespace IK.Imager.Core.Tests.ImageLookupTests;
 
-public class RequestImagesQueryHandlerTests
+public class LookupImagesQueryHandlerTests
 {
-    private readonly ILogger<RequestImagesQueryHandler> _logger;
+    private readonly ILogger<LookupImagesQueryHandler> _logger;
     private readonly Mock<IImageMetadataRepository> _metadataRepositoryMock;
     private readonly Mock<IImageBlobRepository> _blobRepositoryMock;
 
-    public RequestImagesQueryHandlerTests(ITestOutputHelper output)
+    public LookupImagesQueryHandlerTests(ITestOutputHelper output)
     {
-        _logger = output.BuildLoggerFor<RequestImagesQueryHandler>();
+        _logger = output.BuildLoggerFor<LookupImagesQueryHandler>();
         _metadataRepositoryMock = new Mock<IImageMetadataRepository>();
         _blobRepositoryMock = new Mock<IImageBlobRepository>();
     }
@@ -44,13 +44,13 @@ public class RequestImagesQueryHandlerTests
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(imageMetadataList);
         
-        RequestImagesQueryHandler handler = new RequestImagesQueryHandler(_logger, _metadataRepositoryMock.Object, _blobRepositoryMock.Object);
-        var result = await handler.Handle( new Fixture().Create<RequestImagesQuery>(), CancellationToken.None);
+        LookupImagesQueryHandler handler = new LookupImagesQueryHandler(_logger, _metadataRepositoryMock.Object, _blobRepositoryMock.Object);
+        var result = await handler.Handle( new Fixture().Create<LookupImagesQuery>(), CancellationToken.None);
 
         CompareFields(imageMetadataList, result);
     }
  
-    private void CompareFields(List<ImageMetadata> expectedImages, ImagesSearchResult actualImages)
+    private void CompareFields(List<ImageMetadata> expectedImages, ImageLookupResult actualImages)
     {
         for (int i = 0; i < expectedImages.Count; i++)
         {

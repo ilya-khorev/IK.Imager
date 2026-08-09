@@ -7,7 +7,7 @@ using IK.Imager.Core.Abstractions.Thumbnails;
 using IK.Imager.Core.Abstractions.Validation;
 using IK.Imager.Core.Cdn;
 using IK.Imager.Core.ImageDeleting;
-using IK.Imager.Core.ImageSearch;
+using IK.Imager.Core.ImageLookup;
 using IK.Imager.Core.ImageUploading;
 using IK.Imager.Core.Messaging;
 using IK.Imager.Core.Settings;
@@ -64,9 +64,9 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ICommandHandler<CreateThumbnailsCommand>, CreateThumbnailsCommandHandler>();
 
         //Handlers returning image urls are wrapped into a CDN decorator - see IK.Imager.Core/Cdn/CdnDecorators.cs
-        services.AddScoped<RequestImagesQueryHandler>();
-        services.AddScoped<IQueryHandler<RequestImagesQuery, ImagesSearchResult>>(s =>
-            new RequestImagesQueryCdnDecorator(s.GetRequiredService<RequestImagesQueryHandler>(), s.GetRequiredService<ICdnService>()));
+        services.AddScoped<LookupImagesQueryHandler>();
+        services.AddScoped<IQueryHandler<LookupImagesQuery, ImageLookupResult>>(s =>
+            new LookupImagesQueryCdnDecorator(s.GetRequiredService<LookupImagesQueryHandler>(), s.GetRequiredService<ICdnService>()));
 
         services.AddScoped<UploadImageCommandHandler>();
         services.AddScoped<ICommandHandler<UploadImageCommand, ImageInfo>>(s =>

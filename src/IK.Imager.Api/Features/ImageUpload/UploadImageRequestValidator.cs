@@ -1,6 +1,6 @@
 using System;
 using FluentValidation;
-using IK.Imager.Api.Contract;
+using IK.Imager.Api.Contract.ImageUpload;
 using IK.Imager.Api.Validation;
 #pragma warning disable 1591
 

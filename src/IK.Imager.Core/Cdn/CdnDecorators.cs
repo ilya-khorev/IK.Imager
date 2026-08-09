@@ -1,10 +1,10 @@
-﻿using System.Linq;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using IK.Imager.Core.Abstractions.Cdn;
 using IK.Imager.Core.Abstractions.Messaging;
 using IK.Imager.Core.Abstractions.Models;
-using IK.Imager.Core.ImageSearch;
+using IK.Imager.Core.ImageLookup;
 using IK.Imager.Core.ImageUploading;
 
 namespace IK.Imager.Core.Cdn;
@@ -14,18 +14,18 @@ namespace IK.Imager.Core.Cdn;
 /// is swapped for the CDN host, so a new response needing url rewriting gets a decorator here
 /// rather than a change inside a handler.
 /// </summary>
-public class RequestImagesQueryCdnDecorator : IQueryHandler<RequestImagesQuery, ImagesSearchResult>
+public class LookupImagesQueryCdnDecorator : IQueryHandler<LookupImagesQuery, ImageLookupResult>
 {
-    private readonly IQueryHandler<RequestImagesQuery, ImagesSearchResult> _inner;
+    private readonly IQueryHandler<LookupImagesQuery, ImageLookupResult> _inner;
     private readonly ICdnService _cdnService;
 
-    public RequestImagesQueryCdnDecorator(IQueryHandler<RequestImagesQuery, ImagesSearchResult> inner, ICdnService cdnService)
+    public LookupImagesQueryCdnDecorator(IQueryHandler<LookupImagesQuery, ImageLookupResult> inner, ICdnService cdnService)
     {
         _inner = inner;
         _cdnService = cdnService;
     }
 
-    public async Task<ImagesSearchResult> Handle(RequestImagesQuery query, CancellationToken cancellationToken)
+    public async Task<ImageLookupResult> Handle(LookupImagesQuery query, CancellationToken cancellationToken)
     {
         var response = await _inner.Handle(query, cancellationToken);
 

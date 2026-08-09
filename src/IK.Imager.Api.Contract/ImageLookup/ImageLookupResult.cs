@@ -1,9 +1,9 @@
-﻿namespace IK.Imager.Api.Contract;
+namespace IK.Imager.Api.Contract.ImageLookup;
 
 /// <summary>
 /// Model with set of images
 /// </summary>
-public class ImagesSearchResult
+public class ImageLookupResult
 {
     /// <summary>
     /// Set of images

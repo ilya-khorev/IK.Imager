@@ -1,5 +1,5 @@
 ﻿#pragma warning disable 8618
-namespace IK.Imager.Api.Contract;
+namespace IK.Imager.Api.Contract.ImageDeleting;
 
 /// <summary>
 /// Model with identifiers needed to remove an image

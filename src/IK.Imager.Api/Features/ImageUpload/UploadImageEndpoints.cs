@@ -1,5 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
+using IK.Imager.Api.Contract;
+using IK.Imager.Api.Contract.ImageUpload;
 using IK.Imager.Api.Validation;
 using IK.Imager.Core.Abstractions.Messaging;
 using IK.Imager.Core.ImageUploading;
@@ -8,7 +10,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
-using Contract = IK.Imager.Api.Contract;
 using CoreModels = IK.Imager.Core.Abstractions.Models;
 
 #pragma warning disable 1591
@@ -28,12 +29,12 @@ public static class UploadImageEndpoints
             .WithName(nameof(UploadImageFile))
             .WithValidation<UploadImageFileRequest>()
             .DisableAntiforgery()
-            .Produces<Contract.ImageInfo>();
+            .Produces<ImageInfo>();
 
         images.MapPost("/UploadByUrl", UploadImageByUrl)
             .WithName(nameof(UploadImageByUrl))
-            .WithValidation<Contract.UploadImageRequest>()
-            .Produces<Contract.ImageInfo>();
+            .WithValidation<UploadImageRequest>()
+            .Produces<ImageInfo>();
 
         return images;
     }
@@ -50,7 +51,7 @@ public static class UploadImageEndpoints
     /// <response code="200">Returns the newly added image info</response>
     /// <response code="400">If the image size is greater or smaller then the system threshold values.
     /// Or if the image type is different from what the system supports.</response>
-    internal static async Task<Ok<Contract.ImageInfo>> UploadImageFile(
+    internal static async Task<Ok<ImageInfo>> UploadImageFile(
         [FromForm] UploadImageFileRequest imageFileRequest,
         ICommandHandler<UploadImageCommand, CoreModels.ImageInfo> uploadImageCommandHandler,
         CancellationToken cancellationToken)
@@ -76,8 +77,8 @@ public static class UploadImageEndpoints
     /// Or if the image is not found by the given image url.
     /// Or if the image size is greater or smaller then the system threshold values.
     /// Or if the image type is different from what the system supports.</response>
-    internal static async Task<Ok<Contract.ImageInfo>> UploadImageByUrl(
-        Contract.UploadImageRequest uploadImageRequest,
+    internal static async Task<Ok<ImageInfo>> UploadImageByUrl(
+        UploadImageRequest uploadImageRequest,
         ICommandHandler<UploadImageByUrlCommand, CoreModels.ImageInfo> uploadImageByUrlCommandHandler,
         CancellationToken cancellationToken)
     {
@@ -88,7 +89,7 @@ public static class UploadImageEndpoints
     }
 
     //hand-written, there is no AutoMapper - and it stays inside the feature that returns the model
-    private static Contract.ImageInfo ToContract(this CoreModels.ImageInfo source) =>
+    private static ImageInfo ToContract(this CoreModels.ImageInfo source) =>
         new()
         {
             Id = source.Id,
