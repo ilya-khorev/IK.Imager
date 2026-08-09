@@ -1,12 +1,13 @@
-﻿using FluentValidation;
+using FluentValidation;
 using IK.Imager.Api.Contract;
+using IK.Imager.Api.Validation;
 #pragma warning disable 1591
 
-namespace IK.Imager.Api.Validations;
+namespace IK.Imager.Api.Features.ImageDeleting;
 
-public class RemoveImageRequestValidator: AbstractValidator<DeleteImageRequest>
+public class DeleteImageRequestValidator: AbstractValidator<DeleteImageRequest>
 {
-    public RemoveImageRequestValidator()
+    public DeleteImageRequestValidator()
     {
         RuleFor(x => x.ImageGroup)
             .MaximumLength(ValidationConstants.MaxImageGroupLength)

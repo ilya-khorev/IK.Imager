@@ -1,8 +1,8 @@
-﻿using FluentValidation;
-using IK.Imager.Api.Contract;
+using FluentValidation;
+using IK.Imager.Api.Validation;
 #pragma warning disable 1591
 
-namespace IK.Imager.Api.Validations;
+namespace IK.Imager.Api.Features.ImageUpload;
 
 public class UploadImageFileRequestValidator: AbstractValidator<UploadImageFileRequest>
 {

@@ -1,14 +1,15 @@
-﻿using System;
+using System;
 using FluentValidation;
 using IK.Imager.Api.Contract;
+using IK.Imager.Api.Validation;
 #pragma warning disable 1591
 
-namespace IK.Imager.Api.Validations;
+namespace IK.Imager.Api.Features.ImageUpload;
 
 public class UploadImageRequestValidator: AbstractValidator<UploadImageRequest>
 {
     private const string IncorrectUrlFormat = "Image Url is not well formed. Please specify an absolute url path.";
-        
+
     public UploadImageRequestValidator()
     {
         RuleFor(x => x.ImageGroup)

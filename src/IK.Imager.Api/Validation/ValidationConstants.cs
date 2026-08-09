@@ -1,5 +1,5 @@
-﻿#pragma warning disable 1591
-namespace IK.Imager.Api.Validations;
+#pragma warning disable 1591
+namespace IK.Imager.Api.Validation;
 
 internal static class ValidationConstants
 {

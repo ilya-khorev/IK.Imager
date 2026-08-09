@@ -1,6 +1,7 @@
-﻿using Microsoft.AspNetCore.Http;
+using IK.Imager.Api.Contract;
+using Microsoft.AspNetCore.Http;
 
-namespace IK.Imager.Api.Contract;
+namespace IK.Imager.Api.Features.ImageUpload;
 
 /// <summary>
 /// Model that represent a request for uploading a new image

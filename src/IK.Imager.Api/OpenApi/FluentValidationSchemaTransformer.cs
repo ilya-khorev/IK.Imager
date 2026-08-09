@@ -7,9 +7,8 @@ using Microsoft.OpenApi;
 namespace IK.Imager.Api.OpenApi;
 
 /// <summary>
-/// Applies <see cref="FluentValidationRules"/> to the schemas generated for the request models that are
-/// bound from the body. Form-bound models are flattened into individual fields before they reach a schema
-/// transformer and are handled by <see cref="FormRequestOperationTransformer"/> instead.
+/// Applies <see cref="FluentValidationRules"/> to the schemas generated for the request models, whether they
+/// are bound from the body or from a form.
 /// </summary>
 internal sealed class FluentValidationSchemaTransformer : IOpenApiSchemaTransformer
 {

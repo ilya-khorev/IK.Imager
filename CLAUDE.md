@@ -51,7 +51,19 @@ A single ASP.NET Core service (`IK.Imager.Api`) that both serves the HTTP API **
 
 ### Request flow
 
-Dispatch is hand-rolled rather than via a mediator library. `IK.Imager.Core.Abstractions/Messaging` defines `ICommandHandler<TCommand>`, `ICommandHandler<TCommand, TResult>`, `IQueryHandler<TQuery, TResult>`, and `IDomainEvent` / `IDomainEventHandler<T>` / `IDomainEventDispatcher`. Controller actions are thin: they inject the handler interface they need, call `Handle(...)`, and map the core model to the `IK.Imager.Api.Contract` model with the `ToContract()` extensions in `IK.Imager.Api/Mapping/ContractMappingExtensions.cs` (hand-written — there is no AutoMapper).
+Dispatch is hand-rolled rather than via a mediator library. `IK.Imager.Core.Abstractions/Messaging` defines `ICommandHandler<TCommand>`, `ICommandHandler<TCommand, TResult>`, `IQueryHandler<TQuery, TResult>`, and `IDomainEvent` / `IDomainEventHandler<T>` / `IDomainEventDispatcher`. Endpoint handlers are thin: they take the handler interface they need as a parameter (resolved from DI), call `Handle(...)`, and map the core model to the `IK.Imager.Api.Contract` model with the `ToContract()` extensions in `IK.Imager.Api/Mapping/ContractMappingExtensions.cs` (hand-written — there is no AutoMapper).
+
+### Endpoints are minimal APIs, grouped by feature
+
+There are no controllers and no MVC services — `IK.Imager.Api/Features` holds one folder per feature (`ImageUpload`, `ImageLookup`, `ImageDeleting`), and a feature owns its routes, its request models and its FluentValidation validators. Each folder exposes a `Map…Endpoints(this IEndpointRouteBuilder)` extension; `Features/ImagerEndpoints.cs` creates the `/Images` group (tagged `Images`, which is what keeps the Swagger UI grouping the controller used to give) and calls them. Add an endpoint to the feature it belongs to, never to the aggregator.
+
+Route paths are unchanged from the controller era: `POST /Images/Upload`, `POST /Images/UploadByUrl`, `POST /Images/Search`, `DELETE /Images`.
+
+Handlers are named `internal static` methods rather than lambdas: the source generator in `Microsoft.AspNetCore.OpenApi` reads their XML documentation, so `<summary>`, `<param>` and `<response code="…">` land in the document exactly as the controller attributes used to. Return `TypedResults` (`Ok<T>`, `Results<NoContent, NotFound<string>>`) so the response types are inferred rather than declared twice.
+
+Two things minimal APIs need that MVC did implicitly:
+- `POST /Images/Upload` calls `.DisableAntiforgery()`. Form endpoints require an antiforgery token by default, which only makes sense for a cookie-authenticated browser form; `[ApiController]` never enforced it.
+- `DELETE /Images` marks its request model `[FromBody]`. DELETE is one of the methods minimal APIs refuse to infer a body for, and the failure is a startup-time `InvalidOperationException` on first request rather than a compile error.
 
 Upload → `UploadImageCommandHandler` (validate format/size → blob storage → metadata) → publishes the **domain** event `ImageUploadedDomainEvent` → `ImageUploadedDomainEventHandler` (in the Api project) republishes it as the **integration** event `OriginalImageUploadedIntegrationEvent` on Service Bus → `CreateThumbnailsHandler` consumes it and sends `CreateThumbnailsCommand`. Hence the ~2s delay before thumbnails appear in search results.
 
@@ -63,7 +75,7 @@ CDN rewriting is applied outside handlers, via decorators in `IK.Imager.Core/Cdn
 
 ### Project layout
 
-`IK.Imager.Api` (host, controllers, validators, event translation) → `IK.Imager.Core` (all handlers, thumbnail resizing via ImageSharp, validation, CDN) → `IK.Imager.Core.Abstractions` / `IK.Imager.Storage.Abstractions` (interfaces + models, no dependencies). Storage implementations (`ImageBlobStorage.AzureFiles`, `ImageMetadataStorage.CosmosDB`) depend only on the storage abstractions. `IK.Imager.Api.Contract` is the only `netstandard2.1` project — it's the public DTO contract, kept separately so clients can reference it.
+`IK.Imager.Api` (host, feature endpoints, validators, event translation) → `IK.Imager.Core` (all handlers, thumbnail resizing via ImageSharp, validation, CDN) → `IK.Imager.Core.Abstractions` / `IK.Imager.Storage.Abstractions` (interfaces + models, no dependencies). Storage implementations (`ImageBlobStorage.AzureFiles`, `ImageMetadataStorage.CosmosDB`) depend only on the storage abstractions. `IK.Imager.Api.Contract` is the only `netstandard2.1` project — it's the public DTO contract, kept separately so clients can reference it.
 
 ### DI registration
 
@@ -82,17 +94,19 @@ The convention: each method takes the **configuration root** and owns its sectio
 
 Health checks stay in the host (`Extensions/ObservabilityExtensions.cs`) rather than moving into the storage modules — `AspNetCore.HealthChecks.*` is versioned independently and which endpoints get probed is an operational decision. They read the storage connection settings through `IOptions<T>` so a probe can never target a different database or container than the repositories do.
 
+`AddApiServices()` is what the endpoints need rather than an MVC layer: the `GlobalExceptionHandler`, `AddProblemDetails()`, and every validator in the assembly. `UseImagerPipeline()` (`Extensions/WebApplicationExtensions.cs`) puts `UseExceptionHandler()` outermost and then maps the OpenAPI document, the Service Fabric middleware, `MapImagerEndpoints()` and the health endpoints.
+
 The host uses minimal hosting: `IK.Imager.Api/Program.cs` is a top-level-statements file that only wires configuration and logging, then calls the module extensions and `UseImagerPipeline()`. There is no `Startup` class. It turns on `ValidateScopes` + `ValidateOnBuild` in every environment — nothing tests the container, so a captive dependency or a dropped registration should fail at `builder.Build()` rather than on the first request.
 
 ### API documentation
 
 The OpenAPI document is generated by **ASP.NET Core itself** (`Microsoft.AspNetCore.OpenApi`), served at `/openapi/v1.json` as OpenAPI 3.1. Swashbuckle is reduced to `Swashbuckle.AspNetCore.SwaggerUI` — the UI only, hosted at the root path; there is no `SwaggerGen` and no `UseSwagger()`. Both halves are wired in `IK.Imager.Api/Extensions/OpenApiServiceCollectionExtensions.cs`.
 
-Endpoint and schema descriptions come from the XML documentation of `IK.Imager.Api` and `IK.Imager.Api.Contract`, which the source generator inside `Microsoft.AspNetCore.OpenApi` bakes into the assembly at compile time. `GenerateDocumentationFile` must stay on in both projects, and the `.xml` files must still reach the output directory — `XmlPropertyDescriptions` reads them at runtime for the one case the generator cannot serve (below).
+Endpoint and schema descriptions come from the XML documentation of `IK.Imager.Api` and `IK.Imager.Api.Contract`, which the source generator inside `Microsoft.AspNetCore.OpenApi` bakes into the assembly at compile time. `GenerateDocumentationFile` must stay on in both projects — the generator is what carries the endpoint summaries and `<response>` codes, and nothing reads the `.xml` files at runtime.
 
-`IK.Imager.Api/OpenApi` replaces MicroElements.Swashbuckle.FluentValidation, which only plugs into Swashbuckle's schema generator: `FluentValidationRules` maps a property validator onto a schema (`NotEmpty`/`NotNull` → `required` plus `minLength`/`minItems`, `Length` → `minLength`/`maxLength`, `Matches` → `pattern`). `FluentValidationSchemaTransformer` applies it to body-bound models. Rules expressed as `Must(...)` predicates are invisible to it, exactly as they were to MicroElements.
+`IK.Imager.Api/OpenApi` replaces MicroElements.Swashbuckle.FluentValidation, which only plugs into Swashbuckle's schema generator: `FluentValidationRules` maps a property validator onto a schema (`NotEmpty`/`NotNull` → `required` plus `minLength`/`minItems`, `Length` → `minLength`/`maxLength`, `Matches` → `pattern`). `FluentValidationSchemaTransformer` applies it to every request model. Rules expressed as `Must(...)` predicates are invisible to it, exactly as they were to MicroElements.
 
-**A `[FromForm]` model needs both halves rebuilt.** ASP.NET Core flattens it into one field per property and builds the request body schema from the resulting `ApiParameterDescription`s, so the model never reaches a schema transformer as a type: it arrives with neither its validator constraints nor its XML summaries, and the summary of a flattened property ends up describing the whole request body instead. `FormRequestOperationTransformer` matches both back onto the fields through `ApiParameterDescription.ModelMetadata` and drops the misplaced body description. Only `POST /Images/Upload` is affected today.
+The `[FromForm]` model of `POST /Images/Upload` needs nothing special. A minimal API endpoint keeps it a type all the way into the document (`multipart/form-data` → `$ref: UploadImageFileRequest`), so it picks up its validator constraints and its XML summaries through the ordinary schema transformer. Under MVC it arrived flattened into one `ApiParameterDescription` per property and both had to be matched back onto the fields by hand — the operation transformer that did so is gone.
 
 `Microsoft.OpenApi` is referenced directly: the transformers work against its schema model, and the pin lifts the vulnerable 2.0.0 that `Microsoft.AspNetCore.OpenApi` 10.0.10 would otherwise bring in (NU1903 / GHSA-v5pm-xwqc-g5wc, patched in 2.7.5).
 
@@ -103,7 +117,7 @@ Endpoint and schema descriptions come from the XML documentation of `IK.Imager.A
 
 ### Validation is two-layered
 
-FluentValidation validators in `IK.Imager.Api/Validations` check the *request shape* (URL well-formed, `ImageGroup` length 3–30, ≤200 image ids) and surface into the OpenAPI document. FluentValidation 12 dropped built-in ASP.NET Core auto-validation, so `IK.Imager.Api/Filters/FluentValidationActionFilter.cs` runs the validators over the action arguments and short-circuits with a 400 `ValidationProblemDetails`. `IK.Imager.Core.Validation.ImageValidator` checks the *image itself* (format/size/dimensions/aspect ratio) against the `ImageLimitations` config section. Note the handlers currently throw `ValidationException` on failure (there are `//todo`s about returning an error model instead); `GlobalExceptionFilter` maps it to a 400.
+FluentValidation validators live next to the feature they guard under `IK.Imager.Api/Features` and check the *request shape* (URL well-formed, `ImageGroup` length 3–30, ≤200 image ids); they also surface into the OpenAPI document. FluentValidation 12 dropped built-in ASP.NET Core auto-validation, so `IK.Imager.Api/Validation/ValidationEndpointFilter.cs` runs the validator over the argument and short-circuits with a 400 `ValidationProblemDetails`. It is attached per endpoint with `.WithValidation<TRequest>()`, which also declares the 400 in the document — an endpoint that takes a validated model and forgets the call silently accepts anything, so add it alongside the `Map…` line. `IK.Imager.Core.Validation.ImageValidator` checks the *image itself* (format/size/dimensions/aspect ratio) against the `ImageLimitations` config section. Note the handlers currently throw `ValidationException` on failure (there are `//todo`s about returning an error model instead); `IK.Imager.Api/ExceptionHandling/GlobalExceptionHandler.cs` maps it to a 400 and everything else to a 500 (with the full exception in `developerMessage` in Development). It is an `IExceptionHandler` registered on the pipeline rather than an MVC filter, because an endpoint filter cannot see an exception thrown by another filter; there is no developer exception page, since the MVC filter suppressed it for every action exception anyway.
 
 ## Configuration
 

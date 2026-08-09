@@ -1,14 +1,15 @@
-﻿using FluentValidation;
+using FluentValidation;
 using IK.Imager.Api.Contract;
+using IK.Imager.Api.Validation;
 #pragma warning disable 1591
 
-namespace IK.Imager.Api.Validations;
+namespace IK.Imager.Api.Features.ImageLookup;
 
-public class RequestImagesRequestValidator: AbstractValidator<SearchImagesByIdRequest>
+public class SearchImagesByIdRequestValidator: AbstractValidator<SearchImagesByIdRequest>
 {
     const int MaxImagesToRequest = 200;
-        
-    public RequestImagesRequestValidator()
+
+    public SearchImagesByIdRequestValidator()
     {
         RuleFor(x => x.ImageGroup)
             .MaximumLength(ValidationConstants.MaxImageGroupLength)
