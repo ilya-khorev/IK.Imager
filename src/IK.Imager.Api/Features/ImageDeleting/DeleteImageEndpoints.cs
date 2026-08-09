@@ -2,8 +2,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using IK.Imager.Api.Contract.ImageDeleting;
 using IK.Imager.Api.Validation;
-using IK.Imager.Core.Abstractions.Messaging;
-using IK.Imager.Core.ImageDeleting;
+using IK.Imager.Core.Abstractions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -36,7 +35,7 @@ public static class DeleteImageEndpoints
     /// However, the image itself will stop to return in lookup results immediately after this call.
     /// </summary>
     /// <param name="deleteImageRequest">Image removal request model</param>
-    /// <param name="deleteImageMetadataCommandHandler"></param>
+    /// <param name="imageDeleter"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     /// <response code="204">The image has been removed.</response>
@@ -45,11 +44,11 @@ public static class DeleteImageEndpoints
     //DELETE is one of the methods minimal APIs refuse to infer a body for, so the source is explicit here
     internal static async Task<Results<NoContent, NotFound<string>>> DeleteImage(
         [FromBody] DeleteImageRequest deleteImageRequest,
-        ICommandHandler<DeleteImageMetadataCommand, bool> deleteImageMetadataCommandHandler,
+        IImageDeleter imageDeleter,
         CancellationToken cancellationToken)
     {
-        var imageDeleted = await deleteImageMetadataCommandHandler.Handle(
-            new DeleteImageMetadataCommand(deleteImageRequest.ImageId, deleteImageRequest.ImageGroup), cancellationToken);
+        var imageDeleted = await imageDeleter.DeleteMetadata(
+            deleteImageRequest.ImageId, deleteImageRequest.ImageGroup, cancellationToken);
 
         if (!imageDeleted)
             return TypedResults.NotFound(string.Format(ImageNotFound, deleteImageRequest.ImageId));

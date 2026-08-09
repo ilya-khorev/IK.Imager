@@ -51,7 +51,20 @@ A single ASP.NET Core service (`IK.Imager.Api`) that both serves the HTTP API **
 
 ### Request flow
 
-Dispatch is hand-rolled rather than via a mediator library. `IK.Imager.Core.Abstractions/Messaging` defines `ICommandHandler<TCommand>`, `ICommandHandler<TCommand, TResult>`, `IQueryHandler<TQuery, TResult>`, and `IDomainEvent` / `IDomainEventHandler<T>` / `IDomainEventDispatcher`. Endpoint handlers are thin: they take the handler interface they need as a parameter (resolved from DI), call `Handle(...)`, and map the core model to the `IK.Imager.Api.Contract` model with a private `ToContract()` in their own endpoint file (hand-written — there is no AutoMapper, and there is no shared mapping class).
+**There is no mediator and no command/handler abstraction.** The core is four ordinary services, one per feature, each behind a small interface in `IK.Imager.Core.Abstractions`:
+
+| Interface | Implementation | Methods |
+|---|---|---|
+| `IImageUploader` | `Core/ImageUploader.cs` | `Upload(stream, group, ct)`, `UploadByUrl(url, group, ct)` |
+| `IImageLookup` | `Core/ImageLookup.cs` | `LookupByIds(ids, group, ct)` |
+| `IImageDeleter` | `Core/ImageDeleter.cs` | `DeleteMetadata(id, group, ct) → bool`, `DeleteFiles(id, name, thumbnailNames, ct)` |
+| `IThumbnailGenerator` | `Core/ThumbnailGenerator.cs` | `Generate(imageId, group, ct)` |
+
+An earlier version routed everything through `ICommandHandler<TCommand, TResult>` / `IQueryHandler<TQuery, TResult>` plus a command record per operation. The record existed only to be unpacked one line into the handler, and the generic interface made every registration and call site harder to read than the method it stood for — it bought pipeline behaviours nothing ever added. Pass arguments; add a method to the service that owns the feature.
+
+The implementations sit flat in `IK.Imager.Core` alongside `ImageMetadataReader`, `ImageIdentifierProvider` and `ImageDownloadClient` — one class per feature does not need a folder, and a `Core.ImageLookup` namespace would collide with the `ImageLookup` type.
+
+Endpoint handlers are thin: they take the service interface they need as a parameter (resolved from DI), call it, and map the core model to the `IK.Imager.Api.Contract` model with a private `ToContract()` in their own endpoint file (hand-written — there is no AutoMapper, and there is no shared mapping class).
 
 ### Endpoints are minimal APIs, grouped by feature
 
@@ -63,7 +76,7 @@ A slice is kept self-contained rather than DRY: `ImageLookup` maps a thumbnail o
 
 The routes: `POST /Images/Upload`, `POST /Images/UploadByUrl`, `POST /Images/Lookup`, `DELETE /Images`.
 
-**"Lookup", never "search".** The operation fetches images by their ids — there is no querying or filtering — so `search` was retired everywhere: `LookupImagesQuery(Handler)` and `Core/ImageLookup` in the core, `ImageLookupByIdRequest` / `ImageLookupResult` in the contract, `POST /Images/Lookup` on the wire. Note `LookupImagesQuery` also brings the core messages into one shape: every one of them is now `VerbNounCommand`/`Query`.
+**"Lookup", never "search".** The operation fetches images by their ids — there is no querying or filtering — so `search` was retired everywhere: `IImageLookup.LookupByIds` in the core, `ImageLookupByIdRequest` / `ImageLookupResult` in the contract, `POST /Images/Lookup` on the wire.
 
 Handlers are named `internal static` methods rather than lambdas: the source generator in `Microsoft.AspNetCore.OpenApi` reads their XML documentation, so `<summary>`, `<param>` and `<response code="…">` land in the document exactly as the controller attributes used to. Return `TypedResults` (`Ok<T>`, `Results<NoContent, NotFound<string>>`) so the response types are inferred rather than declared twice.
 
@@ -71,13 +84,13 @@ Two things minimal APIs need that MVC did implicitly:
 - `POST /Images/Upload` calls `.DisableAntiforgery()`. Form endpoints require an antiforgery token by default, which only makes sense for a cookie-authenticated browser form; `[ApiController]` never enforced it.
 - `DELETE /Images` marks its request model `[FromBody]`. DELETE is one of the methods minimal APIs refuse to infer a body for, and the failure is a startup-time `InvalidOperationException` on first request rather than a compile error.
 
-Upload → `UploadImageCommandHandler` (validate format/size → blob storage → metadata) → publishes the **domain** event `ImageUploadedDomainEvent` → `ImageUploadedDomainEventHandler` (in the Api project) republishes it as the **integration** event `OriginalImageUploadedIntegrationEvent` on Service Bus → `CreateThumbnailsHandler` consumes it and sends `CreateThumbnailsCommand`. Hence the ~2s delay before thumbnails appear in lookup results.
+Upload → `ImageUploader.Upload` (validate format/size → blob storage → metadata) → `IImageEvents.ImageUploaded` → published as the integration event `OriginalImageUploadedIntegrationEvent` on Service Bus → `CreateThumbnailsHandler` consumes it and calls `IThumbnailGenerator.Generate`. Hence the ~2s delay before thumbnails appear in lookup results.
 
-Delete → `DeleteImageMetadataCommandHandler` removes only the metadata (image disappears from lookup results immediately) → `ImageMetadataDeletedDomainEvent` → `ImageMetadataDeletedIntegrationEvent` → `RemoveImageFilesHandler` → `DeleteImageCommand` deletes the original blob and thumbnail blobs.
+Delete → `ImageDeleter.DeleteMetadata` removes only the metadata (image disappears from lookup results immediately) → `IImageEvents.ImageMetadataDeleted` → `ImageMetadataDeletedIntegrationEvent` → `RemoveImageFilesHandler` → `ImageDeleter.DeleteFiles` deletes the original blob and thumbnail blobs.
 
-This **domain event (`IDomainEvent`, dispatched in-process) → integration event (MassTransit) → command** relay is the core pattern. Domain events stay in `IK.Imager.Core`; the translation to Service Bus lives entirely in `IK.Imager.Api/DomainEventHandlers` and `IK.Imager.Api/IntegrationEvents`, so `IK.Imager.Core` has no messaging dependency. `DomainEventDispatcher` (in `IK.Imager.Core/Messaging`) just resolves every `IDomainEventHandler<T>` from the container and awaits them in turn; handlers are registered by `AddIntegrationEventMessaging` (`IK.Imager.Api/Extensions/MessagingServiceCollectionExtensions.cs`), alongside the bus they publish onto.
+**`IImageEvents` is how the core reaches the bus without depending on it.** It is declared in `IK.Imager.Core.Abstractions` as two plain methods and implemented once, by `IK.Imager.Api/IntegrationEvents/ImageEvents.cs`, which publishes over MassTransit; `AddIntegrationEventMessaging` registers it alongside the bus it publishes onto. It replaced an `IDomainEvent` / `IDomainEventHandler<T>` / `IDomainEventDispatcher` trio plus a dispatcher that resolved handlers out of the container — three interfaces, two event records and two handler classes, for two events that had exactly one handler each. If an event ever genuinely needs several independent reactions, add them on the bus side rather than reviving in-process dispatch.
 
-CDN rewriting is applied outside handlers, via decorators in `IK.Imager.Core/Cdn/CdnDecorators.cs` — a handler always returns the raw blob URL, and the decorator swaps in the CDN host when `Cdn:Uri` is configured. The decorators are wired in `AddImagerCore`: the concrete handler is registered by its own type, and the handler *interface* resolves to the decorator wrapping it. Add a decorator there rather than touching handlers when a new response needs URL rewriting.
+CDN rewriting is applied outside the services, via decorators in `IK.Imager.Core/Cdn/CdnDecorators.cs` — a service always returns the raw blob URL, and `CdnImageUploader` / `CdnImageLookup` swap in the CDN host when `Cdn:Uri` is configured. This is the one reason the services have interfaces at all, and it is what the by-type-then-interface pair in `AddImagerCore` is for: `AddScoped<ImageLookup>()` registers the concrete service, and `AddScoped<IImageLookup>(…)` resolves to the decorator wrapping it. `IImageDeleter` and `IThumbnailGenerator` return no URLs and are registered plainly. Add a decorator there rather than touching a service when a new response needs URL rewriting.
 
 ### Project layout
 
@@ -123,7 +136,7 @@ The `[FromForm]` model of `POST /Images/Upload` needs nothing special. A minimal
 
 ### Validation is two-layered
 
-FluentValidation validators live next to the feature they guard under `IK.Imager.Api/Features` and check the *request shape* (URL well-formed, `ImageGroup` length 3–30, ≤200 image ids); they also surface into the OpenAPI document. FluentValidation 12 dropped built-in ASP.NET Core auto-validation, so `IK.Imager.Api/Validation/ValidationEndpointFilter.cs` runs the validator over the argument and short-circuits with a 400 `ValidationProblemDetails`. It is attached per endpoint with `.WithValidation<TRequest>()`, which also declares the 400 in the document — an endpoint that takes a validated model and forgets the call silently accepts anything, so add it alongside the `Map…` line. `IK.Imager.Core.Validation.ImageValidator` checks the *image itself* (format/size/dimensions/aspect ratio) against the `ImageLimitations` config section. Note the handlers currently throw `ValidationException` on failure (there are `//todo`s about returning an error model instead); `IK.Imager.Api/ExceptionHandling/GlobalExceptionHandler.cs` maps it to a 400 and everything else to a 500 (with the full exception in `developerMessage` in Development). It is an `IExceptionHandler` registered on the pipeline rather than an MVC filter, because an endpoint filter cannot see an exception thrown by another filter; there is no developer exception page, since the MVC filter suppressed it for every action exception anyway.
+FluentValidation validators live next to the feature they guard under `IK.Imager.Api/Features` and check the *request shape* (URL well-formed, `ImageGroup` length 3–30, ≤200 image ids); they also surface into the OpenAPI document. FluentValidation 12 dropped built-in ASP.NET Core auto-validation, so `IK.Imager.Api/Validation/ValidationEndpointFilter.cs` runs the validator over the argument and short-circuits with a 400 `ValidationProblemDetails`. It is attached per endpoint with `.WithValidation<TRequest>()`, which also declares the 400 in the document — an endpoint that takes a validated model and forgets the call silently accepts anything, so add it alongside the `Map…` line. `IK.Imager.Core.Validation.ImageValidator` checks the *image itself* (format/size/dimensions/aspect ratio) against the `ImageLimitations` config section. Note the core services currently throw `ValidationException` on failure (there are `//todo`s about returning an error model instead); `IK.Imager.Api/ExceptionHandling/GlobalExceptionHandler.cs` maps it to a 400 and everything else to a 500 (with the full exception in `developerMessage` in Development). It is an `IExceptionHandler` registered on the pipeline rather than an MVC filter, because an endpoint filter cannot see an exception thrown by another filter; there is no developer exception page, since the MVC filter suppressed it for every action exception anyway.
 
 ## Configuration
 

@@ -7,7 +7,6 @@ using IK.Imager.Core.Abstractions;
 using IK.Imager.Core.Abstractions.Models;
 using IK.Imager.Core.Abstractions.Thumbnails;
 using IK.Imager.Core.Settings;
-using IK.Imager.Core.Thumbnails;
 using IK.Imager.Storage.Abstractions.Models;
 using IK.Imager.Storage.Abstractions.Repositories;
 using Microsoft.Extensions.Logging;
@@ -25,7 +24,7 @@ namespace IK.Imager.Core.Tests.ThumbnailsTests
         private readonly Mock<IImageMetadataRepository> _metadataRepositoryMock;
         private readonly Mock<IImageResizing> _imageResizingMock;
         private readonly Mock<IOptions<ImageThumbnailsSettings>> _imageThumbnailSettingsMock;
-        private readonly ILogger<CreateThumbnailsCommandHandler> _logger;
+        private readonly ILogger<ThumbnailGenerator> _logger;
         private readonly IImageIdentifierProvider _imageIdentifierProvider; 
         
         public ThumbnailsGeneratingTests(ITestOutputHelper output)
@@ -34,7 +33,7 @@ namespace IK.Imager.Core.Tests.ThumbnailsTests
             _blobRepositoryMock = new Mock<IImageBlobRepository>();
             _metadataRepositoryMock = new Mock<IImageMetadataRepository>();
             _imageThumbnailSettingsMock = new Mock<IOptions<ImageThumbnailsSettings>>();
-            _logger = output.BuildLoggerFor<CreateThumbnailsCommandHandler>(); 
+            _logger = output.BuildLoggerFor<ThumbnailGenerator>(); 
             _imageIdentifierProvider = new ImageIdentifierProvider();
         }
 
@@ -51,11 +50,11 @@ namespace IK.Imager.Core.Tests.ThumbnailsTests
                 It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new List<ImageMetadata>());
             
-            var thumbnailsCommandHandler = new CreateThumbnailsCommandHandler(_logger, _imageResizingMock.Object,
+            var thumbnailGenerator = new ThumbnailGenerator(_logger, _imageResizingMock.Object,
                 _blobRepositoryMock.Object, _metadataRepositoryMock.Object,
                 _imageIdentifierProvider, _imageThumbnailSettingsMock.Object);
 
-            await thumbnailsCommandHandler.Handle(new Fixture().Create<CreateThumbnailsCommand>(),
+            await thumbnailGenerator.Generate(new Fixture().Create<string>(), new Fixture().Create<string>(),
                 CancellationToken.None);
             
             //verifying that image download is not called
@@ -83,11 +82,11 @@ namespace IK.Imager.Core.Tests.ThumbnailsTests
                     It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new List<ImageMetadata> { imageMetadata });
             
-            var thumbnailsCommandHandler = new CreateThumbnailsCommandHandler(_logger, _imageResizingMock.Object,
+            var thumbnailGenerator = new ThumbnailGenerator(_logger, _imageResizingMock.Object,
                 _blobRepositoryMock.Object, _metadataRepositoryMock.Object,
                 _imageIdentifierProvider, _imageThumbnailSettingsMock.Object);
 
-            await thumbnailsCommandHandler.Handle(new Fixture().Create<CreateThumbnailsCommand>(),
+            await thumbnailGenerator.Generate(new Fixture().Create<string>(), new Fixture().Create<string>(),
                 CancellationToken.None);
             
             //verifying that image download is not called
@@ -169,11 +168,11 @@ namespace IK.Imager.Core.Tests.ThumbnailsTests
                     Size = new Fixture().Create<ImageSize>()
                 });
             
-            var thumbnailsCommandHandler = new CreateThumbnailsCommandHandler(_logger, _imageResizingMock.Object,
+            var thumbnailGenerator = new ThumbnailGenerator(_logger, _imageResizingMock.Object,
                 _blobRepositoryMock.Object, _metadataRepositoryMock.Object,
                 _imageIdentifierProvider, _imageThumbnailSettingsMock.Object);
 
-            await thumbnailsCommandHandler.Handle(new Fixture().Create<CreateThumbnailsCommand>(),
+            await thumbnailGenerator.Generate(new Fixture().Create<string>(), new Fixture().Create<string>(),
                 CancellationToken.None);
         }
     }

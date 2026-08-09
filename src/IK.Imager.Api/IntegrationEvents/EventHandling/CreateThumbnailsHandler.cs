@@ -1,7 +1,6 @@
-﻿using System.Threading.Tasks;
+using System.Threading.Tasks;
 using IK.Imager.Api.IntegrationEvents.Events;
-using IK.Imager.Core.Abstractions.Messaging;
-using IK.Imager.Core.Thumbnails;
+using IK.Imager.Core.Abstractions;
 using IK.Imager.Utils;
 using MassTransit;
 // ReSharper disable ClassNeverInstantiated.Global
@@ -12,17 +11,16 @@ namespace IK.Imager.Api.IntegrationEvents.EventHandling;
 
 public class CreateThumbnailsHandler : IConsumer<OriginalImageUploadedIntegrationEvent>
 {
-    private readonly ICommandHandler<CreateThumbnailsCommand> _createThumbnailsCommandHandler;
+    private readonly IThumbnailGenerator _thumbnailGenerator;
 
-    public CreateThumbnailsHandler(ICommandHandler<CreateThumbnailsCommand> createThumbnailsCommandHandler)
+    public CreateThumbnailsHandler(IThumbnailGenerator thumbnailGenerator)
     {
-        ArgumentHelper.AssertNotNull(nameof(createThumbnailsCommandHandler), createThumbnailsCommandHandler);
-        _createThumbnailsCommandHandler = createThumbnailsCommandHandler;
+        ArgumentHelper.AssertNotNull(nameof(thumbnailGenerator), thumbnailGenerator);
+        _thumbnailGenerator = thumbnailGenerator;
     }
 
     public async Task Consume(ConsumeContext<OriginalImageUploadedIntegrationEvent> context)
     {
-        await _createThumbnailsCommandHandler.Handle(
-            new CreateThumbnailsCommand(context.Message.ImageId, context.Message.ImageGroup), context.CancellationToken);
+        await _thumbnailGenerator.Generate(context.Message.ImageId, context.Message.ImageGroup, context.CancellationToken);
     }
 }

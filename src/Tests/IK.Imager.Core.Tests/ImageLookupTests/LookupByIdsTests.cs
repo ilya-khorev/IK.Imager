@@ -5,7 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using AutoFixture;
 using IK.Imager.Core.Abstractions.Models;
-using IK.Imager.Core.ImageLookup;
+using IK.Imager.Core.Abstractions;
 using IK.Imager.Storage.Abstractions.Models;
 using IK.Imager.Storage.Abstractions.Repositories;
 using Microsoft.Extensions.Logging;
@@ -15,15 +15,15 @@ using Xunit.Abstractions;
 
 namespace IK.Imager.Core.Tests.ImageLookupTests;
 
-public class LookupImagesQueryHandlerTests
+public class LookupByIdsTests
 {
-    private readonly ILogger<LookupImagesQueryHandler> _logger;
+    private readonly ILogger<ImageLookup> _logger;
     private readonly Mock<IImageMetadataRepository> _metadataRepositoryMock;
     private readonly Mock<IImageBlobRepository> _blobRepositoryMock;
 
-    public LookupImagesQueryHandlerTests(ITestOutputHelper output)
+    public LookupByIdsTests(ITestOutputHelper output)
     {
-        _logger = output.BuildLoggerFor<LookupImagesQueryHandler>();
+        _logger = output.BuildLoggerFor<ImageLookup>();
         _metadataRepositoryMock = new Mock<IImageMetadataRepository>();
         _blobRepositoryMock = new Mock<IImageBlobRepository>();
     }
@@ -31,7 +31,7 @@ public class LookupImagesQueryHandlerTests
     [Theory]
     [InlineData(1)]
     [InlineData(5)]
-    public async Task Handle_FindImages(int imagesCount)
+    public async Task LookupByIds_FindImages(int imagesCount)
     {
         _blobRepositoryMock.Setup(x => x.GetImageUri(It.IsAny<string>(), It.IsAny<ImageSizeType>()))
             .Returns(new Uri("https://test.com"));
@@ -44,8 +44,8 @@ public class LookupImagesQueryHandlerTests
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(imageMetadataList);
         
-        LookupImagesQueryHandler handler = new LookupImagesQueryHandler(_logger, _metadataRepositoryMock.Object, _blobRepositoryMock.Object);
-        var result = await handler.Handle( new Fixture().Create<LookupImagesQuery>(), CancellationToken.None);
+        ImageLookup imageLookup = new ImageLookup(_logger, _metadataRepositoryMock.Object, _blobRepositoryMock.Object);
+        var result = await imageLookup.LookupByIds(new Fixture().Create<string[]>(), new Fixture().Create<string>(), CancellationToken.None);
 
         CompareFields(imageMetadataList, result);
     }

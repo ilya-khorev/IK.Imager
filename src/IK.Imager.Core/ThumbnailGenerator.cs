@@ -1,9 +1,8 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using IK.Imager.Core.Abstractions;
-using IK.Imager.Core.Abstractions.Messaging;
 using IK.Imager.Core.Abstractions.Thumbnails;
 using IK.Imager.Core.Settings;
 using IK.Imager.Storage.Abstractions.Models;
@@ -13,11 +12,13 @@ using Microsoft.Extensions.Options;
 using ImageType = IK.Imager.Core.Abstractions.Models.ImageType;
 using StorageImageType = IK.Imager.Storage.Abstractions.Models.ImageType;
 
-namespace IK.Imager.Core.Thumbnails;
+#pragma warning disable 1591
 
-public class CreateThumbnailsCommandHandler : ICommandHandler<CreateThumbnailsCommand>
+namespace IK.Imager.Core;
+
+public class ThumbnailGenerator : IThumbnailGenerator
 {
-    private readonly ILogger<CreateThumbnailsCommandHandler> _logger;
+    private readonly ILogger<ThumbnailGenerator> _logger;
     private readonly IImageResizing _imageResizing;
     private readonly IImageBlobRepository _blobRepository;
     private readonly IImageMetadataRepository _metadataRepository;
@@ -38,7 +39,7 @@ public class CreateThumbnailsCommandHandler : ICommandHandler<CreateThumbnailsCo
     private const string PngMimeType = "image/png";
     private const string PngFileExtension = ".png";
 
-    public CreateThumbnailsCommandHandler(ILogger<CreateThumbnailsCommandHandler> logger, IImageResizing imageResizing,
+    public ThumbnailGenerator(ILogger<ThumbnailGenerator> logger, IImageResizing imageResizing,
         IImageBlobRepository blobRepository, IImageMetadataRepository metadataRepository,
         IImageIdentifierProvider imageIdentifierProvider,
         IOptions<ImageThumbnailsSettings> imageThumbnailsSettings)
@@ -51,13 +52,13 @@ public class CreateThumbnailsCommandHandler : ICommandHandler<CreateThumbnailsCo
         _thumbnailTargetWidths = imageThumbnailsSettings.Value.TargetWidth.OrderByDescending(x => x).ToList();
     }
 
-    public async Task Handle(CreateThumbnailsCommand request, CancellationToken cancellationToken)
+    public async Task Generate(string imageId, string imageGroup, CancellationToken cancellationToken)
     {
         //firstly, receiving image metadata of the given image
-        var imageMetadataList = await _metadataRepository.GetMetadata(new List<string> { request.ImageId }, request.ImageGroup, CancellationToken.None);
+        var imageMetadataList = await _metadataRepository.GetMetadata(new List<string> { imageId }, imageGroup, CancellationToken.None);
         if (imageMetadataList == null || !imageMetadataList.Any())
         {
-            _logger.LogInformation(ImageNotFound, request.ImageId);
+            _logger.LogInformation(ImageNotFound, imageId);
             return;
         }
 
@@ -87,7 +88,7 @@ public class CreateThumbnailsCommandHandler : ICommandHandler<CreateThumbnailsCo
         var imageStream = originalImageStream!;
         foreach (var targetWidth in _thumbnailTargetWidths)
         {
-            //the current image width is smaller than the target thumbnail width, so just ignoring it 
+            //the current image width is smaller than the target thumbnail width, so just ignoring it
             //and moving to the next target thumbnail
             if (targetWidth >= imageMetadata.Width)
                 continue;
@@ -122,6 +123,6 @@ public class CreateThumbnailsCommandHandler : ICommandHandler<CreateThumbnailsCo
 
         imageMetadata.Thumbnails.Reverse(); //smaller thumbnails come first
         await _metadataRepository.SetMetadata(imageMetadata, CancellationToken.None);
-        _logger.LogInformation(ThumbnailsGenerated, imageMetadata.Thumbnails.Count, request.ImageId);
+        _logger.LogInformation(ThumbnailsGenerated, imageMetadata.Thumbnails.Count, imageId);
     }
 }

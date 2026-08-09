@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using IK.Imager.Core.Abstractions.Messaging;
+using IK.Imager.Core.Abstractions;
 using IK.Imager.Core.Abstractions.Models;
 using IK.Imager.Storage.Abstractions.Models;
 using IK.Imager.Storage.Abstractions.Repositories;
@@ -9,25 +9,25 @@ using Microsoft.Extensions.Logging;
 
 #pragma warning disable 1591
 
-namespace IK.Imager.Core.ImageLookup;
+namespace IK.Imager.Core;
 
-public class LookupImagesQueryHandler: IQueryHandler<LookupImagesQuery, ImageLookupResult>
+public class ImageLookup: IImageLookup
 {
-    private readonly ILogger<LookupImagesQueryHandler> _logger;
+    private readonly ILogger<ImageLookup> _logger;
     private readonly IImageMetadataRepository _metadataRepository;
     private readonly IImageBlobRepository _blobRepository;
     private const string FoundImages = "Found {0} image(s) for requested {1} image id(s)";
-    
-    public LookupImagesQueryHandler(ILogger<LookupImagesQueryHandler> logger, IImageMetadataRepository metadataRepository, IImageBlobRepository blobRepository)
+
+    public ImageLookup(ILogger<ImageLookup> logger, IImageMetadataRepository metadataRepository, IImageBlobRepository blobRepository)
     {
         _logger = logger;
         _metadataRepository = metadataRepository;
         _blobRepository = blobRepository;
     }
-        
-    public async Task<ImageLookupResult> Handle(LookupImagesQuery request, CancellationToken cancellationToken)
+
+    public async Task<ImageLookupResult> LookupByIds(string[] imageIds, string? imageGroup, CancellationToken cancellationToken)
     {
-        var imagesMetadata = await _metadataRepository.GetMetadata(request.ImageIds, request.ImageGroup, CancellationToken.None);
+        var imagesMetadata = await _metadataRepository.GetMetadata(imageIds, imageGroup, CancellationToken.None);
 
         ImageLookupResult result = new ImageLookupResult
         {
@@ -51,7 +51,7 @@ public class LookupImagesQueryHandler: IQueryHandler<LookupImagesQuery, ImageLoo
             };
 
             //todo if an image was added a long time ago and there are not any thumbnails, it's worth sending a new event to generate them
-                
+
             if (imageMetadata.Thumbnails != null)
                 foreach (var thumbnail in imageMetadata.Thumbnails)
                 {
@@ -67,12 +67,12 @@ public class LookupImagesQueryHandler: IQueryHandler<LookupImagesQuery, ImageLoo
                         Url = _blobRepository.GetImageUri(thumbnail.Name, ImageSizeType.Thumbnail)
                     });
                 }
-                    
+
             result.Images.Add(model);
         }
-            
-        _logger.LogInformation(FoundImages, result.Images.Count, request.ImageIds.Length);
-        
+
+        _logger.LogInformation(FoundImages, result.Images.Count, imageIds.Length);
+
         return result;
     }
 }

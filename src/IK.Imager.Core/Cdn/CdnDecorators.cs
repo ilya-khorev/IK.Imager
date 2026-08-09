@@ -1,33 +1,34 @@
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using IK.Imager.Core.Abstractions;
 using IK.Imager.Core.Abstractions.Cdn;
-using IK.Imager.Core.Abstractions.Messaging;
 using IK.Imager.Core.Abstractions.Models;
-using IK.Imager.Core.ImageLookup;
-using IK.Imager.Core.ImageUploading;
+
+#pragma warning disable 1591
 
 namespace IK.Imager.Core.Cdn;
 
 /// <summary>
-/// Handlers always return the raw blob url. These decorators are the single place where the blob host
+/// The services always return the raw blob url. These decorators are the single place where the blob host
 /// is swapped for the CDN host, so a new response needing url rewriting gets a decorator here
-/// rather than a change inside a handler.
+/// rather than a change inside a service.
 /// </summary>
-public class LookupImagesQueryCdnDecorator : IQueryHandler<LookupImagesQuery, ImageLookupResult>
+public class CdnImageLookup : IImageLookup
 {
-    private readonly IQueryHandler<LookupImagesQuery, ImageLookupResult> _inner;
+    private readonly IImageLookup _inner;
     private readonly ICdnService _cdnService;
 
-    public LookupImagesQueryCdnDecorator(IQueryHandler<LookupImagesQuery, ImageLookupResult> inner, ICdnService cdnService)
+    public CdnImageLookup(IImageLookup inner, ICdnService cdnService)
     {
         _inner = inner;
         _cdnService = cdnService;
     }
 
-    public async Task<ImageLookupResult> Handle(LookupImagesQuery query, CancellationToken cancellationToken)
+    public async Task<ImageLookupResult> LookupByIds(string[] imageIds, string? imageGroup, CancellationToken cancellationToken)
     {
-        var response = await _inner.Handle(query, cancellationToken);
+        var response = await _inner.LookupByIds(imageIds, imageGroup, cancellationToken);
 
         if (!response.Images.Any())
             return response;
@@ -43,40 +44,28 @@ public class LookupImagesQueryCdnDecorator : IQueryHandler<LookupImagesQuery, Im
     }
 }
 
-public class UploadImageByUrlCommandCdnDecorator : ICommandHandler<UploadImageByUrlCommand, ImageInfo>
+public class CdnImageUploader : IImageUploader
 {
-    private readonly ICommandHandler<UploadImageByUrlCommand, ImageInfo> _inner;
+    private readonly IImageUploader _inner;
     private readonly ICdnService _cdnService;
 
-    public UploadImageByUrlCommandCdnDecorator(ICommandHandler<UploadImageByUrlCommand, ImageInfo> inner, ICdnService cdnService)
+    public CdnImageUploader(IImageUploader inner, ICdnService cdnService)
     {
         _inner = inner;
         _cdnService = cdnService;
     }
 
-    public async Task<ImageInfo> Handle(UploadImageByUrlCommand command, CancellationToken cancellationToken)
+    public async Task<ImageInfo> Upload(Stream imageStream, string imageGroup, CancellationToken cancellationToken)
     {
-        var response = await _inner.Handle(command, cancellationToken);
+        var response = await _inner.Upload(imageStream, imageGroup, cancellationToken);
         response.Url = _cdnService.TryTransformToCdnUri(response.Url);
 
         return response;
     }
-}
 
-public class UploadImageCommandCdnDecorator : ICommandHandler<UploadImageCommand, ImageInfo>
-{
-    private readonly ICommandHandler<UploadImageCommand, ImageInfo> _inner;
-    private readonly ICdnService _cdnService;
-
-    public UploadImageCommandCdnDecorator(ICommandHandler<UploadImageCommand, ImageInfo> inner, ICdnService cdnService)
+    public async Task<ImageInfo> UploadByUrl(string imageUrl, string imageGroup, CancellationToken cancellationToken)
     {
-        _inner = inner;
-        _cdnService = cdnService;
-    }
-
-    public async Task<ImageInfo> Handle(UploadImageCommand command, CancellationToken cancellationToken)
-    {
-        var response = await _inner.Handle(command, cancellationToken);
+        var response = await _inner.UploadByUrl(imageUrl, imageGroup, cancellationToken);
         response.Url = _cdnService.TryTransformToCdnUri(response.Url);
 
         return response;

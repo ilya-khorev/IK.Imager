@@ -3,8 +3,7 @@ using System.Threading.Tasks;
 using IK.Imager.Api.Contract;
 using IK.Imager.Api.Contract.ImageUpload;
 using IK.Imager.Api.Validation;
-using IK.Imager.Core.Abstractions.Messaging;
-using IK.Imager.Core.ImageUploading;
+using IK.Imager.Core.Abstractions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -45,7 +44,7 @@ public static class UploadImageEndpoints
     /// Thumbnails for the given image are available after a short delay - initially image is returned without any thumbnails.
     /// </summary>
     /// <param name="imageFileRequest"></param>
-    /// <param name="uploadImageCommandHandler"></param>
+    /// <param name="imageUploader"></param>
     /// <param name="cancellationToken"></param>
     /// <returns>A model with information about just uploaded image</returns>
     /// <response code="200">Returns the newly added image info</response>
@@ -53,11 +52,11 @@ public static class UploadImageEndpoints
     /// Or if the image type is different from what the system supports.</response>
     internal static async Task<Ok<ImageInfo>> UploadImageFile(
         [FromForm] UploadImageFileRequest imageFileRequest,
-        ICommandHandler<UploadImageCommand, CoreModels.ImageInfo> uploadImageCommandHandler,
+        IImageUploader imageUploader,
         CancellationToken cancellationToken)
     {
-        var uploadImageResult = await uploadImageCommandHandler.Handle(
-            new UploadImageCommand(imageFileRequest.File.OpenReadStream(), imageFileRequest.ImageGroup), cancellationToken);
+        var uploadImageResult = await imageUploader.Upload(
+            imageFileRequest.File.OpenReadStream(), imageFileRequest.ImageGroup, cancellationToken);
 
         return TypedResults.Ok(uploadImageResult.ToContract());
     }
@@ -68,7 +67,7 @@ public static class UploadImageEndpoints
     /// Thumbnails for the given image are available after a short delay - initially image is returned to the client without any thumbnails.
     /// </summary>
     /// <param name="uploadImageRequest">Image upload request model</param>
-    /// <param name="uploadImageByUrlCommandHandler"></param>
+    /// <param name="imageUploader"></param>
     /// <param name="cancellationToken"></param>
     /// <returns>A model with information about just uploaded image</returns>
     /// <response code="200">Returns the newly added image info</response>
@@ -79,11 +78,11 @@ public static class UploadImageEndpoints
     /// Or if the image type is different from what the system supports.</response>
     internal static async Task<Ok<ImageInfo>> UploadImageByUrl(
         UploadImageRequest uploadImageRequest,
-        ICommandHandler<UploadImageByUrlCommand, CoreModels.ImageInfo> uploadImageByUrlCommandHandler,
+        IImageUploader imageUploader,
         CancellationToken cancellationToken)
     {
-        var uploadImageResult = await uploadImageByUrlCommandHandler.Handle(
-            new UploadImageByUrlCommand(uploadImageRequest.ImageUrl, uploadImageRequest.ImageGroup), cancellationToken);
+        var uploadImageResult = await imageUploader.UploadByUrl(
+            uploadImageRequest.ImageUrl, uploadImageRequest.ImageGroup, cancellationToken);
 
         return TypedResults.Ok(uploadImageResult.ToContract());
     }

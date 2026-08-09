@@ -4,8 +4,7 @@ using System.Threading.Tasks;
 using IK.Imager.Api.Contract;
 using IK.Imager.Api.Contract.ImageLookup;
 using IK.Imager.Api.Validation;
-using IK.Imager.Core.Abstractions.Messaging;
-using IK.Imager.Core.ImageLookup;
+using IK.Imager.Core.Abstractions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -35,7 +34,7 @@ public static class LookupImagesEndpoints
     /// Look up a set of images by image ids
     /// </summary>
     /// <param name="imageLookupByIdRequest">Image lookup request model</param>
-    /// <param name="lookupImagesQueryHandler"></param>
+    /// <param name="imageLookup"></param>
     /// <param name="cancellationToken"></param>
     /// <returns>A model with full info about just found images. Each image is represented with the nested object.
     /// These objects are returned in the same order as they were requested.
@@ -45,11 +44,11 @@ public static class LookupImagesEndpoints
     /// Or if it is requested for more than 200 images.</response>
     internal static async Task<Ok<ImageLookupResult>> LookupImagesById(
         ImageLookupByIdRequest imageLookupByIdRequest,
-        IQueryHandler<LookupImagesQuery, CoreModels.ImageLookupResult> lookupImagesQueryHandler,
+        IImageLookup imageLookup,
         CancellationToken cancellationToken)
     {
-        var lookupResult = await lookupImagesQueryHandler.Handle(
-            new LookupImagesQuery(imageLookupByIdRequest.ImageIds, imageLookupByIdRequest.ImageGroup), cancellationToken);
+        var lookupResult = await imageLookup.LookupByIds(
+            imageLookupByIdRequest.ImageIds, imageLookupByIdRequest.ImageGroup, cancellationToken);
 
         return TypedResults.Ok(lookupResult.ToContract());
     }
