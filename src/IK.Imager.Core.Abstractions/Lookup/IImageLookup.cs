@@ -2,7 +2,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using IK.Imager.Core.Abstractions.Models;
 
-namespace IK.Imager.Core.Abstractions;
+namespace IK.Imager.Core.Abstractions.Lookup;
 
 /// <summary>
 /// Reads images that are already in the system.

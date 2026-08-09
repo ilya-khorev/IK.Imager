@@ -3,7 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using IK.Imager.Core.Abstractions.Models;
 
-namespace IK.Imager.Core.Abstractions;
+namespace IK.Imager.Core.Abstractions.Uploading;
 
 /// <summary>
 /// Gets a new image into the system: validates it, stores the file and its metadata, and raises

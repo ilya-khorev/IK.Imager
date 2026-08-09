@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using IK.Imager.Api.Contract;
 using IK.Imager.Api.Contract.ImageUpload;
 using IK.Imager.Api.Validation;
-using IK.Imager.Core.Abstractions;
+using IK.Imager.Core.Abstractions.Uploading;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;

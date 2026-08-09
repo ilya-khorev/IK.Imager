@@ -5,6 +5,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using AutoFixture;
 using IK.Imager.Core.Abstractions;
+using IK.Imager.Core.Abstractions.Deleting;
+using IK.Imager.Core.Deleting;
 using IK.Imager.Storage.Abstractions.Models;
 using IK.Imager.Storage.Abstractions.Repositories;
 using Microsoft.Extensions.Logging;

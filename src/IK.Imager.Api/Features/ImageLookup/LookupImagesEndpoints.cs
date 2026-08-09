@@ -4,11 +4,11 @@ using System.Threading.Tasks;
 using IK.Imager.Api.Contract;
 using IK.Imager.Api.Contract.ImageLookup;
 using IK.Imager.Api.Validation;
-using IK.Imager.Core.Abstractions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Routing;
+using CoreLookup = IK.Imager.Core.Abstractions.Lookup;
 using CoreModels = IK.Imager.Core.Abstractions.Models;
 
 #pragma warning disable 1591
@@ -44,7 +44,7 @@ public static class LookupImagesEndpoints
     /// Or if it is requested for more than 200 images.</response>
     internal static async Task<Ok<ImageLookupResult>> LookupImagesById(
         ImageLookupByIdRequest imageLookupByIdRequest,
-        IImageLookup imageLookup,
+        CoreLookup.IImageLookup imageLookup,
         CancellationToken cancellationToken)
     {
         var lookupResult = await imageLookup.LookupByIds(
@@ -54,13 +54,13 @@ public static class LookupImagesEndpoints
     }
 
     //hand-written, there is no AutoMapper - and it stays inside the feature that returns the model
-    private static ImageLookupResult ToContract(this CoreModels.ImageLookupResult source) =>
+    private static ImageLookupResult ToContract(this CoreLookup.ImageLookupResult source) =>
         new()
         {
             Images = source.Images.Select(ToContract).ToList()
         };
 
-    private static ImageFullInfoWithThumbnails ToContract(this CoreModels.ImageFullInfoWithThumbnails source) =>
+    private static ImageFullInfoWithThumbnails ToContract(this CoreLookup.ImageFullInfoWithThumbnails source) =>
         new()
         {
             Id = source.Id,

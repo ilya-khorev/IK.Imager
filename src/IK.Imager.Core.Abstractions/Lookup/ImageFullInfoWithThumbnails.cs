@@ -1,14 +1,7 @@
 using System.Collections.Generic;
+using IK.Imager.Core.Abstractions.Models;
 
-namespace IK.Imager.Core.Abstractions.Models;
-
-public class ImageLookupResult
-{
-    /// <summary>
-    /// Set of images
-    /// </summary>
-    public List<ImageFullInfoWithThumbnails> Images { get; set; } = new();
-}
+namespace IK.Imager.Core.Abstractions.Lookup;
 
 /// <summary>
 /// Model containing information about image and its thumbnails

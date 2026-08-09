@@ -55,14 +55,18 @@ A single ASP.NET Core service (`IK.Imager.Api`) that both serves the HTTP API **
 
 | Interface | Implementation | Methods |
 |---|---|---|
-| `IImageUploader` | `Core/ImageUploader.cs` | `Upload(stream, group, ct)`, `UploadByUrl(url, group, ct)` |
-| `IImageLookup` | `Core/ImageLookup.cs` | `LookupByIds(ids, group, ct)` |
-| `IImageDeleter` | `Core/ImageDeleter.cs` | `DeleteMetadata(id, group, ct) → bool`, `DeleteFiles(id, name, thumbnailNames, ct)` |
-| `IThumbnailGenerator` | `Core/ThumbnailGenerator.cs` | `Generate(imageId, group, ct)` |
+| `IImageUploader` | `Core/Uploading/ImageUploader.cs` | `Upload(stream, group, ct)`, `UploadByUrl(url, group, ct)` |
+| `IImageLookup` | `Core/Lookup/ImageLookup.cs` | `LookupByIds(ids, group, ct)` |
+| `IImageDeleter` | `Core/Deleting/ImageDeleter.cs` | `DeleteMetadata(id, group, ct) → bool`, `DeleteFiles(id, name, thumbnailNames, ct)` |
+| `IThumbnailGenerator` | `Core/Thumbnails/ThumbnailGenerator.cs` | `Generate(imageId, group, ct)` |
 
 An earlier version routed everything through `ICommandHandler<TCommand, TResult>` / `IQueryHandler<TQuery, TResult>` plus a command record per operation. The record existed only to be unpacked one line into the handler, and the generic interface made every registration and call site harder to read than the method it stood for — it bought pipeline behaviours nothing ever added. Pass arguments; add a method to the service that owns the feature.
 
-The implementations sit flat in `IK.Imager.Core` alongside `ImageMetadataReader`, `ImageIdentifierProvider` and `ImageDownloadClient` — one class per feature does not need a folder, and a `Core.ImageLookup` namespace would collide with the `ImageLookup` type.
+`IK.Imager.Core` and `IK.Imager.Core.Abstractions` are both split into the same feature folders — `Uploading/`, `Lookup/`, `Deleting/`, `Thumbnails/`, plus `Cdn/`. Each holds the service and everything only that feature uses: `Uploading/` also owns `ImageMetadataReader`, `ImageDownloadClient`, `ImageValidator` and `ImageLimitationSettings`; `Thumbnails/` owns `ImageResizing` and `ImageThumbnailsSettings`. There is no `Settings/` or `Validation/` folder any more — a settings class lives next to the single class that reads it. Only `ImageIdentifierProvider` (upload **and** thumbnails) and `IImageEvents` stay at the project root.
+
+**The folders deliberately drop the `Image` prefix.** `IK.Imager.Core.ImageLookup` would be a namespace wrapping a type of the same name, which the compiler rejects at every use site (*"'ImageLookup' is a type not a namespace"*). `IK.Imager.Core.Uploading` also reads better than `…Core.ImageUploading` inside a project already called Imager.
+
+Services use primary constructors, and they thread the `CancellationToken` they are given into every repository call — an earlier version accepted a token and then passed `CancellationToken.None` everywhere.
 
 Endpoint handlers are thin: they take the service interface they need as a parameter (resolved from DI), call it, and map the core model to the `IK.Imager.Api.Contract` model with a private `ToContract()` in their own endpoint file (hand-written — there is no AutoMapper, and there is no shared mapping class).
 
@@ -90,7 +94,7 @@ Delete → `ImageDeleter.DeleteMetadata` removes only the metadata (image disapp
 
 **`IImageEvents` is how the core reaches the bus without depending on it.** It is declared in `IK.Imager.Core.Abstractions` as two plain methods and implemented once, by `IK.Imager.Api/IntegrationEvents/ImageEvents.cs`, which publishes over MassTransit; `AddIntegrationEventMessaging` registers it alongside the bus it publishes onto. It replaced an `IDomainEvent` / `IDomainEventHandler<T>` / `IDomainEventDispatcher` trio plus a dispatcher that resolved handlers out of the container — three interfaces, two event records and two handler classes, for two events that had exactly one handler each. If an event ever genuinely needs several independent reactions, add them on the bus side rather than reviving in-process dispatch.
 
-CDN rewriting is applied outside the services, via decorators in `IK.Imager.Core/Cdn/CdnDecorators.cs` — a service always returns the raw blob URL, and `CdnImageUploader` / `CdnImageLookup` swap in the CDN host when `Cdn:Uri` is configured. This is the one reason the services have interfaces at all, and it is what the by-type-then-interface pair in `AddImagerCore` is for: `AddScoped<ImageLookup>()` registers the concrete service, and `AddScoped<IImageLookup>(…)` resolves to the decorator wrapping it. `IImageDeleter` and `IThumbnailGenerator` return no URLs and are registered plainly. Add a decorator there rather than touching a service when a new response needs URL rewriting.
+CDN rewriting is applied outside the services, by a decorator sitting next to the service it wraps — `Uploading/CdnImageUploader.cs` and `Lookup/CdnImageLookup.cs`. A service always returns the raw blob URL and the decorator swaps in the CDN host when `Cdn:Uri` is configured. This is the one reason the services have interfaces at all, and it is what the by-type-then-interface pair in `AddImagerCore` is for: `AddScoped<ImageLookup>()` registers the concrete service, and `AddScoped<IImageLookup>(…)` resolves to the decorator wrapping it. `IImageDeleter` and `IThumbnailGenerator` return no URLs and are registered plainly. Add a decorator in the feature folder rather than touching a service when a new response needs URL rewriting.
 
 ### Project layout
 

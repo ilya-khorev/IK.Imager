@@ -1,12 +1,15 @@
 using System;
 using IK.Imager.Core.Abstractions;
 using IK.Imager.Core.Abstractions.Cdn;
+using IK.Imager.Core.Abstractions.Deleting;
+using IK.Imager.Core.Abstractions.Lookup;
 using IK.Imager.Core.Abstractions.Thumbnails;
-using IK.Imager.Core.Abstractions.Validation;
+using IK.Imager.Core.Abstractions.Uploading;
 using IK.Imager.Core.Cdn;
-using IK.Imager.Core.Settings;
+using IK.Imager.Core.Deleting;
+using IK.Imager.Core.Lookup;
 using IK.Imager.Core.Thumbnails;
-using IK.Imager.Core.Validation;
+using IK.Imager.Core.Uploading;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -19,7 +22,7 @@ public static class ServiceCollectionExtensions
     public const string ImageLimitationsSectionName = "ImageLimitations";
 
     /// <summary>
-    /// Registers the core services - handlers, thumbnail resizing, validation, CDN - and binds their settings.
+    /// Registers the core services - one per feature, plus the pieces they are built from - and binds their settings.
     /// </summary>
     /// <param name="services">The service collection to add the registrations to.</param>
     /// <param name="configuration">The configuration root - this module locates its own sections within it.</param>
@@ -45,18 +48,18 @@ public static class ServiceCollectionExtensions
         var imageDownloadClientBuilder = services.AddHttpClient<ImageDownloadClient>();
         configureImageDownloadClient?.Invoke(imageDownloadClientBuilder);
 
-        RegisterServices(services);
+        RegisterFeatureServices(services);
 
         return services;
     }
 
-    private static void RegisterServices(IServiceCollection services)
+    private static void RegisterFeatureServices(IServiceCollection services)
     {
         services.AddScoped<IImageDeleter, ImageDeleter>();
         services.AddScoped<IThumbnailGenerator, ThumbnailGenerator>();
 
         //The two services returning image urls are wrapped into a CDN decorator, which is why they are
-        //registered by their own type first - see IK.Imager.Core/Cdn/CdnDecorators.cs
+        //registered by their own type first - see Lookup/CdnImageLookup.cs and Uploading/CdnImageUploader.cs
         services.AddScoped<ImageLookup>();
         services.AddScoped<IImageLookup>(s =>
             new CdnImageLookup(s.GetRequiredService<ImageLookup>(), s.GetRequiredService<ICdnService>()));

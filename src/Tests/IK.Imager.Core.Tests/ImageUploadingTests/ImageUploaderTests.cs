@@ -1,7 +1,8 @@
 using System.Net.Http;
 using System.Threading.Tasks;
 using IK.Imager.Core.Abstractions;
-using IK.Imager.Core.Abstractions.Validation;
+using IK.Imager.Core.Abstractions.Uploading;
+using IK.Imager.Core.Uploading;
 using IK.Imager.Storage.Abstractions.Repositories;
 using Microsoft.Extensions.Logging;
 using Moq;

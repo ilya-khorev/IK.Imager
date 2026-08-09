@@ -1,7 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace IK.Imager.Core.Abstractions;
+namespace IK.Imager.Core.Abstractions.Thumbnails;
 
 /// <summary>
 /// Generates the thumbnails of an already uploaded image and attaches them to its metadata.

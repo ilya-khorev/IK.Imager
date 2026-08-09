@@ -6,7 +6,7 @@ using AutoFixture;
 using IK.Imager.Core.Abstractions;
 using IK.Imager.Core.Abstractions.Models;
 using IK.Imager.Core.Abstractions.Thumbnails;
-using IK.Imager.Core.Settings;
+using IK.Imager.Core.Thumbnails;
 using IK.Imager.Storage.Abstractions.Models;
 using IK.Imager.Storage.Abstractions.Repositories;
 using Microsoft.Extensions.Logging;

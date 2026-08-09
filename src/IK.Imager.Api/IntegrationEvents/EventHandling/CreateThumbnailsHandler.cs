@@ -1,6 +1,6 @@
 using System.Threading.Tasks;
 using IK.Imager.Api.IntegrationEvents.Events;
-using IK.Imager.Core.Abstractions;
+using IK.Imager.Core.Abstractions.Thumbnails;
 using IK.Imager.Utils;
 using MassTransit;
 // ReSharper disable ClassNeverInstantiated.Global

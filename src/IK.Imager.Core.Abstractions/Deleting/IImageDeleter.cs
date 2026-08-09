@@ -1,7 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace IK.Imager.Core.Abstractions;
+namespace IK.Imager.Core.Abstractions.Deleting;
 
 /// <summary>
 /// Removes an image, in the two stages the system deletes in: the metadata goes first, so the image stops
