@@ -43,15 +43,6 @@ public class ImageResizing: IImageResizing
         
         MemoryStream resultStream = new MemoryStream();
         image.Save(resultStream, imageEncoder);
-        return new ImageResizingResult
-        {
-            Image = resultStream,
-            Size = new ImageSize
-            {
-                Bytes = resultStream.Length,
-                Width = image.Width,
-                Height = image.Height
-            }
-        };
+        return new ImageResizingResult(resultStream, new ImageSize(image.Width, image.Height, resultStream.Length));
     }
 }

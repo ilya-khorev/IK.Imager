@@ -1,30 +1,12 @@
-﻿namespace IK.Imager.Core.Abstractions.Models
-{
-    public class ImageFormat
-    {
-        public ImageFormat(string mimeType, string fileExtension, ImageType imageType)
-        {
-            MimeType = mimeType;
-            FileExtension = fileExtension;
-            ImageType = imageType;
-        }
-        
-        /// <summary>
-        /// .bmp, jpg, .jpeg, .png, .gif, .bmp, etc.
-        /// </summary>
-        public string FileExtension { get; }
-        
-        /// <summary>
-        /// Standard that indicates the nature and format of a file.
-        /// E.g. 'image/jpeg', 'image/png', 'image/bmp', 'image/gif'
-        /// </summary>
-        public string MimeType { get; }
-        
-        public ImageType ImageType { get; }
+namespace IK.Imager.Core.Abstractions.Models;
 
-        public override string ToString()
-        {
-            return $"FileExtension:{FileExtension}, MimeType:{MimeType}, ImageType:{MimeType}";
-        }
-    }
-}
+/// <summary>
+/// The format a stream was identified as. Read once off the stream and never changed afterwards.
+/// </summary>
+/// <param name="MimeType">
+/// Standard that indicates the nature and format of a file.
+/// E.g. 'image/jpeg', 'image/png', 'image/bmp', 'image/gif'
+/// </param>
+/// <param name="FileExtension">.bmp, jpg, .jpeg, .png, .gif, .bmp, etc.</param>
+/// <param name="ImageType">The format as one of the types the system supports.</param>
+public record ImageFormat(string MimeType, string FileExtension, ImageType ImageType);

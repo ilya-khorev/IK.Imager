@@ -3,7 +3,7 @@ namespace IK.Imager.Api.Contract.ImageUpload;
 /// <summary>
 /// Model that represent a request for uploading a new image
 /// </summary>
-public abstract class UploadImageRequestBase
+public abstract record UploadImageRequestBase
 {
     /// <summary>
     /// Image group represents a logical group to which this image belong.
@@ -12,7 +12,7 @@ public abstract class UploadImageRequestBase
     /// 
     /// Image group is also used as partition to evenly spread data, and to make lookup requests more efficient.
     /// </summary>
-    public string ImageGroup { get; set; } = null!;
+    public string ImageGroup { get; init; } = null!;
         
     //todo optional image name
 }

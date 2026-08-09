@@ -162,11 +162,7 @@ namespace IK.Imager.Core.Tests.ThumbnailsTests
                     It.IsAny<Stream>(),
                     It.IsAny<IK.Imager.Core.Abstractions.Models.ImageType>(),
                     It.IsAny<int>()))
-                .Returns(new ImageResizingResult()
-                {
-                    Image = new MemoryStream(),
-                    Size = new Fixture().Create<ImageSize>()
-                });
+                .Returns(new ImageResizingResult(new MemoryStream(), new Fixture().Create<ImageSize>()));
             
             var thumbnailGenerator = new ThumbnailGenerator(_logger, _imageResizingMock.Object,
                 _blobRepositoryMock.Object, _metadataRepositoryMock.Object,

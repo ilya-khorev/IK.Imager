@@ -70,11 +70,6 @@ public class ImageMetadataReader: IImageMetadataReader
             return null;
         }
 
-        return new ImageSize
-        {
-            Bytes = imageStream.Length,
-            Width = identify.Width,
-            Height = identify.Height
-        };
+        return new ImageSize(identify.Width, identify.Height, imageStream.Length);
     }
 }

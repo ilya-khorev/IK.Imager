@@ -27,20 +27,11 @@ public class ImageEvents : IImageEvents
         //If the program fails at this stage, this message is not sent and therefore thumbnails are not generated for the image.
         //Such cases are handled when requesting an image metadata object later by resending this event again.
 
-        await _publishEndpoint.Publish(new OriginalImageUploadedIntegrationEvent
-        {
-            ImageId = imageId,
-            ImageGroup = imageGroup
-        }, cancellationToken);
+        await _publishEndpoint.Publish(new OriginalImageUploadedIntegrationEvent(imageId, imageGroup), cancellationToken);
     }
 
     public async Task ImageMetadataDeleted(string imageId, string imageName, string[] thumbnailNames, CancellationToken cancellationToken)
     {
-        await _publishEndpoint.Publish(new ImageMetadataDeletedIntegrationEvent
-        {
-            ImageId = imageId,
-            ImageName = imageName,
-            ThumbnailNames = thumbnailNames
-        }, cancellationToken);
+        await _publishEndpoint.Publish(new ImageMetadataDeletedIntegrationEvent(imageId, imageName, thumbnailNames), cancellationToken);
     }
 }

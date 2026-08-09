@@ -30,6 +30,23 @@ Shared MSBuild settings live outside the individual `.csproj` files, so most of 
 
 Nullable reference types are on everywhere. Config-bound options classes and models populated by deserialization use `= null!` rather than `required`, which keeps today's behaviour (a missing value fails at first use) and keeps `IK.Imager.Api.Contract` usable from `netstandard2.1`, where `required` does not exist.
 
+### Records, and where they stop
+
+A model is a `record` when it is built once and only read afterwards. Two shapes are in use, deliberately:
+
+- **Positional**, for the small core value objects — `ImageFormat`, `ImageSize`, `ImageResizingResult`, and the two integration events. Everything is passed at construction, so there is nothing to say twice.
+- **`init` properties, not positional**, for every `IK.Imager.Api.Contract` model. The OpenAPI schema descriptions come from the `<summary>` of each property, which a positional record would have to express as `<param>` on the primary constructor; keeping properties keeps the document identical and keeps the object-initializer call sites in the endpoint mappings readable. Model binding populates `init` properties fine — verified against a running host for JSON bodies, for a record inheriting `UploadImageRequestBase`, and for the multipart `UploadImageFileRequest` including its `IFormFile`.
+
+`IK.Imager.Api.Contract` is `netstandard2.1`, which predates `System.Runtime.CompilerServices.IsExternalInit` — the type every `init` accessor compiles a reference to. `IsExternalInit.cs` declares it `internal` so it never collides with the real one in a consumer. Removing that file breaks every `init` in the project.
+
+These stay classes, each for a reason worth not re-litigating:
+
+- **`IK.Imager.Core.Abstractions` `ImageInfo` / `ImageFullInfoWithThumbnails` / `ImageLookupResult`** — the CDN decorators rewrite `Url` in place, including on thumbnails nested in a list. Immutability would mean rebuilding those lists with `with`, which is more code than the assignment it replaces.
+- **`ImageMetadata`** — hand-writes `IEquatable` with a *sequence* comparison of `Thumbnails`. A generated record equality would silently downgrade that to reference equality on the `List<>`. It is also Newtonsoft-bound for Cosmos and mutated in place before the upsert.
+- **The options classes** (`CdnSettings`, `ImageThumbnailsSettings`, `ImageLimitationSettings`, `TopicsConfiguration`) — `IOptions<T>` resolves through `Activator.CreateInstance<T>()` and needs a public parameterless constructor, which a positional record does not have. That failure appears at first resolve, not at compile time.
+
+Note the value equality of `ImageLookupResult` and `ImageFullInfoWithThumbnails` is only as deep as their `List<>` properties, i.e. reference equality for the collections. Do not lean on `==` for these.
+
 ### Test prerequisites
 
 - `IK.Imager.Core.Tests` — xUnit + Moq + AutoFixture, fully in-memory (`Tests/IK.Imager.Core.Tests/Mocks/`). Sample images under `Images/` are copied to the output dir. **No Docker needed.**
