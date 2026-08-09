@@ -51,11 +51,15 @@ A single ASP.NET Core service (`IK.Imager.Api`) that both serves the HTTP API **
 
 ### Request flow
 
-Dispatch is hand-rolled rather than via a mediator library. `IK.Imager.Core.Abstractions/Messaging` defines `ICommandHandler<TCommand>`, `ICommandHandler<TCommand, TResult>`, `IQueryHandler<TQuery, TResult>`, and `IDomainEvent` / `IDomainEventHandler<T>` / `IDomainEventDispatcher`. Endpoint handlers are thin: they take the handler interface they need as a parameter (resolved from DI), call `Handle(...)`, and map the core model to the `IK.Imager.Api.Contract` model with the `ToContract()` extensions in `IK.Imager.Api/Mapping/ContractMappingExtensions.cs` (hand-written — there is no AutoMapper).
+Dispatch is hand-rolled rather than via a mediator library. `IK.Imager.Core.Abstractions/Messaging` defines `ICommandHandler<TCommand>`, `ICommandHandler<TCommand, TResult>`, `IQueryHandler<TQuery, TResult>`, and `IDomainEvent` / `IDomainEventHandler<T>` / `IDomainEventDispatcher`. Endpoint handlers are thin: they take the handler interface they need as a parameter (resolved from DI), call `Handle(...)`, and map the core model to the `IK.Imager.Api.Contract` model with a private `ToContract()` in their own endpoint file (hand-written — there is no AutoMapper, and there is no shared mapping class).
 
 ### Endpoints are minimal APIs, grouped by feature
 
-There are no controllers and no MVC services — `IK.Imager.Api/Features` holds one folder per feature (`ImageUpload`, `ImageLookup`, `ImageDeleting`), and a feature owns its routes, its request models and its FluentValidation validators. Each folder exposes a `Map…Endpoints(this IEndpointRouteBuilder)` extension; `Features/ImagerEndpoints.cs` creates the `/Images` group (tagged `Images`, which is what keeps the Swagger UI grouping the controller used to give) and calls them. Add an endpoint to the feature it belongs to, never to the aggregator.
+There are no controllers and no MVC services — `IK.Imager.Api/Features` holds one folder per feature (`ImageUpload`, `ImageLookup`, `ImageDeleting`), and a feature owns its routes, its request models, its FluentValidation validators and its mapping onto the contract models. Each folder exposes a `Map…Endpoints(this IEndpointRouteBuilder)` extension; `Features/ImagerEndpoints.cs` creates the `/Images` group (tagged `Images`, which is what keeps the Swagger UI grouping the controller used to give) and calls them. Add an endpoint to the feature it belongs to, never to the aggregator.
+
+A slice is kept self-contained rather than DRY: `ImageLookup` maps a thumbnail onto `Contract.ImageInfo` itself instead of reaching for the identical mapping in `ImageUpload`. Eight assignments are not worth coupling two features together — factor a mapping out only once a third feature needs it.
+
+`IK.Imager.Api.Contract` mirrors the same three folders, so a request model and the endpoint that binds it are found the same way from either side. Its **namespace stays flat `IK.Imager.Api.Contract`** for every file regardless of folder — it is the DTO package clients compile against, and moving types between namespaces breaks them for nothing.
 
 Route paths are unchanged from the controller era: `POST /Images/Upload`, `POST /Images/UploadByUrl`, `POST /Images/Search`, `DELETE /Images`.
 
@@ -94,9 +98,9 @@ The convention: each method takes the **configuration root** and owns its sectio
 
 Health checks stay in the host (`Extensions/ObservabilityExtensions.cs`) rather than moving into the storage modules — `AspNetCore.HealthChecks.*` is versioned independently and which endpoints get probed is an operational decision. They read the storage connection settings through `IOptions<T>` so a probe can never target a different database or container than the repositories do.
 
-`AddApiServices()` is what the endpoints need rather than an MVC layer: the `GlobalExceptionHandler`, `AddProblemDetails()`, and every validator in the assembly. `UseImagerPipeline()` (`Extensions/WebApplicationExtensions.cs`) puts `UseExceptionHandler()` outermost and then maps the OpenAPI document, the Service Fabric middleware, `MapImagerEndpoints()` and the health endpoints.
+`AddApiServices()` is what the endpoints need rather than an MVC layer: the `GlobalExceptionHandler`, `AddProblemDetails()`, and every validator in the assembly.
 
-The host uses minimal hosting: `IK.Imager.Api/Program.cs` is a top-level-statements file that only wires configuration and logging, then calls the module extensions and `UseImagerPipeline()`. There is no `Startup` class. It turns on `ValidateScopes` + `ValidateOnBuild` in every environment — nothing tests the container, so a captive dependency or a dropped registration should fail at `builder.Build()` rather than on the first request.
+The host uses minimal hosting: `IK.Imager.Api/Program.cs` is a top-level-statements file that wires configuration and logging, calls the module extensions, and then builds the pipeline inline — `UseExceptionHandler()` outermost, the OpenAPI document and its Swagger UI, `MapImagerEndpoints()`, `MapImagerHealthChecks()`. There is no `Startup` class and no `UseImagerPipeline()` extension: four lines are clearer where they run than behind a name. It turns on `ValidateScopes` + `ValidateOnBuild` in every environment — nothing tests the container, so a captive dependency or a dropped registration should fail at `builder.Build()` rather than on the first request.
 
 ### API documentation
 

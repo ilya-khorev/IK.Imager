@@ -1,6 +1,5 @@
 using System.Threading;
 using System.Threading.Tasks;
-using IK.Imager.Api.Mapping;
 using IK.Imager.Api.Validation;
 using IK.Imager.Core.Abstractions.Messaging;
 using IK.Imager.Core.ImageUploading;
@@ -87,4 +86,18 @@ public static class UploadImageEndpoints
 
         return TypedResults.Ok(uploadImageResult.ToContract());
     }
+
+    //hand-written, there is no AutoMapper - and it stays inside the feature that returns the model
+    private static Contract.ImageInfo ToContract(this CoreModels.ImageInfo source) =>
+        new()
+        {
+            Id = source.Id,
+            Url = source.Url.ToString(),
+            Hash = source.Hash,
+            DateAdded = source.DateAdded,
+            Width = source.Width,
+            Height = source.Height,
+            Bytes = source.Bytes,
+            MimeType = source.MimeType
+        };
 }

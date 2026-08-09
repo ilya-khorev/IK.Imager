@@ -1,6 +1,6 @@
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using IK.Imager.Api.Mapping;
 using IK.Imager.Api.Validation;
 using IK.Imager.Core.Abstractions.Messaging;
 using IK.Imager.Core.ImageSearch;
@@ -52,4 +52,41 @@ public static class SearchImagesEndpoints
 
         return TypedResults.Ok(searchResult.ToContract());
     }
+
+    //hand-written, there is no AutoMapper - and it stays inside the feature that returns the model
+    private static Contract.ImagesSearchResult ToContract(this CoreModels.ImagesSearchResult source) =>
+        new()
+        {
+            Images = source.Images.Select(ToContract).ToList()
+        };
+
+    private static Contract.ImageFullInfoWithThumbnails ToContract(this CoreModels.ImageFullInfoWithThumbnails source) =>
+        new()
+        {
+            Id = source.Id,
+            Url = source.Url.ToString(),
+            Hash = source.Hash,
+            DateAdded = source.DateAdded,
+            Width = source.Width,
+            Height = source.Height,
+            Bytes = source.Bytes,
+            MimeType = source.MimeType,
+            Tags = source.Tags,
+            Thumbnails = source.Thumbnails.Select(ToThumbnailContract).ToList()
+        };
+
+    //a thumbnail is the same shape as the model the upload feature returns, but mapping it here keeps this
+    //endpoint readable on its own - a feature is not worth coupling to another one over eight assignments
+    private static Contract.ImageInfo ToThumbnailContract(CoreModels.ImageInfo source) =>
+        new()
+        {
+            Id = source.Id,
+            Url = source.Url.ToString(),
+            Hash = source.Hash,
+            DateAdded = source.DateAdded,
+            Width = source.Width,
+            Height = source.Height,
+            Bytes = source.Bytes,
+            MimeType = source.MimeType
+        };
 }
