@@ -1,9 +1,9 @@
-﻿using System;
+using System;
 // ReSharper disable NonReadonlyMemberInGetHashCode
 
 namespace IK.Imager.Storage.Abstractions.Models
 {
-    public class ImageThumbnail: IImageBasicDetails, IEquatable<ImageThumbnail>
+    public class ImageThumbnail : IImageBasicDetails, IEquatable<ImageThumbnail>
     {
         public string Id { get; set; } = null!;
         public string Name { get; set; } = null!;
@@ -18,7 +18,7 @@ namespace IK.Imager.Storage.Abstractions.Models
         {
             if (ReferenceEquals(null, other))
                 return false;
-            if (ReferenceEquals(this, other)) 
+            if (ReferenceEquals(this, other))
                 return true;
 
             return Id == other.Id
@@ -33,13 +33,13 @@ namespace IK.Imager.Storage.Abstractions.Models
 
         public override bool Equals(object? obj)
         {
-            if (ReferenceEquals(null, obj)) 
+            if (ReferenceEquals(null, obj))
                 return false;
-            if (ReferenceEquals(this, obj)) 
+            if (ReferenceEquals(this, obj))
                 return true;
-            if (obj.GetType() != GetType()) 
+            if (obj.GetType() != GetType())
                 return false;
-            return Equals((ImageThumbnail) obj);
+            return Equals((ImageThumbnail)obj);
         }
 
         public override int GetHashCode()

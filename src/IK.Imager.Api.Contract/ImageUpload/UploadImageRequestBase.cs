@@ -13,6 +13,6 @@ public abstract record UploadImageRequestBase
     /// Image group is also used as partition to evenly spread data, and to make lookup requests more efficient.
     /// </summary>
     public string ImageGroup { get; init; } = null!;
-        
+
     //todo optional image name
 }

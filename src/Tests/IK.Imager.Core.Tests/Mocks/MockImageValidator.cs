@@ -3,7 +3,7 @@ using IK.Imager.Core.Abstractions.Uploading;
 
 namespace IK.Imager.Core.Tests.Mocks
 {
-    public class MockImageValidator: IImageValidator
+    public class MockImageValidator : IImageValidator
     {
         public ValidationResult CheckFormat(ImageFormat? imageFormat)
         {

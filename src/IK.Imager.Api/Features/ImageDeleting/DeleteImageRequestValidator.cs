@@ -5,7 +5,7 @@ using IK.Imager.Api.Validation;
 
 namespace IK.Imager.Api.Features.ImageDeleting;
 
-public class DeleteImageRequestValidator: AbstractValidator<DeleteImageRequest>
+public class DeleteImageRequestValidator : AbstractValidator<DeleteImageRequest>
 {
     public DeleteImageRequestValidator()
     {

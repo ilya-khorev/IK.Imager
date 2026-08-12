@@ -12,7 +12,7 @@ namespace IK.Imager.Api.IntegrationEvents.EventHandling;
 /// Removing files of the original image and its thumbnails.
 /// Metadata object has been already removed before this event was delivered.
 /// </summary>
-public class RemoveImageFilesHandler: IConsumer<ImageMetadataDeletedIntegrationEvent>
+public class RemoveImageFilesHandler : IConsumer<ImageMetadataDeletedIntegrationEvent>
 {
     private readonly IImageDeleter _imageDeleter;
 

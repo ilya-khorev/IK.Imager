@@ -4,7 +4,7 @@ using IK.Imager.Api.Validation;
 
 namespace IK.Imager.Api.Features.ImageUpload;
 
-public class UploadImageFileRequestValidator: AbstractValidator<UploadImageFileRequest>
+public class UploadImageFileRequestValidator : AbstractValidator<UploadImageFileRequest>
 {
     public UploadImageFileRequestValidator()
     {

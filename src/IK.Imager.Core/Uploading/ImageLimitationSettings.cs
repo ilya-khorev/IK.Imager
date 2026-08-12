@@ -66,7 +66,7 @@ public class ImageLimitationSettings
                 Max = settings.SizeBytes.Max
             };
         }
-        
+
         if (settings.AspectRatio != null)
         {
             AspectRatio = new Range<double>
@@ -76,7 +76,7 @@ public class ImageLimitationSettings
             };
         }
 
-        if (settings.Types != null) 
+        if (settings.Types != null)
             Types = settings.Types.ToList();
     }
 }
@@ -84,7 +84,7 @@ public class ImageLimitationSettings
 /// <summary>
 /// Type that represent a range with min and max values
 /// </summary>
-public class Range<T> where T: IComparable<T>
+public class Range<T> where T : IComparable<T>
 {
     /// <summary>
     /// Min value

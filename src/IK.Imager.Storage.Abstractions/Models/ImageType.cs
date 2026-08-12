@@ -1,4 +1,4 @@
-﻿namespace IK.Imager.Storage.Abstractions.Models
+namespace IK.Imager.Storage.Abstractions.Models
 {
     public enum ImageType
     {
@@ -26,7 +26,7 @@
         /// Tag Image File Format
         /// </summary>
         TIFF,
-        
+
         WEBP
     }
 }

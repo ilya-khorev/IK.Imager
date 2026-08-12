@@ -58,7 +58,7 @@ internal static class FluentValidationRules
             case INotEmptyValidator:
                 Require(containerSchema, propertyName);
                 //"required" only says the member is present - the empty value has to be excluded separately
-                if (propertySchema?.Type is {} notEmptyType)
+                if (propertySchema?.Type is { } notEmptyType)
                 {
                     if (notEmptyType.HasFlag(JsonSchemaType.Array))
                         propertySchema.MinItems = Math.Max(propertySchema.MinItems ?? 0, 1);

@@ -40,7 +40,7 @@ namespace IK.Imager.Core.Tests
             await using var fileStream = ImageTestsHelper.OpenFileForReading(filePath);
             Assert.Throws<NotSupportedException>(() => _imageMetadataReader.DetectFormat(fileStream));
         }
-        
+
         [Theory]
         [InlineData(ImageTestsHelper.TextFilePath)]
         public async Task DetectFormat_UnrecognizedFormat_ReturnsNull(string filePath)
@@ -49,7 +49,7 @@ namespace IK.Imager.Core.Tests
             var format = _imageMetadataReader.DetectFormat(fileStream);
             Assert.Null(format);
         }
-        
+
         [Theory]
         [InlineData(ImageTestsHelper.JpegImagesDirectory + "/1043-1200x900.jpg", 1200, 900, 265504)]
         [InlineData(ImageTestsHelper.BmpImagesDirectory + "/1068-1000x2000.bmp", 1000, 2000, 8000138)]

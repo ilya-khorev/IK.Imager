@@ -30,7 +30,7 @@ public class ImageDeleter(
     {
         logger.LogDebug(MetadataRemoving, imageId, imageGroup);
 
-        var metadata = await metadataRepository.GetMetadata(new List<string> {imageId}, imageGroup, cancellationToken);
+        var metadata = await metadataRepository.GetMetadata(new List<string> { imageId }, imageGroup, cancellationToken);
         if (metadata == null || !metadata.Any())
             return false;
 

@@ -13,14 +13,14 @@ using SixLabors.ImageSharp.Processing;
 
 namespace IK.Imager.Core.Thumbnails;
 
-public class ImageResizing: IImageResizing
+public class ImageResizing : IImageResizing
 {
     public ImageResizingResult Resize(Stream imageStream, ImageType imageType, int targetWidth)
     {
         ArgumentHelper.AssertNotNull(nameof(imageStream), imageStream);
 
         imageStream.Position = 0;
-        
+
         IImageEncoder imageEncoder = imageType switch
         {
             ImageType.JPEG => new JpegEncoder(),
@@ -30,7 +30,7 @@ public class ImageResizing: IImageResizing
         };
 
         using var image = Image.Load(imageStream);
-        
+
         decimal divisor = (decimal)image.Width / targetWidth;
         var targetHeight = Convert.ToInt32(Math.Round(image.Height / divisor));
 
@@ -40,7 +40,7 @@ public class ImageResizing: IImageResizing
                 Size = new Size(targetWidth, targetHeight),
                 Mode = ResizeMode.Max
             }));
-        
+
         MemoryStream resultStream = new MemoryStream();
         image.Save(resultStream, imageEncoder);
         return new ImageResizingResult(resultStream, new ImageSize(image.Width, image.Height, resultStream.Length));

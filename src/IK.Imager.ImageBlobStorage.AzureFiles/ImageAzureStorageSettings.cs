@@ -1,4 +1,4 @@
-﻿namespace IK.Imager.ImageBlobStorage.AzureFiles
+namespace IK.Imager.ImageBlobStorage.AzureFiles
 {
     public class ImageAzureStorageSettings
     {

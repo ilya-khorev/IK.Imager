@@ -8,7 +8,7 @@ public record ImageSize(int Width, int Height, long Bytes)
     /// <summary>
     /// The ratio of the width to the height.
     /// </summary>
-    public double AspectRatio => (double) Width / Height;
+    public double AspectRatio => (double)Width / Height;
 
     //the generated ToString would not mention AspectRatio, and this one is written into the logs
     public override string ToString()

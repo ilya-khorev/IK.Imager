@@ -15,28 +15,28 @@ namespace IK.Imager.Core.Tests.ValidationTests
             var optionsMock = new Mock<IOptionsSnapshot<ImageLimitationSettings>>();
             optionsMock.Setup(x => x.Value).Returns(new ImageLimitationSettings()
             {
-                Types = new List<string> { "PNG", "BMP", "JPEG", "GIF"}
+                Types = new List<string> { "PNG", "BMP", "JPEG", "GIF" }
             });
-            
+
             var imageValidator = new ImageValidator(optionsMock.Object);
             var validationResult = imageValidator.CheckFormat(new ImageFormat("image/jpeg", ".jpg", ImageType.JPEG));
             Assert.True(validationResult.IsValid);
         }
-        
+
         [Fact]
         public void CheckFormat_Null_InvalidResult()
         {
             var optionsMock = new Mock<IOptionsSnapshot<ImageLimitationSettings>>();
             optionsMock.Setup(x => x.Value).Returns(new ImageLimitationSettings()
             {
-                Types = new List<string> { "PNG", "BMP", "JPEG", "GIF"}
+                Types = new List<string> { "PNG", "BMP", "JPEG", "GIF" }
             });
-            
+
             var imageValidator = new ImageValidator(optionsMock.Object);
             var validationResult = imageValidator.CheckFormat(null);
             Assert.False(validationResult.IsValid);
         }
-        
+
         [Fact]
         public void CheckFormat_UnsupportedFormat_InvalidResult()
         {
@@ -45,7 +45,7 @@ namespace IK.Imager.Core.Tests.ValidationTests
             {
                 Types = new List<string> { "PNG" }
             });
-            
+
             var imageValidator = new ImageValidator(optionsMock.Object);
             var validationResult = imageValidator.CheckFormat(new ImageFormat("image/jpeg", ".jpg", ImageType.JPEG));
             Assert.False(validationResult.IsValid);
@@ -60,7 +60,7 @@ namespace IK.Imager.Core.Tests.ValidationTests
             var validationResult = imageValidator.CheckSize(size);
             Assert.True(validationResult.IsValid);
         }
-        
+
         [Fact]
         public void CheckSize_SizeIsGreaterThanThreshold_InvalidResult()
         {
@@ -71,7 +71,7 @@ namespace IK.Imager.Core.Tests.ValidationTests
             Assert.False(validationResult.IsValid);
             Assert.Equal(ImageValidator.IncorrectSizeKey, validationResult.ValidationErrors[0].Key);
         }
-        
+
         [Fact]
         public void CheckSize_SizeIsSmallerThanThreshold_InvalidResult()
         {
@@ -82,7 +82,7 @@ namespace IK.Imager.Core.Tests.ValidationTests
             Assert.False(validationResult.IsValid);
             Assert.Equal(ImageValidator.IncorrectSizeKey, validationResult.ValidationErrors[0].Key);
         }
-        
+
         [Theory]
         [InlineData(1, 0)]
         [InlineData(-1, 0)]
@@ -115,7 +115,7 @@ namespace IK.Imager.Core.Tests.ValidationTests
             Assert.False(validationResult.IsValid);
             Assert.Equal(ImageValidator.IncorrectDimensionKey, validationResult.ValidationErrors[0].Key);
         }
-        
+
         [Fact]
         public void CheckSize_AspectRatioIsSmallerThanThreshold_InvalidResult()
         {
@@ -127,7 +127,7 @@ namespace IK.Imager.Core.Tests.ValidationTests
             Assert.False(validationResult.IsValid);
             Assert.Equal(ImageValidator.IncorrectAspectRatioKey, validationResult.ValidationErrors[0].Key);
         }
-        
+
         [Fact]
         public void CheckSize_AspectRatioIsGreaterThanThreshold_InvalidResult()
         {
@@ -144,7 +144,7 @@ namespace IK.Imager.Core.Tests.ValidationTests
         {
             return new ImageSize(300, 300, 500000);
         }
-        
+
         private IOptionsSnapshot<ImageLimitationSettings> GetSettings()
         {
             var optionsMock = new Mock<IOptionsSnapshot<ImageLimitationSettings>>();

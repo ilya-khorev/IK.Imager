@@ -4,8 +4,8 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using AutoFixture;
-using IK.Imager.Core.Abstractions.Models;
 using IK.Imager.Core.Abstractions.Lookup;
+using IK.Imager.Core.Abstractions.Models;
 using IK.Imager.Core.Lookup;
 using IK.Imager.Storage.Abstractions.Models;
 using IK.Imager.Storage.Abstractions.Repositories;
@@ -36,21 +36,21 @@ public class LookupByIdsTests
     {
         _blobRepositoryMock.Setup(x => x.GetImageUri(It.IsAny<string>(), It.IsAny<ImageSizeType>()))
             .Returns(new Uri("https://test.com"));
-        
+
         List<ImageMetadata> imageMetadataList = new Fixture().CreateMany<ImageMetadata>(imagesCount).ToList();
-        
+
         _metadataRepositoryMock.Setup(x => x.GetMetadata(
                 It.IsAny<ICollection<string>>(),
                 It.IsAny<string>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(imageMetadataList);
-        
+
         ImageLookup imageLookup = new ImageLookup(_logger, _metadataRepositoryMock.Object, _blobRepositoryMock.Object);
         var result = await imageLookup.LookupByIds(new Fixture().Create<string[]>(), new Fixture().Create<string>(), CancellationToken.None);
 
         CompareFields(imageMetadataList, result);
     }
- 
+
     private void CompareFields(List<ImageMetadata> expectedImages, ImageLookupResult actualImages)
     {
         for (int i = 0; i < expectedImages.Count; i++)
@@ -58,7 +58,7 @@ public class LookupByIdsTests
             CompareFields(expectedImages[i], actualImages.Images[i]);
         }
     }
-    
+
     private void CompareFields(ImageMetadata expectedImage, ImageFullInfoWithThumbnails actualImage)
     {
         Assert.Equal(expectedImage.SizeBytes, actualImage.Bytes);
