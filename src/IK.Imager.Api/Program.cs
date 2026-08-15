@@ -56,3 +56,10 @@ app.MapImagerEndpoints();
 app.MapImagerHealthChecks();
 
 await app.RunAsync();
+
+/// <summary>
+/// The entry point class the compiler generates for these top-level statements is internal, and
+/// WebApplicationFactory needs a public one to boot the host from. Declaring the partial here makes it
+/// public without a second InternalsVisibleTo - see IK.Imager.Api.Tests.
+/// </summary>
+public partial class Program;

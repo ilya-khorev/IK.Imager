@@ -1,3 +1,4 @@
+using System;
 using IK.Imager.Api.IntegrationEvents;
 using IK.Imager.Api.IntegrationEvents.EventHandling;
 using IK.Imager.Api.IntegrationEvents.Events;
@@ -15,6 +16,21 @@ public static class MessagingServiceCollectionExtensions
 {
     public const string TopicsSectionName = "Topics";
     public const string ServiceBusConnectionStringPath = "ServiceBus:ConnectionString";
+    public const string ServiceBusTransportPath = "ServiceBus:Transport";
+
+    /// <summary>
+    /// The <see cref="ServiceBusTransportPath"/> value that swaps Azure Service Bus for MassTransit's
+    /// in-memory transport. Anything else - including the absent setting - keeps Azure Service Bus.
+    ///
+    /// Azure Service Bus is the one dependency of this service with no emulator MassTransit 8 can drive:
+    /// the emulator only grew an administration API in 2026, and MassTransit only speaks to it from v9,
+    /// which is commercially licensed. So the API integration tests select the in-memory transport here,
+    /// which also makes the service runnable locally without a real Service Bus namespace.
+    ///
+    /// In-memory is a single-process transport with no persistence - it is a test and local-development
+    /// option, never a deployment one.
+    /// </summary>
+    public const string InMemoryTransport = "InMemory";
 
     /// <summary>
     /// Registers everything that carries integration events over Azure Service Bus - the topic configuration,
@@ -30,9 +46,21 @@ public static class MessagingServiceCollectionExtensions
         //here rather than in AddImagerCore, which has no way to publish anything
         services.AddScoped<IImageEvents, ImageEvents>();
 
+        var useInMemoryTransport = string.Equals(configuration.GetValue<string>(ServiceBusTransportPath),
+            InMemoryTransport, StringComparison.OrdinalIgnoreCase);
+
         services.AddMassTransit(x =>
         {
             x.AddConsumers(typeof(MessagingServiceCollectionExtensions).Assembly);
+
+            //the consumers, the events and the publish/consume path are the same either way - only the
+            //transport underneath them differs, so the entity naming below has no in-memory equivalent
+            if (useInMemoryTransport)
+            {
+                x.UsingInMemory((context, cfg) => cfg.ConfigureEndpoints(context));
+                return;
+            }
+
             x.UsingAzureServiceBus((context, cfg) =>
             {
                 cfg.Host(configuration.GetValue<string>(ServiceBusConnectionStringPath));
