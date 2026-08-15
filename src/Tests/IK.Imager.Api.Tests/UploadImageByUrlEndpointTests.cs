@@ -85,19 +85,12 @@ public class UploadImageByUrlEndpointTests(ImagerApiFixture fixture) : ImagerApi
     }
 
     /// <summary>
-    /// Pins today's behaviour, which is not the documented one.
-    ///
-    /// A well formed url passes the request validator, so an unreachable one only fails further in:
-    /// ImageDownloadClient returns null, and ImageUploader.UploadByUrl passes that null straight on - see
-    /// the '//todo handle' there. ImageMetadataReader then rejects the null stream with an
-    /// ArgumentNullException, which GlobalExceptionHandler can only read as a 500, while the endpoint's own
-    /// documentation promises a 400 "if the image is not found by the given image url".
-    ///
-    /// So this test should start failing the day that todo is addressed - at which point the assertion
-    /// becomes BadRequest.
+    /// A well formed url passes the request validator, so a url nothing answers on only fails further in:
+    /// ImageDownloadClient returns null and ImageUploader rejects it. That is the caller's error rather than
+    /// a fault, so it is a 400 - which is what this endpoint documents for a url no image is found by.
     /// </summary>
     [Fact]
-    public async Task UploadByUrl_UrlNothingIsServing_CurrentlyReturnsServerError()
+    public async Task UploadByUrl_UrlNothingIsListeningOn_ReturnsBadRequest()
     {
         var response = await Api.PostUploadByUrl(new
         {
@@ -105,6 +98,19 @@ public class UploadImageByUrlEndpointTests(ImagerApiFixture fixture) : ImagerApi
             ImageGroup = NewImageGroup()
         });
 
-        Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task UploadByUrl_UrlThatAnswersNotFound_ReturnsBadRequest()
+    {
+        //a reachable host is a different path from a refused connection: blob storage answers, with a 404
+        var imageGroup = NewImageGroup();
+        var source = await Api.Upload(TestImages.Jpeg800X600, imageGroup);
+        var missingBlobUrl = source.Url.Replace(".jpg", "-does-not-exist.jpg");
+
+        var response = await Api.PostUploadByUrl(new { ImageUrl = missingBlobUrl, ImageGroup = imageGroup });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 }
