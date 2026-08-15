@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using IK.Imager.Storage.Abstractions.Models;
@@ -6,10 +6,10 @@ using IK.Imager.Storage.Abstractions.Repositories;
 
 namespace IK.Imager.Core.Tests.Mocks
 {
-    public class InMemoryMockedImageMetadataRepository: IImageMetadataRepository
+    public class InMemoryMockedImageMetadataRepository : IImageMetadataRepository
     {
         readonly Dictionary<string, ImageMetadata> _dictionary = new();
-        
+
         public Task SetMetadata(ImageMetadata metadata, CancellationToken cancellationToken)
         {
             _dictionary.TryAdd(metadata.Id, metadata);
@@ -36,7 +36,7 @@ namespace IK.Imager.Core.Tests.Mocks
         {
             if (!_dictionary.ContainsKey(imageId))
                 return Task.FromResult(false);
-            
+
             _dictionary.Remove(imageId);
             return Task.FromResult(true);
         }

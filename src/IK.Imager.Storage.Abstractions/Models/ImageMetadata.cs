@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Newtonsoft.Json;
 // ReSharper disable NonReadonlyMemberInGetHashCode
@@ -6,7 +6,7 @@ using Newtonsoft.Json;
 
 namespace IK.Imager.Storage.Abstractions.Models
 {
-    public class ImageMetadata: IImageBasicDetails, IEquatable<ImageMetadata>
+    public class ImageMetadata : IImageBasicDetails, IEquatable<ImageMetadata>
     {
         /// <summary>
         /// Image group which also used to partition data
@@ -34,12 +34,12 @@ namespace IK.Imager.Storage.Abstractions.Models
         /// E.g. 'image/jpeg', 'image/png', 'image/bmp', 'image/gif'
         /// </summary>
         public string MimeType { get; set; } = null!;
-        
+
         /// <summary>
         /// Image type
         /// </summary>
         public ImageType ImageType { get; set; }
-        
+
         /// <summary>
         /// File extensions, e.g. '.jpeg', '.png', etc
         /// </summary>
@@ -60,7 +60,7 @@ namespace IK.Imager.Storage.Abstractions.Models
 
         public bool Equals(ImageMetadata? other)
         {
-            if (ReferenceEquals(null, other)) 
+            if (ReferenceEquals(null, other))
                 return false;
             if (ReferenceEquals(this, other))
                 return true;
@@ -119,15 +119,15 @@ namespace IK.Imager.Storage.Abstractions.Models
 
         public override bool Equals(object? obj)
         {
-            if (ReferenceEquals(null, obj)) 
+            if (ReferenceEquals(null, obj))
                 return false;
-            if (ReferenceEquals(this, obj)) 
+            if (ReferenceEquals(this, obj))
                 return true;
-            
+
             if (obj.GetType() != GetType())
                 return false;
-            
-            return Equals((ImageMetadata) obj);
+
+            return Equals((ImageMetadata)obj);
         }
 
         public override int GetHashCode()
@@ -136,7 +136,7 @@ namespace IK.Imager.Storage.Abstractions.Models
             {
                 var hashCode = ImageGroup != null ? ImageGroup.GetHashCode() : 0;
                 hashCode = (hashCode * 397) ^ (Id != null ? Id.GetHashCode() : 0);
-                hashCode = (int) ((hashCode * 397) ^ SizeBytes);
+                hashCode = (int)((hashCode * 397) ^ SizeBytes);
                 hashCode = (hashCode * 397) ^ (MD5Hash != null ? MD5Hash.GetHashCode() : 0);
                 hashCode = (hashCode * 397) ^ Width;
                 hashCode = (hashCode * 397) ^ Height;
@@ -146,7 +146,7 @@ namespace IK.Imager.Storage.Abstractions.Models
                 hashCode = (hashCode * 397) ^ (FileExtension != null ? FileExtension.GetHashCode() : 0);
                 hashCode = (hashCode * 397) ^ (Tags != null ? Tags.GetHashCode() : 0);
                 hashCode = (hashCode * 397) ^ (Thumbnails != null ? Thumbnails.GetHashCode() : 0);
-                hashCode = (hashCode * 397) ^ (int) ImageType;
+                hashCode = (hashCode * 397) ^ (int)ImageType;
 
                 return hashCode;
             }

@@ -16,7 +16,7 @@ internal sealed class FluentValidationSchemaTransformer : IOpenApiSchemaTransfor
     {
         //the transformer is invoked for every schema, including the one generated for each individual
         //property - properties are handled from their declaring type, so those calls are skipped
-        if (context.JsonPropertyInfo != null || schema.Properties is not {Count: > 0})
+        if (context.JsonPropertyInfo != null || schema.Properties is not { Count: > 0 })
             return Task.CompletedTask;
 
         var rulesByMember = FluentValidationRules.ForType(context.ApplicationServices, context.JsonTypeInfo.Type);

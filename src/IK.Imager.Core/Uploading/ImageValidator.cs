@@ -19,7 +19,7 @@ public class ImageValidator(IOptionsSnapshot<ImageLimitationSettings> limitation
     public const string IncorrectSizeKey = "image/incorrect-size";
     public const string IncorrectDimensionKey = "image/incorrect-dimension";
     public const string IncorrectAspectRatioKey = "image/incorrect-aspect-ratio";
-    
+
     public ValidationResult CheckFormat(ImageFormat? imageFormat)
     {
         var limits = limitationSettings.Value;
@@ -32,20 +32,20 @@ public class ImageValidator(IOptionsSnapshot<ImageLimitationSettings> limitation
 
         return ValidationResult.Success;
     }
-    
+
     //todo move errors to resources
-   
+
     public ValidationResult CheckSize(ImageSize imageSize)
     {
         ArgumentHelper.AssertNotNull(nameof(imageSize), imageSize);
-        
+
         var limits = limitationSettings.Value;
 
         List<ValidationError> validationErrors = new List<ValidationError>();
         if (imageSize.Bytes > limits.SizeBytes.Max || imageSize.Bytes < limits.SizeBytes.Min)
             validationErrors.Add(new ValidationError(IncorrectSizeKey, string.Format(IncorrectSize, limits.SizeBytes.Min, limits.SizeBytes.Max)));
 
-        if (imageSize.Width > limits.Width.Max || imageSize.Width < limits.Width.Min || 
+        if (imageSize.Width > limits.Width.Max || imageSize.Width < limits.Width.Min ||
             imageSize.Height > limits.Height.Max || imageSize.Height < limits.Height.Min)
             validationErrors.Add(new ValidationError(IncorrectDimensionKey, string.Format(IncorrectDimension, limits.Width.Min, limits.Width.Max, limits.Height.Min, limits.Height.Max)));
 

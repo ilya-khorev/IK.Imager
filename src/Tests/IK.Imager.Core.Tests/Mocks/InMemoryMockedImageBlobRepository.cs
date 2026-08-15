@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
@@ -9,10 +9,10 @@ using IK.Imager.Storage.Abstractions.Repositories;
 
 namespace IK.Imager.Core.Tests.Mocks
 {
-    public class InMemoryMockedImageBlobRepository: IImageBlobRepository
+    public class InMemoryMockedImageBlobRepository : IImageBlobRepository
     {
         private readonly Dictionary<string, MemoryStream> _imagesDictionary = new Dictionary<string, MemoryStream>();
-        
+
         public async Task<UploadImageResult> UploadImage(string imageName, Stream imageStream, ImageSizeType imageSizeType, string contentType,
             CancellationToken cancellationToken)
         {
@@ -21,7 +21,7 @@ namespace IK.Imager.Core.Tests.Mocks
             await imageStream.CopyToAsync(memoryStream, cancellationToken);
             memoryStream.Position = 0L;
             _imagesDictionary.TryAdd(imageName, memoryStream);
-            
+
             return new UploadImageResult
             {
                 Url = GetImageUri(imageName, imageSizeType),

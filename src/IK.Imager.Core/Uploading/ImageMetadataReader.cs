@@ -15,7 +15,7 @@ using SixLabors.ImageSharp.Formats.Webp;
 
 namespace IK.Imager.Core.Uploading;
 
-public class ImageMetadataReader: IImageMetadataReader    
+public class ImageMetadataReader : IImageMetadataReader
 {
     public ImageFormat? DetectFormat(Stream imageStream)
     {
@@ -35,7 +35,7 @@ public class ImageMetadataReader: IImageMetadataReader
         }
 
         ImageType imageType;
-        
+
         if (imageFormat is PngFormat)
             imageType = ImageType.PNG;
         else if (imageFormat is JpegFormat)
@@ -48,7 +48,7 @@ public class ImageMetadataReader: IImageMetadataReader
             imageType = ImageType.TIFF;
         else if (imageFormat is WebpFormat)
             imageType = ImageType.WEBP;
-        else 
+        else
             throw new NotSupportedException($"Image format {imageFormat.Name} is not supported");
 
         return new ImageFormat(imageFormat.DefaultMimeType, imageFormat.FileExtensions.First(), imageType);

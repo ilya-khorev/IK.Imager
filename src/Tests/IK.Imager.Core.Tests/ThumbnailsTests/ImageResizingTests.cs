@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -13,7 +13,7 @@ namespace IK.Imager.Core.Tests.ThumbnailsTests
     public class ImageResizingTests
     {
         private readonly ImageResizing _imageResizing;
-        
+
         public ImageResizingTests()
         {
             _imageResizing = new ImageResizing();
@@ -24,19 +24,19 @@ namespace IK.Imager.Core.Tests.ThumbnailsTests
         {
             await CheckDimensionsAfterResize(ImageTestsHelper.JpegImagesDirectory);
         }
-        
+
         [Fact]
         public async Task PngResizingTest()
         {
             await CheckDimensionsAfterResize(ImageTestsHelper.PngImagesDirectory);
         }
-        
+
         [Fact]
         public async Task BmpResizingTest()
         {
             await CheckDimensionsAfterResize(ImageTestsHelper.BmpImagesDirectory);
         }
-        
+
         [Fact]
         public async Task GifResizingTest()
         {
@@ -48,7 +48,7 @@ namespace IK.Imager.Core.Tests.ThumbnailsTests
             var images = GetImagesFromDirectory(directory);
 
             await using var originalImageStream = ImageTestsHelper.OpenFileForReading(images[0].FilePath);
-            
+
             for (int i = 1; i < images.Count; i++)
             {
                 var imageResizingResult = _imageResizing.Resize(originalImageStream, ImageType.JPEG, images[i].Width);
@@ -68,16 +68,16 @@ namespace IK.Imager.Core.Tests.ThumbnailsTests
         {
             var files = Directory.GetFiles(directory);
             List<ImageInfo> result = new List<ImageInfo>(files.Length);
-            
+
             foreach (var file in files)
             {
                 var size = Regex.Match(file, "\\d+x\\d+");
- 
+
                 var sizeArray = size.Value
                     .Split("x")
                     .Select(x => Convert.ToInt32(x))
                     .ToArray();
-                
+
                 result.Add(new ImageInfo
                 {
                     FilePath = file,
@@ -88,7 +88,7 @@ namespace IK.Imager.Core.Tests.ThumbnailsTests
 
             return result.OrderByDescending(x => x.Height + x.Width).ToList();
         }
-        
+
         class ImageInfo
         {
             public string FilePath { get; set; } = null!;

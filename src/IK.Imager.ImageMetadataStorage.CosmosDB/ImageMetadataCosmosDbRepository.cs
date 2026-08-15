@@ -46,7 +46,7 @@ namespace IK.Imager.ImageMetadataStorage.CosmosDB
          * Using of partitions make lookup requests more efficient
          * https://docs.microsoft.com/en-us/azure/cosmos-db/partitioning-overview
          */
-        
+
         /// <inheritdoc />
         public async Task<List<ImageMetadata>> GetMetadata(ICollection<string> imageIds, string? imageGroup,
             CancellationToken cancellationToken)
@@ -105,7 +105,7 @@ namespace IK.Imager.ImageMetadataStorage.CosmosDB
 
                 throw;
             }
-    
+
             return response.StatusCode == HttpStatusCode.NoContent;
         }
     }

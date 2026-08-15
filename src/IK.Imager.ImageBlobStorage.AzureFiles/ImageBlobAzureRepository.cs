@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -18,11 +18,11 @@ namespace IK.Imager.ImageBlobStorage.AzureFiles
         public ImageBlobAzureRepository(IOptions<ImageAzureStorageSettings> settings, IAzureBlobClient blobClient)
         {
             ArgumentHelper.AssertNotNull(nameof(settings), settings);
-            
+
             _imagesContainer = new Lazy<BlobContainerClient>(() => blobClient.CreateContainerIfNotExists(settings.Value.ImagesContainerName.ToLowerInvariant()));
             _thumbnailsContainer = new Lazy<BlobContainerClient>(() => blobClient.CreateContainerIfNotExists(settings.Value.ThumbnailsContainerName.ToLowerInvariant()));
         }
-        
+
         /// <inheritdoc />
         public async Task<UploadImageResult> UploadImage(string imageName, Stream imageStream, ImageSizeType imageSizeType,
             string imageContentType, CancellationToken cancellationToken)
@@ -32,10 +32,10 @@ namespace IK.Imager.ImageBlobStorage.AzureFiles
 
             var blobClient = GetBlobClient(imageName, imageSizeType);
             //blobClient.Properties.ContentType = imageContentType;
-             
+
             imageStream.Position = 0;
             var uploadResult = await blobClient.UploadAsync(imageStream, cancellationToken).ConfigureAwait(false);
-            
+
             return new UploadImageResult
             {
                 Hash = Convert.ToBase64String(uploadResult.Value.ContentHash),

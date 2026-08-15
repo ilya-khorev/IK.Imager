@@ -3,7 +3,7 @@ namespace IK.Imager.Api.Contract.ImageLookup;
 /// <summary>
 /// Model containing information about image and its thumbnails
 /// </summary>
-public record ImageFullInfoWithThumbnails: ImageInfo
+public record ImageFullInfoWithThumbnails : ImageInfo
 {
     /// <summary>
     /// Additional information associated with an image in arbitrary form of key-value dictionary.

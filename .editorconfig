@@ -5,7 +5,10 @@ root = true
 
 [*]
 charset = utf-8
-end_of_line = lf
+# No end_of_line here on purpose - .gitattributes owns line endings. `* text=auto` normalises the
+# index to LF, so a CRLF working tree on Windows is expected and is not a diff. Declaring `lf` here
+# instead made `dotnet format` flag every line of every file as ENDOFLINE on a Windows checkout
+# (4174 of 4439 reported errors), which buried the violations that were real.
 indent_style = space
 indent_size = 4
 insert_final_newline = true
@@ -21,6 +24,7 @@ trim_trailing_whitespace = false
 [*.{csproj,props,targets,config,xml}]
 indent_size = 4
 
+# These three are pinned `eol=crlf` in .gitattributes, so they are CRLF on every platform.
 [*.{sln,DotSettings}]
 end_of_line = crlf
 

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 namespace IK.Imager.Core.Abstractions.Cdn
 {

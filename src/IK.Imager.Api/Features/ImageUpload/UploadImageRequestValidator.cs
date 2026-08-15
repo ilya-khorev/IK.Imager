@@ -6,7 +6,7 @@ using IK.Imager.Api.Validation;
 
 namespace IK.Imager.Api.Features.ImageUpload;
 
-public class UploadImageRequestValidator: AbstractValidator<UploadImageRequest>
+public class UploadImageRequestValidator : AbstractValidator<UploadImageRequest>
 {
     private const string IncorrectUrlFormat = "Image Url is not well formed. Please specify an absolute url path.";
 

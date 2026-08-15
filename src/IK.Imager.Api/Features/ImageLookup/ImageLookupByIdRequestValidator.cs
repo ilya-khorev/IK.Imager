@@ -5,7 +5,7 @@ using IK.Imager.Api.Validation;
 
 namespace IK.Imager.Api.Features.ImageLookup;
 
-public class ImageLookupByIdRequestValidator: AbstractValidator<ImageLookupByIdRequest>
+public class ImageLookupByIdRequestValidator : AbstractValidator<ImageLookupByIdRequest>
 {
     const int MaxImagesToLookup = 200;
 

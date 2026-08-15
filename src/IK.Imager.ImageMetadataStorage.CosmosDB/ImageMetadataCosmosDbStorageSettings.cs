@@ -1,4 +1,4 @@
-﻿namespace IK.Imager.ImageMetadataStorage.CosmosDB
+namespace IK.Imager.ImageMetadataStorage.CosmosDB
 {
     public class ImageMetadataCosmosDbStorageSettings
     {

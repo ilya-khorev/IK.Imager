@@ -1,4 +1,4 @@
-﻿namespace IK.Imager.Core.Abstractions
+namespace IK.Imager.Core.Abstractions
 {
     public interface IImageIdentifierProvider
     {

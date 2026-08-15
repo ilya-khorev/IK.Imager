@@ -80,7 +80,7 @@ public class ImageUploader(
             MD5Hash = uploadImageResult.Hash,
             SizeBytes = imageSize.Bytes,
             MimeType = imageFormat.MimeType,
-            ImageType = (Storage.Abstractions.Models.ImageType) imageFormat.ImageType,
+            ImageType = (Storage.Abstractions.Models.ImageType)imageFormat.ImageType,
             FileExtension = imageFormat.FileExtension,
             ImageGroup = imageGroup
         }, cancellationToken);

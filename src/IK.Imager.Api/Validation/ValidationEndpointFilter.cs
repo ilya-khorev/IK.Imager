@@ -26,7 +26,7 @@ internal sealed class ValidationEndpointFilter<T> : IEndpointFilter where T : cl
     {
         //a request that failed to bind arrives as a null argument - there is nothing to validate, and the
         //binding failure has already produced its own response
-        if (context.Arguments.OfType<T>().FirstOrDefault() is not {} argument)
+        if (context.Arguments.OfType<T>().FirstOrDefault() is not { } argument)
             return await next(context);
 
         var validationResult = await _validator.ValidateAsync(argument, context.HttpContext.RequestAborted);

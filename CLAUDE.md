@@ -18,15 +18,40 @@ dotnet run --project src\IK.Imager.Api                   # http://localhost:5000
 
 `Scripts\AzureResources.ps1` provisions the Azure resources; `Scripts\DockerUpload.ps1` builds/pushes the Docker images.
 
+### Before committing
+
+Always run both of these before a commit, and report what they said. CI runs neither — `dotnetcore.yml` builds without `-warnaserror` and has no format step — so this is a local gate or it is nothing.
+
+```powershell
+dotnet build src\IK.Imager.sln --configuration Release -warnaserror   # must end in "0 Warning(s)"
+dotnet format src\IK.Imager.sln --verify-no-changes                   # must exit 0
+```
+
+Both pass on a clean checkout. Either one failing is your change, not pre-existing debt — the repo was swept clean in one commit of its own.
+
+**1. No new build warnings.** `-warnaserror` is the check rather than eyeballing the log, because a warning scrolls past in a 12-project build. It also promotes the transitive `NuGetAudit` advisories (NU1901–NU1904) to errors — that is intended, and a new one means bumping the package in `Directory.Packages.props`, not suppressing the code. Never silence a warning with `#pragma warning disable` or `<NoWarn>` to get the build green; fix the cause or say why it cannot be fixed.
+
+**2. Formatting, via `.editorconfig`.** At its default severity `dotnet format` checks indentation and blank lines, trailing whitespace, the final newline, the UTF-8 charset (i.e. no BOM) and `using` ordering — which is what formatting means here. Run it without `--verify-no-changes` to apply the fixes.
+
+**Do not add `--severity info` to that gate**, tempting as it looks given every rule in `.editorconfig` is `suggestion`. It reports 267 diagnostics across the solution — `IDE0161` (file-scoped namespaces), `IDE0007` (`var`), `IDE0011` (braces), `IDE0290` (primary constructors), plus the `CA` analyzers — in the older files that predate those conventions. It also cannot be applied: `dotnet format style --severity info` dies with `NotSupportedException: Changing document properties is not supported`, because the `IDE1006` naming fixer does not support Fix All. Treat that list as a backlog to work through by hand, file by file, not as a commit gate.
+
+Two related traps:
+
+- **`dotnet format` cannot strip a UTF-8 BOM.** The charset fixer hits the same `Changing document properties` crash, which aborts the whole run and writes *nothing* — including the whitespace fixes it had already computed. If `CHARSET` errors appear, rewrite those files byte-wise without the leading `EF BB BF` first, then re-run.
+- **Line endings are `.gitattributes`' job, not `.editorconfig`'s.** `end_of_line` is deliberately absent from `[*]`; see the *Build configuration* notes.
+
+Never run a repo-wide `dotnet format` and commit the result alongside a behaviour change — it buries the real diff. A sweep is welcome, as its own commit with nothing else in it.
+
 ### Build configuration
 
 Shared MSBuild settings live outside the individual `.csproj` files, so most of them now contain nothing but references.
 
 - `src/Directory.Build.props` — imported by every project under `src/`. Sets `TargetFramework` (`net10.0`), `LangVersion` (`latest`), `Nullable` (`enable`), transitive `NuGetAudit`, and `ContinuousIntegrationBuild` when `CI=true`. A property set in a `.csproj` still wins, which is how `IK.Imager.Api.Contract` keeps `netstandard2.1`.
 - `src/Directory.Packages.props` — Central Package Management. `PackageReference` items carry **no `Version`**; add or bump a version here instead. This is what keeps `Azure.Storage.Blobs` / `Microsoft.Azure.Cosmos` identical between a production project and the test project that drives its emulator.
-- `.editorconfig` (repo root) — codifies the existing style (4-space indent, file-scoped namespaces, `_camelCase` private fields, `var` everywhere). All style rules are `suggestion`; `EnforceCodeStyleInBuild` is deliberately **not** set, so none of them can fail a build. Apply with `dotnet format src\IK.Imager.sln`.
+- `.editorconfig` (repo root) — codifies the existing style (4-space indent, file-scoped namespaces, `_camelCase` private fields, `var` everywhere). All style rules are `suggestion`; `EnforceCodeStyleInBuild` is deliberately **not** set, so none of them can fail a build — which is exactly why the pre-commit check above is manual. Apply with `dotnet format src\IK.Imager.sln`, and see *Before committing* for why that gate stays at the default severity. `end_of_line` is deliberately absent from `[*]`: `.gitattributes` owns line endings, and declaring `lf` here made `dotnet format` report every line of every file as an `ENDOFLINE` violation on a Windows checkout (4174 of 4439 errors) while the index was already LF. The `crlf` pins that remain — `.sln`, `.DotSettings`, `.ps1` — match files `.gitattributes` checks out as CRLF on every platform.
 - `IK.Imager.sln.DotSettings` is still required alongside it: it holds the ReSharper/Rider naming-abbreviation list (`JPEG`, `WEBP`, …) and the spell-check user dictionary, neither of which has a standard `.editorconfig` equivalent.
 - `global.json` pins the SDK to 10.0.x (`rollForward: latestFeature`); `nuget.config` clears inherited feeds so restore only ever sees nuget.org.
+- `.gitattributes` normalises text to LF in the index (`* text=auto`, with `eol=crlf` pinned for `.sln`/`.ps1`/`.DotSettings`). The index is already LF, so a Windows checkout being CRLF on disk is expected and is not a diff.
 
 Nullable reference types are on everywhere. Config-bound options classes and models populated by deserialization use `= null!` rather than `required`, which keeps today's behaviour (a missing value fails at first use) and keeps `IK.Imager.Api.Contract` usable from `netstandard2.1`, where `required` does not exist.
 
