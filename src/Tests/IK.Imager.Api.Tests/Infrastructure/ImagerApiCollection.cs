@@ -1,6 +1,6 @@
 using Xunit;
 
-namespace IK.Imager.Api.Tests;
+namespace IK.Imager.Api.Tests.Infrastructure;
 
 /// <summary>
 /// One API host and one pair of emulators for the whole assembly - starting the Cosmos emulator per test

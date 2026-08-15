@@ -17,7 +17,7 @@ using Testcontainers.Azurite;
 using Testcontainers.CosmosDb;
 using Xunit;
 
-namespace IK.Imager.Api.Tests;
+namespace IK.Imager.Api.Tests.Infrastructure;
 
 /// <summary>
 /// Boots the whole service once for the test assembly: Azurite and the Cosmos DB emulator as throwaway

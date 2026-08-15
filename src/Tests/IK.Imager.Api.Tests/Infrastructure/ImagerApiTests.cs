@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Xunit;
 
-namespace IK.Imager.Api.Tests;
+namespace IK.Imager.Api.Tests.Infrastructure;
 
 /// <summary>
 /// Base class of every API test: the shared host, a client over it, and the two things nearly all of them

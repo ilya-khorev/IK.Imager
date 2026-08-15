@@ -3,9 +3,10 @@ using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 using IK.Imager.Api.Contract;
+using IK.Imager.Api.Tests.Infrastructure;
 using Xunit;
 
-namespace IK.Imager.Api.Tests;
+namespace IK.Imager.Api.Tests.Features.Thumbnails;
 
 /// <summary>
 /// The asynchronous half of an upload: OriginalImageUploadedIntegrationEvent goes onto the bus,

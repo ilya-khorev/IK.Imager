@@ -1,9 +1,10 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using IK.Imager.Api.Tests.Infrastructure;
 using Xunit;
 
-namespace IK.Imager.Api.Tests;
+namespace IK.Imager.Api.Tests.Features.ImageLookup;
 
 /// <summary>
 /// POST /Images/Lookup - fetching images by id. There is no querying or filtering, hence "lookup".

@@ -10,7 +10,7 @@ using IK.Imager.Api.Contract;
 using IK.Imager.Api.Contract.ImageLookup;
 using Xunit;
 
-namespace IK.Imager.Api.Tests;
+namespace IK.Imager.Api.Tests.Infrastructure;
 
 /// <summary>
 /// The four routes of the service, as a test reads them.

@@ -1,6 +1,6 @@
 using System.IO;
 
-namespace IK.Imager.Api.Tests;
+namespace IK.Imager.Api.Tests.Infrastructure;
 
 /// <summary>
 /// The sample files these tests upload, linked in from IK.Imager.Core.Tests by the .csproj.

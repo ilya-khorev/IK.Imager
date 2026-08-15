@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using IK.Imager.Api.IntegrationEvents.Events;
 using MassTransit;
 
-namespace IK.Imager.Api.Tests;
+namespace IK.Imager.Api.Tests.Infrastructure;
 
 /// <summary>
 /// Watches the bus and completes a task once a given integration event has been consumed.

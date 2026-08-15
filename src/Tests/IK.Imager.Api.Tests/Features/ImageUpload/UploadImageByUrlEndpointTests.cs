@@ -1,8 +1,9 @@
 using System.Net;
 using System.Threading.Tasks;
+using IK.Imager.Api.Tests.Infrastructure;
 using Xunit;
 
-namespace IK.Imager.Api.Tests;
+namespace IK.Imager.Api.Tests.Features.ImageUpload;
 
 /// <summary>
 /// POST /Images/UploadByUrl.
