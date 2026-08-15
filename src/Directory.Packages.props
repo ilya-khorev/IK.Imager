@@ -53,10 +53,16 @@
     <ItemGroup Label="Testing">
         <PackageVersion Include="AutoFixture" Version="4.18.1" />
         <PackageVersion Include="Divergic.Logging.Xunit" Version="4.3.1" />
+        <!-- Boots IK.Imager.Api in-process for the API integration tests. Kept on the same 10.0.10 as the
+             rest of the framework packages - it has to match the ASP.NET Core the host runs on. -->
+        <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.10" />
         <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.8.1" />
         <PackageVersion Include="Moq" Version="4.20.72" />
-        <PackageVersion Include="Testcontainers.Azurite" Version="4.13.0" />
-        <PackageVersion Include="Testcontainers.CosmosDb" Version="4.13.0" />
+        <!-- 4.13.0 dragged in SSH.NET 2025.1.0 transitively, which NuGetAudit now flags
+             (NU1903 / GHSA-q939-rpr3-3284, patched in SSH.NET 2026.0.0). 4.14.0 is the first Testcontainers
+             release to reference the patched version. -->
+        <PackageVersion Include="Testcontainers.Azurite" Version="4.14.0" />
+        <PackageVersion Include="Testcontainers.CosmosDb" Version="4.14.0" />
         <PackageVersion Include="xunit" Version="2.9.3" />
         <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
     </ItemGroup>

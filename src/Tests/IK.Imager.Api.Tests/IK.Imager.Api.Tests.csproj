@@ -1,0 +1,47 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <IsPackable>false</IsPackable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <!-- Used directly by ImagerApiFixture to point the SDK at the containerized emulator; the version
+             is shared with the production project through Directory.Packages.props. -->
+        <PackageReference Include="Microsoft.Azure.Cosmos" />
+        <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+        <PackageReference Include="Microsoft.NET.Test.Sdk" />
+        <PackageReference Include="Testcontainers.Azurite" />
+        <PackageReference Include="Testcontainers.CosmosDb" />
+        <PackageReference Include="xunit" />
+        <PackageReference Include="xunit.runner.visualstudio">
+          <PrivateAssets>all</PrivateAssets>
+          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\IK.Imager.Api\IK.Imager.Api.csproj" />
+      <ProjectReference Include="..\IK.Imager.TestsBase\IK.Imager.TestsBase.csproj" />
+    </ItemGroup>
+
+    <!-- Linked rather than copied: these are the same sample images IK.Imager.Core.Tests drives its unit
+         tests with, and a second copy of a megabyte of binaries would only drift from the first. -->
+    <ItemGroup>
+      <Content Include="..\IK.Imager.Core.Tests\Images\jpeg\1043-1200x900.jpg" Link="Images\1043-1200x900.jpg">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="..\IK.Imager.Core.Tests\Images\jpeg\1043-800x600.jpg" Link="Images\1043-800x600.jpg">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="..\IK.Imager.Core.Tests\Images\png\1060-1000x1000.png" Link="Images\1060-1000x1000.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="..\IK.Imager.Core.Tests\Images\gif\giphy_200x200.gif" Link="Images\giphy_200x200.gif">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="..\IK.Imager.Core.Tests\textFile.txt" Link="Images\textFile.txt">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+    </ItemGroup>
+
+</Project>

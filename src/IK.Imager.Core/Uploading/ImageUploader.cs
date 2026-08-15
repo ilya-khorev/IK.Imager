@@ -28,6 +28,8 @@ public class ImageUploader(
     private const string UploadingFinished = "Image with id={0} and its metadata have been saved.";
     private const string DownloadingByUrl = "Downloading an image by url {0}.";
     private const string DownloadedByUrl = "Downloaded an image by url {0}.";
+    private const string NotDownloadedByUrl = "Nothing could be downloaded by url {0}.";
+    private const string CouldNotDownloadImage = "An image could not be downloaded by the given url.";
 
     public async Task<ImageInfo> UploadByUrl(string imageUrl, string imageGroup, CancellationToken cancellationToken)
     {
@@ -36,13 +38,17 @@ public class ImageUploader(
         var imageStream = await imageDownloadClient.GetMemoryStream(imageUrl, cancellationToken);
         if (imageStream == null)
         {
-            //todo handle
+            logger.LogInformation(NotDownloadedByUrl, imageUrl);
+
+            //the request is well formed - the url simply yielded nothing - so this is the caller's error and
+            //not a fault. ValidationException is what GlobalExceptionHandler turns into a 400, which is what
+            //this endpoint documents for a url no image is found by.
+            throw new ValidationException(CouldNotDownloadImage);
         }
 
         logger.LogDebug(DownloadedByUrl, imageUrl);
 
-        //the null case above is still unhandled (see the todo); the ! preserves the existing behaviour of failing downstream
-        return await Upload(imageStream!, imageGroup, cancellationToken);
+        return await Upload(imageStream, imageGroup, cancellationToken);
     }
 
     public async Task<ImageInfo> Upload(Stream imageStream, string imageGroup, CancellationToken cancellationToken)
