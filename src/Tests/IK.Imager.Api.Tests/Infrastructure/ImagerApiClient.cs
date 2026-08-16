@@ -7,7 +7,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using System.Threading.Tasks;
 using IK.Imager.Api.Contract;
-using IK.Imager.Api.Contract.ImageLookup;
+using IK.Imager.Api.Contract.Lookup;
 using Xunit;
 
 namespace IK.Imager.Api.Tests.Infrastructure;
@@ -21,10 +21,10 @@ namespace IK.Imager.Api.Tests.Infrastructure;
 /// </summary>
 public sealed class ImagerApiClient(HttpClient httpClient)
 {
-    private const string UploadRoute = "/Images/Upload";
-    private const string UploadByUrlRoute = "/Images/UploadByUrl";
-    private const string LookupRoute = "/Images/Lookup";
-    private const string DeleteRoute = "/Images";
+    private const string UploadRoute = "/images/upload";
+    private const string UploadByUrlRoute = "/images/upload-by-url";
+    private const string LookupRoute = "/images/lookup";
+    private const string DeleteRoute = "/images";
 
     //minimal APIs serialize with the web defaults, so the responses are camelCase
     private static readonly JsonSerializerOptions SerializerOptions = new(JsonSerializerDefaults.Web);
@@ -52,12 +52,19 @@ public sealed class ImagerApiClient(HttpClient httpClient)
     public Task<HttpResponseMessage> PostLookup(object request) =>
         httpClient.PostAsJsonAsync(LookupRoute, request);
 
-    //DELETE with a body is not something HttpClient has a shorthand for
-    public Task<HttpResponseMessage> SendDelete(object request) =>
-        httpClient.SendAsync(new HttpRequestMessage(HttpMethod.Delete, DeleteRoute)
-        {
-            Content = JsonContent.Create(request)
-        });
+    /// <summary>
+    /// The image id is a route segment and the group a query string, so a delete is expressed as a url
+    /// rather than a body. Both are passed raw so that a test can send something the contract type
+    /// could not express - a blank id, an over-short group.
+    /// </summary>
+    public Task<HttpResponseMessage> SendDelete(string imageId, string? imageGroup)
+    {
+        var url = $"{DeleteRoute}/{Uri.EscapeDataString(imageId)}";
+        if (imageGroup != null)
+            url += $"?imageGroup={Uri.EscapeDataString(imageGroup)}";
+
+        return httpClient.DeleteAsync(url);
+    }
 
     public async Task<ImageInfo> Upload(string fileName, string imageGroup) =>
         await ReadContract<ImageInfo>(await PostUpload(fileName, imageGroup));
@@ -65,14 +72,14 @@ public sealed class ImagerApiClient(HttpClient httpClient)
     public async Task<ImageInfo> UploadByUrl(string imageUrl, string imageGroup) =>
         await ReadContract<ImageInfo>(await PostUploadByUrl(new { ImageUrl = imageUrl, ImageGroup = imageGroup }));
 
-    public async Task<ImageLookupResult> Lookup(string[] imageIds, string? imageGroup) =>
-        await ReadContract<ImageLookupResult>(await PostLookup(new { ImageIds = imageIds, ImageGroup = imageGroup }));
+    public async Task<LookupImagesResult> Lookup(string[] imageIds, string? imageGroup) =>
+        await ReadContract<LookupImagesResult>(await PostLookup(new { ImageIds = imageIds, ImageGroup = imageGroup }));
 
     /// <summary>
     /// Looks the image up and asserts it is there - for the many assertions that only make sense on a
     /// single image that is known to exist.
     /// </summary>
-    public async Task<ImageFullInfoWithThumbnails> LookupSingle(string imageId, string? imageGroup)
+    public async Task<ImageWithThumbnails> LookupSingle(string imageId, string? imageGroup)
     {
         var result = await Lookup([imageId], imageGroup);
 
@@ -81,7 +88,7 @@ public sealed class ImagerApiClient(HttpClient httpClient)
 
     public async Task Delete(string imageId, string? imageGroup)
     {
-        var response = await SendDelete(new { ImageId = imageId, ImageGroup = imageGroup });
+        var response = await SendDelete(imageId, imageGroup);
 
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
     }

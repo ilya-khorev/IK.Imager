@@ -8,8 +8,6 @@ using IK.Imager.Storage.Abstractions.Models;
 using IK.Imager.Storage.Abstractions.Repositories;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using ImageType = IK.Imager.Core.Abstractions.Models.ImageType;
-using StorageImageType = IK.Imager.Storage.Abstractions.Models.ImageType;
 
 #pragma warning disable 1591
 
@@ -17,10 +15,10 @@ namespace IK.Imager.Core.Thumbnails;
 
 public class ThumbnailGenerator(
     ILogger<ThumbnailGenerator> logger,
-    IImageResizing imageResizing,
+    IImageResizer imageResizer,
     IImageBlobRepository blobRepository,
     IImageMetadataRepository metadataRepository,
-    IImageIdentifierProvider imageIdentifierProvider,
+    IImageNameGenerator imageNameGenerator,
     IOptions<ImageThumbnailsSettings> imageThumbnailsSettings) : IThumbnailGenerator
 {
     private readonly List<int> _thumbnailTargetWidths =
@@ -59,20 +57,21 @@ public class ThumbnailGenerator(
             return;
         }
 
-        await using var originalImageStream = await blobRepository.DownloadImage(imageMetadata.Name, ImageSizeType.Original, cancellationToken);
+        await using var originalImageStream = await blobRepository.DownloadImage(imageMetadata.Name, ImageVariant.Original, cancellationToken);
         logger.LogDebug(ImageDownloaded, imageMetadata.Id);
 
-        StorageImageType imageType = imageMetadata.ImageType;
+        ImageType imageType = imageMetadata.ImageType;
         string mimeType = imageMetadata.MimeType;
         string fileExtension = imageMetadata.FileExtension;
-        if (imageType == StorageImageType.BMP)
+        if (imageType == ImageType.BMP)
         {
-            imageType = StorageImageType.PNG;
+            imageType = ImageType.PNG;
             mimeType = PngMimeType;
             fileExtension = PngFileExtension;
         }
 
-        //a blob is expected to exist for metadata that exists; a missing one still fails loudly below, as before
+        //a blob is expected to exist for metadata that exists; a missing one now comes back as null from the
+        //repository and still fails loudly on the first resize rather than generating empty thumbnails
         var imageStream = originalImageStream!;
         foreach (var targetWidth in _thumbnailTargetWidths)
         {
@@ -81,14 +80,14 @@ public class ThumbnailGenerator(
             if (targetWidth >= imageMetadata.Width)
                 continue;
 
-            var resizingResult = imageResizing.Resize(imageStream, (ImageType)imageType, targetWidth);
+            var resizingResult = imageResizer.Resize(imageStream, imageType, targetWidth);
             logger.LogDebug(ImageResized, imageMetadata.Id, resizingResult.Size);
 
-            var thumbnailImageId = imageIdentifierProvider.GenerateUniqueId();
-            var thumbnailImageName = imageIdentifierProvider.GetImageFileName(thumbnailImageId, fileExtension);
+            var thumbnailImageId = imageNameGenerator.NewImageId();
+            var thumbnailImageName = imageNameGenerator.ToFileName(thumbnailImageId, fileExtension);
 
             var uploadedBlob = await blobRepository.UploadImage(thumbnailImageName, resizingResult.Image,
-                ImageSizeType.Thumbnail, mimeType, cancellationToken);
+                ImageVariant.Thumbnail, mimeType, cancellationToken);
             imageMetadata.Thumbnails.Add(new ImageThumbnail
             {
                 Id = thumbnailImageId,

@@ -39,7 +39,7 @@
       <Content Include="..\IK.Imager.Core.Tests\Images\gif\giphy_200x200.gif" Link="Images\giphy_200x200.gif">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </Content>
-      <Content Include="..\IK.Imager.Core.Tests\textFile.txt" Link="Images\textFile.txt">
+      <Content Include="..\IK.Imager.Core.Tests\Files\not-an-image.txt" Link="Images\not-an-image.txt">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </Content>
     </ItemGroup>

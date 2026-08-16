@@ -13,7 +13,7 @@ namespace IK.Imager.Core.Lookup;
 /// when <c>Cdn:Uri</c> is configured. Wired in AddImagerCore - the concrete service is registered by its
 /// own type, and <see cref="IImageLookup"/> resolves to this decorator around it.
 /// </summary>
-public class CdnImageLookup(IImageLookup inner, ICdnService cdnService) : IImageLookup
+public class CdnImageLookup(IImageLookup inner, ICdnUrlRewriter cdnService) : IImageLookup
 {
     public async Task<ImageLookupResult> LookupByIds(string[] imageIds, string? imageGroup, CancellationToken cancellationToken)
     {
@@ -24,9 +24,9 @@ public class CdnImageLookup(IImageLookup inner, ICdnService cdnService) : IImage
 
         foreach (var image in response.Images)
         {
-            image.Url = cdnService.TryTransformToCdnUri(image.Url);
+            image.Url = cdnService.Rewrite(image.Url);
             foreach (var thumbnail in image.Thumbnails)
-                thumbnail.Url = cdnService.TryTransformToCdnUri(thumbnail.Url);
+                thumbnail.Url = cdnService.Rewrite(thumbnail.Url);
         }
 
         return response;

@@ -24,12 +24,12 @@ public class ImageLookup(
 
         ImageLookupResult result = new ImageLookupResult
         {
-            Images = new List<ImageFullInfoWithThumbnails>(imagesMetadata.Count)
+            Images = new List<ImageDetailsWithThumbnails>(imagesMetadata.Count)
         };
 
         foreach (var imageMetadata in imagesMetadata)
         {
-            var model = new ImageFullInfoWithThumbnails
+            var model = new ImageDetailsWithThumbnails
             {
                 Id = imageMetadata.Id,
                 Bytes = imageMetadata.SizeBytes,
@@ -37,10 +37,10 @@ public class ImageLookup(
                 Height = imageMetadata.Height,
                 Width = imageMetadata.Width,
                 Tags = imageMetadata.Tags ?? new Dictionary<string, string>(),
-                Url = blobRepository.GetImageUri(imageMetadata.Name, ImageSizeType.Original),
+                Url = blobRepository.GetImageUri(imageMetadata.Name, ImageVariant.Original),
                 DateAdded = imageMetadata.DateAddedUtc,
                 MimeType = imageMetadata.MimeType,
-                Thumbnails = new List<ImageInfo>()
+                Thumbnails = new List<ImageDetails>()
             };
 
             //todo if an image was added a long time ago and there are not any thumbnails, it's worth sending a new event to generate them
@@ -48,7 +48,7 @@ public class ImageLookup(
             if (imageMetadata.Thumbnails != null)
                 foreach (var thumbnail in imageMetadata.Thumbnails)
                 {
-                    model.Thumbnails.Add(new ImageInfo
+                    model.Thumbnails.Add(new ImageDetails
                     {
                         Id = thumbnail.Id,
                         Bytes = thumbnail.SizeBytes,
@@ -57,7 +57,7 @@ public class ImageLookup(
                         Width = thumbnail.Width,
                         DateAdded = thumbnail.DateAddedUtc,
                         MimeType = thumbnail.MimeType,
-                        Url = blobRepository.GetImageUri(thumbnail.Name, ImageSizeType.Thumbnail)
+                        Url = blobRepository.GetImageUri(thumbnail.Name, ImageVariant.Thumbnail)
                     });
                 }
 

@@ -3,7 +3,7 @@ using System;
 
 namespace IK.Imager.Storage.Abstractions.Models
 {
-    public class ImageThumbnail : IImageBasicDetails, IEquatable<ImageThumbnail>
+    public class ImageThumbnail : IStoredImage, IEquatable<ImageThumbnail>
     {
         public string Id { get; set; } = null!;
         public string Name { get; set; } = null!;

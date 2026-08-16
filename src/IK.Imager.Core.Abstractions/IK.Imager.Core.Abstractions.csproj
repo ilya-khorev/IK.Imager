@@ -4,4 +4,10 @@
       <PackageReference Include="System.ComponentModel.Annotations" />
     </ItemGroup>
 
+    <ItemGroup>
+      <!-- Only for ImageType, which used to be duplicated here byte-for-byte. Storage owns it because
+           ImageMetadata.ImageType is the persisted copy; two enums meant numeric casts between them. -->
+      <ProjectReference Include="..\IK.Imager.Storage.Abstractions\IK.Imager.Storage.Abstractions.csproj" />
+    </ItemGroup>
+
 </Project>

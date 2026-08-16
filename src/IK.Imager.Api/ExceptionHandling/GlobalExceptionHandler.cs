@@ -66,16 +66,3 @@ internal sealed class GlobalExceptionHandler : IExceptionHandler
         return true;
     }
 }
-
-public class JsonErrorResponse
-{
-    /// <summary>
-    /// Error messages list
-    /// </summary>
-    public string[] Messages { get; set; } = [];
-
-    /// <summary>
-    /// Debug information (inner exception). Only populated in the Development environment.
-    /// </summary>
-    public string? DeveloperMessage { get; set; }
-}

@@ -3,8 +3,6 @@
     <PropertyGroup>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <UserSecretsId>36a4e41b-1688-4234-b400-4acb3dec374a</UserSecretsId>
-        <DockerDefaultTargetOS>Windows</DockerDefaultTargetOS>
-        <DockerComposeProjectPath>..\docker-compose.dcproj</DockerComposeProjectPath>
     </PropertyGroup>
 
     <ItemGroup>
@@ -28,8 +26,8 @@
       <ProjectReference Include="..\IK.Imager.Api.Contract\IK.Imager.Api.Contract.csproj" />
       <ProjectReference Include="..\IK.Imager.Core.Abstractions\IK.Imager.Core.Abstractions.csproj" />
       <ProjectReference Include="..\IK.Imager.Core\IK.Imager.Core.csproj" />
-      <ProjectReference Include="..\IK.Imager.ImageBlobStorage.AzureFiles\IK.Imager.ImageBlobStorage.AzureFiles.csproj" />
-      <ProjectReference Include="..\IK.Imager.ImageMetadataStorage.CosmosDB\IK.Imager.ImageMetadataStorage.CosmosDB.csproj" />
+      <ProjectReference Include="..\IK.Imager.Storage.AzureBlobs\IK.Imager.Storage.AzureBlobs.csproj" />
+      <ProjectReference Include="..\IK.Imager.Storage.CosmosDb\IK.Imager.Storage.CosmosDb.csproj" />
       <ProjectReference Include="..\IK.Imager.Storage.Abstractions\IK.Imager.Storage.Abstractions.csproj" />
     </ItemGroup>
 

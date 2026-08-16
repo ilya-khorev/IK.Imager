@@ -10,7 +10,7 @@ namespace IK.Imager.Api.Tests.Features.Thumbnails;
 
 /// <summary>
 /// The asynchronous half of an upload: OriginalImageUploadedIntegrationEvent goes onto the bus,
-/// CreateThumbnailsHandler consumes it, and ThumbnailGenerator resizes the original and upserts the
+/// CreateThumbnailsConsumer consumes it, and ThumbnailGenerator resizes the original and upserts the
 /// thumbnails onto the metadata document. The tests wait on the consumer rather than on the clock -
 /// see <see cref="ConsumedEventObserver"/>.
 ///

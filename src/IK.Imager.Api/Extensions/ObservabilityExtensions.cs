@@ -2,8 +2,8 @@ using Azure.Storage.Blobs;
 using HealthChecks.Azure.Storage.Blobs;
 using HealthChecks.CosmosDb;
 using HealthChecks.UI.Client;
-using IK.Imager.ImageBlobStorage.AzureFiles;
-using IK.Imager.ImageMetadataStorage.CosmosDB;
+using IK.Imager.Storage.AzureBlobs;
+using IK.Imager.Storage.CosmosDb;
 using Microsoft.ApplicationInsights.AspNetCore.Extensions;
 using Microsoft.ApplicationInsights.Extensibility.PerfCounterCollector.QuickPulse;
 using Microsoft.AspNetCore.Builder;
@@ -70,19 +70,19 @@ public static class ObservabilityExtensions
         hcBuilder.AddCheck("self", () => HealthCheckResult.Healthy());
 
         hcBuilder.AddAzureCosmosDB(
-            s => new CosmosClient(s.GetRequiredService<IOptions<ImageMetadataCosmosDbStorageSettings>>().Value.ConnectionString),
+            s => new CosmosClient(s.GetRequiredService<IOptions<CosmosDbSettings>>().Value.ConnectionString),
             s => new AzureCosmosDbHealthCheckOptions
             {
-                DatabaseId = s.GetRequiredService<IOptions<ImageMetadataCosmosDbStorageSettings>>().Value.DatabaseId
+                DatabaseId = s.GetRequiredService<IOptions<CosmosDbSettings>>().Value.DatabaseId
             },
             "ik.imager-cosmossdb-check", tags: new[] { "cosmosdb" });
 
         hcBuilder.AddAzureBlobStorage(
-            s => new BlobServiceClient(s.GetRequiredService<IOptions<ImageAzureStorageSettings>>().Value.ConnectionString),
+            s => new BlobServiceClient(s.GetRequiredService<IOptions<AzureBlobStorageSettings>>().Value.ConnectionString),
             s => new AzureBlobStorageHealthCheckOptions
             {
-                //lowercased to match ImageBlobAzureRepository, which lowercases before creating the container
-                ContainerName = s.GetRequiredService<IOptions<ImageAzureStorageSettings>>().Value.ImagesContainerName.ToLowerInvariant()
+                //lowercased to match AzureBlobImageRepository, which lowercases before creating the container
+                ContainerName = s.GetRequiredService<IOptions<AzureBlobStorageSettings>>().Value.ImagesContainerName.ToLowerInvariant()
             },
             "ik.imager-blobstorage-check", tags: new[] { "blobstorage" });
 

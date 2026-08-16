@@ -3,8 +3,8 @@ using System.IO;
 using IK.Imager.Api.Extensions;
 using IK.Imager.Api.Features;
 using IK.Imager.Core;
-using IK.Imager.ImageBlobStorage.AzureFiles;
-using IK.Imager.ImageMetadataStorage.CosmosDB;
+using IK.Imager.Storage.AzureBlobs;
+using IK.Imager.Storage.CosmosDb;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -52,7 +52,7 @@ app.UseExceptionHandler();
 
 app.UseOpenApiDocumentation();
 
-app.MapImagerEndpoints();
+app.MapImageEndpoints();
 app.MapImagerHealthChecks();
 
 await app.RunAsync();
