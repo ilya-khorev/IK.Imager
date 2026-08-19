@@ -98,6 +98,39 @@ CI (`.github/workflows/dotnetcore.yml`) runs on `ubuntu-latest` and now builds *
 
 Test naming convention (stated in `AzureBlobImageRepositoryTests`): `MethodUnderTest_Scenario_ExpectedBehavior`.
 
+## Code style
+
+- Prefer clean, self-explanatory code over comments.
+- Do not add comments that merely describe what the code does.
+- Add comments only when they explain:
+  - a non-obvious decision;
+  - an important constraint;
+  - a workaround;
+  - behavior that would otherwise be surprising.
+- Keep comments short and simple.
+- Use plain English.
+- Avoid complex words, idioms, and long sentences.
+- Do not use comments as documentation for obvious methods or variables.
+- Do not add comments like:
+  - "Initialize the service"
+  - "Get the user by ID"
+  - "Check if the value is null"
+  - "Return the result"
+- Do not add comments describing changes you just made.
+- Prefer descriptive names instead of explanatory comments.
+- Do not add `// Arrange`, `// Act`, `// Assert` comments to tests unless
+  they improve readability.
+
+## Language
+
+When writing code comments, documentation, commit messages, or developer-facing text:
+
+- Use simple and direct English.
+- Prefer short sentences.
+- Avoid sophisticated or unusual vocabulary when a common word works.
+- Avoid idioms and marketing-style language.
+- Write as an experienced developer communicating with other developers.
+
 ## Architecture
 
 A single ASP.NET Core service (`IK.Imager.Api`) that both serves the HTTP API **and** consumes its own integration events off Azure Service Bus. An earlier `IK.Imager.BackgroundService` microservice was folded into the API — `Scripts/DockerUpload.ps1` and `docs/Architecture.svg` still refer to it.
@@ -147,11 +180,15 @@ Two things minimal APIs need that MVC did implicitly:
 
 Upload → `ImageUploader.Upload` (validate format/size → blob storage → metadata) → `IImageEvents.ImageUploaded` → published as the integration event `OriginalImageUploadedIntegrationEvent` on Service Bus → `CreateThumbnailsConsumer` consumes it and calls `IThumbnailGenerator.Generate`. Hence the ~2s delay before thumbnails appear in lookup results.
 
-Delete → `ImageDeleter.DeleteMetadata` removes only the metadata (image disappears from lookup results immediately) → `IImageEvents.ImageMetadataDeleted` → `ImageMetadataDeletedIntegrationEvent` → `RemoveImageFilesConsumer` → `ImageDeleter.DeleteFiles` deletes the original blob and thumbnail blobs.
+Delete → `ImageDeleter.DeleteMetadata` removes only the metadata (image disappears from lookup results immediately) → `IImageEvents.ImageMetadataDeleted` → `ImageMetadataDeletedIntegrationEvent` → `RemoveImageFilesConsumer` → `ImageDeleter.DeleteFiles` deletes the original blob and thumbnail blobs, then `CdnImageDeleter` purges them from the CDN.
 
 **`IImageEvents` is how the core reaches the bus without depending on it.** It is declared in `IK.Imager.Core.Abstractions` as two plain methods and implemented once, by `IK.Imager.Api/IntegrationEvents/ImageEventPublisher.cs`, which publishes over MassTransit; `AddIntegrationEventMessaging` registers it alongside the bus it publishes onto. It replaced an `IDomainEvent` / `IDomainEventHandler<T>` / `IDomainEventDispatcher` trio plus a dispatcher that resolved handlers out of the container — three interfaces, two event records and two handler classes, for two events that had exactly one handler each. If an event ever genuinely needs several independent reactions, add them on the bus side rather than reviving in-process dispatch.
 
-CDN rewriting is applied outside the services, by a decorator sitting next to the service it wraps — `Upload/CdnImageUploader.cs` and `Lookup/CdnImageLookup.cs`. A service always returns the raw blob URL and the decorator swaps in the CDN host when `Cdn:Uri` is configured. This is the one reason the services have interfaces at all, and it is what the by-type-then-interface pair in `AddImagerCore` is for: `AddScoped<ImageLookup>()` registers the concrete service, and `AddScoped<IImageLookup>(…)` resolves to the decorator wrapping it. `IImageDeleter` and `IThumbnailGenerator` return no URLs and are registered plainly. Add a decorator in the feature folder rather than touching a service when a new response needs URL rewriting.
+CDN work is kept outside the services, in a decorator sitting next to the service it wraps — `Upload/CdnImageUploader.cs`, `Lookup/CdnImageLookup.cs` and `Delete/CdnImageDeleter.cs`. A service always returns the raw blob URL and the decorator swaps in the CDN host when `Cdn:Uri` is configured. This is the one reason those services have interfaces at all, and it is what the by-type-then-interface pair in `AddImagerCore` is for: `AddScoped<ImageLookup>()` registers the concrete service, and `AddScoped<IImageLookup>(…)` resolves to the decorator wrapping it. `IThumbnailGenerator` has no CDN concern and is registered plainly. Add a decorator in the feature folder rather than touching a service when a new response needs URL rewriting.
+
+**`ICdnPurger` is the third decorator, and it is about deletion rather than URLs.** Removing a blob does not clear an edge cache, so a deleted image keeps being served until its TTL expires. `CdnImageDeleter` collects the CDN uris of the original and every thumbnail, lets `ImageDeleter` remove the blobs, and then purges — in that order, because purging first only makes the edge re-fetch blobs that are still there. One call covers the whole image; providers rate limit the request, not the uri.
+
+`ICdnPurger` (`IK.Imager.Core.Abstractions/Cdn`) is deliberately provider-agnostic — it takes absolute uris already on the CDN host, since Cloudflare, Akamai and Fastly purge by full url while Azure Front Door and CloudFront want `Uri.AbsolutePath`. Core registers `NoOpCdnPurger` with `TryAddSingleton`, so **adding a CDN is one class plus one registration in its own module**, with no change to Core, and a deployment without a CDN keeps working untouched. Implementations throw on failure: the only caller is `RemoveImageFilesConsumer`, so an exception becomes a MassTransit retry and finally a dead letter, and the blob deletes it re-runs are idempotent. They should also return once the purge is *accepted* rather than propagated — a purge takes minutes, and blocking would hold the Service Bus message lock.
 
 ### Project layout
 

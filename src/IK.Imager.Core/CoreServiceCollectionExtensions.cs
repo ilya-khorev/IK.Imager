@@ -10,8 +10,10 @@ using IK.Imager.Core.Delete;
 using IK.Imager.Core.Lookup;
 using IK.Imager.Core.Thumbnails;
 using IK.Imager.Core.Upload;
+using IK.Imager.Storage.Abstractions.Repositories;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace IK.Imager.Core;
 
@@ -42,6 +44,9 @@ public static class CoreServiceCollectionExtensions
         services.AddSingleton<ICdnUrlRewriter, CdnUrlRewriter>();
         services.AddSingleton<IImageResizer, ImageResizer>();
 
+        //TryAdd so that a provider module can register its own purger without Core knowing it exists
+        services.TryAddSingleton<ICdnPurger, NoOpCdnPurger>();
+
         //ImageValidator takes IOptionsSnapshot, which is scoped - it cannot be a singleton
         services.AddScoped<IImageValidator, ImageValidator>();
 
@@ -57,11 +62,11 @@ public static class CoreServiceCollectionExtensions
 
     private static void RegisterFeatureServices(IServiceCollection services)
     {
-        services.AddScoped<IImageDeleter, ImageDeleter>();
         services.AddScoped<IThumbnailGenerator, ThumbnailGenerator>();
 
-        //The two services returning image urls are wrapped into a CDN decorator, which is why they are
-        //registered by their own type first - see Lookup/CdnImageLookup.cs and Uploading/CdnImageUploader.cs
+        //The three services with a CDN concern are wrapped into a decorator, which is why they are
+        //registered by their own type first - see Lookup/CdnImageLookup.cs, Upload/CdnImageUploader.cs
+        //and Delete/CdnImageDeleter.cs
         services.AddScoped<ImageLookup>();
         services.AddScoped<IImageLookup>(s =>
             new CdnImageLookup(s.GetRequiredService<ImageLookup>(), s.GetRequiredService<ICdnUrlRewriter>()));
@@ -69,5 +74,10 @@ public static class CoreServiceCollectionExtensions
         services.AddScoped<ImageUploader>();
         services.AddScoped<IImageUploader>(s =>
             new CdnImageUploader(s.GetRequiredService<ImageUploader>(), s.GetRequiredService<ICdnUrlRewriter>()));
+
+        services.AddScoped<ImageDeleter>();
+        services.AddScoped<IImageDeleter>(s =>
+            new CdnImageDeleter(s.GetRequiredService<ImageDeleter>(), s.GetRequiredService<IImageBlobRepository>(),
+                s.GetRequiredService<ICdnUrlRewriter>(), s.GetRequiredService<ICdnPurger>()));
     }
 }
