@@ -6,17 +6,17 @@ namespace IK.Imager.Core.Abstractions.Lookup;
 /// <summary>
 /// Model containing information about image and its thumbnails
 /// </summary>
-public class ImageDetailsWithThumbnails : ImageDetails
+public record ImageDetailsWithThumbnails : ImageDetails
 {
     /// <summary>
     /// Additional information associated with an image in arbitrary form of key-value dictionary.
     /// Optional: an image may carry no tags at all.
     /// </summary>
-    public IDictionary<string, string>? Tags { get; set; }
+    public IDictionary<string, string>? Tags { get; init; }
 
     /// <summary>
     /// Image thumbnails sorted by smallest to the biggest.
     /// Empty while thumbnail generation is still in flight.
     /// </summary>
-    public List<ImageDetails> Thumbnails { get; set; } = new();
+    public List<ImageDetails> Thumbnails { get; init; } = new();
 }
