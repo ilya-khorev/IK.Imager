@@ -39,7 +39,7 @@ public interface ICdnPurger
     /// Asks the CDN to drop its cached copies of the given uris.
     /// </summary>
     /// <param name="contentUris">
-    /// Absolute uris on the CDN host, already rewritten by <see cref="ICdnUrlRewriter"/>.
+    /// Absolute uris on the CDN host, as produced by <see cref="IImageUrlBuilder"/>.
     /// An empty collection does nothing.
     /// </param>
     /// <param name="cancellationToken">Cancellation token to stop the operation.</param>

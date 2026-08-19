@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using AutoFixture;
+using IK.Imager.Core.Abstractions.Cdn;
 using IK.Imager.Core.Abstractions.Lookup;
 using IK.Imager.Core.Abstractions.Models;
 using IK.Imager.Core.Lookup;
@@ -20,13 +21,13 @@ public class ImageLookupTests
 {
     private readonly ILogger<ImageLookup> _logger;
     private readonly Mock<IImageMetadataRepository> _metadataRepositoryMock;
-    private readonly Mock<IImageBlobRepository> _blobRepositoryMock;
+    private readonly Mock<IImageUrlBuilder> _imageUrlBuilderMock;
 
     public ImageLookupTests(ITestOutputHelper output)
     {
         _logger = output.BuildLoggerFor<ImageLookup>();
         _metadataRepositoryMock = new Mock<IImageMetadataRepository>();
-        _blobRepositoryMock = new Mock<IImageBlobRepository>();
+        _imageUrlBuilderMock = new Mock<IImageUrlBuilder>();
     }
 
     [Theory]
@@ -34,7 +35,7 @@ public class ImageLookupTests
     [InlineData(5)]
     public async Task LookupByIds_ExistingImages_ReturnsMetadataForEach(int imagesCount)
     {
-        _blobRepositoryMock.Setup(x => x.GetImageUri(It.IsAny<string>(), It.IsAny<ImageVariant>()))
+        _imageUrlBuilderMock.Setup(x => x.Build(It.IsAny<string>(), It.IsAny<ImageVariant>()))
             .Returns(new Uri("https://test.com"));
 
         List<ImageMetadata> imageMetadataList = new Fixture().CreateMany<ImageMetadata>(imagesCount).ToList();
@@ -45,7 +46,7 @@ public class ImageLookupTests
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(imageMetadataList);
 
-        ImageLookup imageLookup = new ImageLookup(_logger, _metadataRepositoryMock.Object, _blobRepositoryMock.Object);
+        ImageLookup imageLookup = new ImageLookup(_logger, _metadataRepositoryMock.Object, _imageUrlBuilderMock.Object);
         var result = await imageLookup.LookupByIds(new Fixture().Create<string[]>(), new Fixture().Create<string>(), CancellationToken.None);
 
         CompareFields(imageMetadataList, result);

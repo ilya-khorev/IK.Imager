@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using IK.Imager.Core.Abstractions.Cdn;
 using IK.Imager.Core.Abstractions.Lookup;
 using IK.Imager.Core.Abstractions.Models;
 using IK.Imager.Storage.Abstractions.Models;
@@ -14,7 +15,7 @@ namespace IK.Imager.Core.Lookup;
 public class ImageLookup(
     ILogger<ImageLookup> logger,
     IImageMetadataRepository metadataRepository,
-    IImageBlobRepository blobRepository) : IImageLookup
+    IImageUrlBuilder imageUrlBuilder) : IImageLookup
 {
     private const string FoundImages = "Found {0} image(s) for requested {1} image id(s)";
 
@@ -37,7 +38,7 @@ public class ImageLookup(
                 Height = imageMetadata.Height,
                 Width = imageMetadata.Width,
                 Tags = imageMetadata.Tags ?? new Dictionary<string, string>(),
-                Url = blobRepository.GetImageUri(imageMetadata.Name, ImageVariant.Original),
+                Url = imageUrlBuilder.Build(imageMetadata.Name, ImageVariant.Original),
                 DateAdded = imageMetadata.DateAddedUtc,
                 MimeType = imageMetadata.MimeType,
                 Thumbnails = new List<ImageDetails>()
@@ -57,7 +58,7 @@ public class ImageLookup(
                         Width = thumbnail.Width,
                         DateAdded = thumbnail.DateAddedUtc,
                         MimeType = thumbnail.MimeType,
-                        Url = blobRepository.GetImageUri(thumbnail.Name, ImageVariant.Thumbnail)
+                        Url = imageUrlBuilder.Build(thumbnail.Name, ImageVariant.Thumbnail)
                     });
                 }
 

@@ -4,6 +4,7 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using IK.Imager.Core.Abstractions;
+using IK.Imager.Core.Abstractions.Cdn;
 using IK.Imager.Core.Abstractions.Models;
 using IK.Imager.Core.Abstractions.Upload;
 using IK.Imager.Core.Upload;
@@ -24,6 +25,7 @@ public class ImageUploaderTests
     private const string Hash = "hash";
 
     private static readonly Uri BlobUrl = new("https://blobs.test/images/image-id.jpg");
+    private static readonly Uri PublicUrl = new("https://cdn.test/images/image-id.jpg");
     private static readonly ImageFormat Jpeg = new("image/jpeg", ".jpg", ImageType.JPEG);
     private static readonly ImageSize Size = new(800, 600, 12345);
 
@@ -32,6 +34,7 @@ public class ImageUploaderTests
     private readonly Mock<IImageInspector> _imageInspectorMock;
     private readonly Mock<IImageValidator> _imageValidatorMock;
     private readonly Mock<IImageNameGenerator> _imageNameGeneratorMock;
+    private readonly Mock<IImageUrlBuilder> _imageUrlBuilderMock;
     private readonly Mock<IImageEvents> _imageEventsMock;
     private readonly ImageDownloader _imageDownloader;
     private readonly ILogger<ImageUploader> _logger;
@@ -44,8 +47,11 @@ public class ImageUploaderTests
         _imageInspectorMock = new Mock<IImageInspector>();
         _imageValidatorMock = new Mock<IImageValidator>();
         _imageNameGeneratorMock = new Mock<IImageNameGenerator>();
+        _imageUrlBuilderMock = new Mock<IImageUrlBuilder>();
         _imageEventsMock = new Mock<IImageEvents>();
         _imageDownloader = new ImageDownloader(new HttpClient());
+
+        _imageUrlBuilderMock.Setup(x => x.Build(ImageName, ImageVariant.Original)).Returns(PublicUrl);
 
         _imageInspectorMock.Setup(x => x.DetectFormat(It.IsAny<Stream>())).Returns(Jpeg);
         _imageInspectorMock.Setup(x => x.ReadSize(It.IsAny<Stream>())).Returns(Size);
@@ -66,7 +72,8 @@ public class ImageUploaderTests
 
     private ImageUploader CreateUploader() =>
         new(_logger, _imageInspectorMock.Object, _blobRepositoryMock.Object, _metadataRepositoryMock.Object,
-            _imageValidatorMock.Object, _imageNameGeneratorMock.Object, _imageDownloader, _imageEventsMock.Object);
+            _imageValidatorMock.Object, _imageNameGeneratorMock.Object, _imageDownloader,
+            _imageUrlBuilderMock.Object, _imageEventsMock.Object);
 
     [Fact]
     public async Task Upload_ValidImage_ReturnsDetailsOfTheStoredImage()
@@ -76,7 +83,8 @@ public class ImageUploaderTests
         Assert.Equal(ImageId, result.Id);
         Assert.Equal(ImageName, result.Name);
         Assert.Equal(Hash, result.Hash);
-        Assert.Equal(BlobUrl, result.Url);
+        //the built public url, not the raw blob url the repository reported
+        Assert.Equal(PublicUrl, result.Url);
         Assert.Equal(Jpeg.MimeType, result.MimeType);
         Assert.Equal(Size.Width, result.Width);
         Assert.Equal(Size.Height, result.Height);
