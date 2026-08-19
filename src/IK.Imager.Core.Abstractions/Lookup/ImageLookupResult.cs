@@ -8,5 +8,5 @@ public class ImageLookupResult
     /// <summary>
     /// Set of images
     /// </summary>
-    public List<ImageFullInfoWithThumbnails> Images { get; set; } = new();
+    public List<ImageDetailsWithThumbnails> Images { get; set; } = new();
 }

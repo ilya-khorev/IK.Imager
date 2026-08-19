@@ -40,11 +40,11 @@ public static class MessagingServiceCollectionExtensions
     /// <param name="configuration">The configuration root - this module locates its own sections within it.</param>
     public static IServiceCollection AddIntegrationEventMessaging(this IServiceCollection services, IConfiguration configuration)
     {
-        services.Configure<TopicsConfiguration>(configuration.GetSection(TopicsSectionName));
+        services.Configure<TopicsSettings>(configuration.GetSection(TopicsSectionName));
 
         //what the core announces becomes a message on the bus registered just below - so it is registered
         //here rather than in AddImagerCore, which has no way to publish anything
-        services.AddScoped<IImageEvents, ImageEvents>();
+        services.AddScoped<IImageEvents, ImageEventPublisher>();
 
         var useInMemoryTransport = string.Equals(configuration.GetValue<string>(ServiceBusTransportPath),
             InMemoryTransport, StringComparison.OrdinalIgnoreCase);
@@ -65,24 +65,24 @@ public static class MessagingServiceCollectionExtensions
             {
                 cfg.Host(configuration.GetValue<string>(ServiceBusConnectionStringPath));
 
-                var topicsConfiguration = context.GetRequiredService<IOptions<TopicsConfiguration>>();
+                var topicsSettings = context.GetRequiredService<IOptions<TopicsSettings>>();
 
                 cfg.Message<OriginalImageUploadedIntegrationEvent>(c =>
-                    c.SetEntityName(topicsConfiguration.Value.UploadedImagesTopicName));
+                    c.SetEntityName(topicsSettings.Value.UploadedImagesTopicName));
                 cfg.Message<ImageMetadataDeletedIntegrationEvent>(c =>
-                    c.SetEntityName(topicsConfiguration.Value.DeletedImagesTopicName));
+                    c.SetEntityName(topicsSettings.Value.DeletedImagesTopicName));
 
-                cfg.ConcurrentMessageLimit = topicsConfiguration.Value.MaxConcurrentCalls;
+                cfg.ConcurrentMessageLimit = topicsSettings.Value.MaxConcurrentCalls;
 
-                cfg.SubscriptionEndpoint<OriginalImageUploadedIntegrationEvent>(topicsConfiguration.Value.SubscriptionName,
+                cfg.SubscriptionEndpoint<OriginalImageUploadedIntegrationEvent>(topicsSettings.Value.SubscriptionName,
                     configurator =>
                     {
-                        configurator.ConfigureConsumer<CreateThumbnailsHandler>(context);
+                        configurator.ConfigureConsumer<CreateThumbnailsConsumer>(context);
                     });
-                cfg.SubscriptionEndpoint<ImageMetadataDeletedIntegrationEvent>(topicsConfiguration.Value.SubscriptionName,
+                cfg.SubscriptionEndpoint<ImageMetadataDeletedIntegrationEvent>(topicsSettings.Value.SubscriptionName,
                     configurator =>
                     {
-                        configurator.ConfigureConsumer<RemoveImageFilesHandler>(context);
+                        configurator.ConfigureConsumer<RemoveImageFilesConsumer>(context);
                     });
             });
         });

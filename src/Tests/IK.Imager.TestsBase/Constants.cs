@@ -36,7 +36,7 @@ namespace IK.Imager.TestsBase
             /// Accepted but ignored by the emulator (the offers endpoint is a no-op there).
             /// Kept so that the production code path is exercised as-is.
             /// </summary>
-            public const int ContainerThroughPutOnCreation = 1000;
+            public const int ContainerThroughputOnCreation = 1000;
         }
     }
 }

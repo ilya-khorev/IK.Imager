@@ -26,7 +26,7 @@ internal static class TestImages
     public const string Gif200X200 = "giphy_200x200.gif";
 
     /// <summary>Not an image at all - ImageValidator rejects it and the upload comes back a 400.</summary>
-    public const string NotAnImage = "textFile.txt";
+    public const string NotAnImage = "not-an-image.txt";
 
     public static string PathOf(string fileName) => Path.Combine(ImagesDirectory, fileName);
 }

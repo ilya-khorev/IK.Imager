@@ -6,7 +6,7 @@ using Newtonsoft.Json;
 
 namespace IK.Imager.Storage.Abstractions.Models
 {
-    public class ImageMetadata : IImageBasicDetails, IEquatable<ImageMetadata>
+    public class ImageMetadata : IStoredImage, IEquatable<ImageMetadata>
     {
         /// <summary>
         /// Image group which also used to partition data

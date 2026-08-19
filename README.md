@@ -6,6 +6,19 @@
 Quick and easy way to store, look up, and manage image binary data and also image metadata, such as size, dimensions, thumbnails, and tags.
 Once a new image is uploaded, the system will automatically generate thumbnails for this image relying on the given parameters.
 
+### API
+
+Method  |   Route   |   Description
+:--- | :--- | :---
+POST   |   `/images/upload`   |   Upload an image as `multipart/form-data`
+POST   |   `/images/upload-by-url`   |   Upload an image the service downloads from a URL
+POST   |   `/images/lookup`   |   Fetch images by their ids
+DELETE   |   `/images/{imageId}`   |   Remove an image, optionally `?imageGroup=`
+
+The full contract is served as OpenAPI at `/openapi/v1.json`, with the Swagger UI at the root path.
+
+Note the screenshots below predate the current route names, which are as listed above.
+
 ### Image Upload
 There are 2 ways to upload an image to the system
 1) By a given Http/Https image URL:
@@ -15,7 +28,7 @@ There are 2 ways to upload an image to the system
 ![](docs/UploadImageRequest.png)
 
 #### Partitioning
-When uploading an image, it is necessary to specify a partition key. This key is needed for Cosmos DB, which is used as metadata storage in this project. Partitioning is a way to scale incoming data and keep performance very high, so it's very important to select an appropriate partition key for your images.
+When uploading an image, it is necessary to specify an image group (`ImageGroup` on every request). This is the partition key for Cosmos DB, which is used as metadata storage in this project. Partitioning is a way to scale incoming data and keep performance very high, so it's very important to select an appropriate partition key for your images.
 It's recommended to use something meaningful, for example:
 1) Let's say you want to store images from different websites. In this case, as a partition key, you may select a web site name, where the images are originally hosted. 
 2) Another example would be to store product images of a particular shop. In this case, you might consider using a combination of shop id and some text phrase as a partition key, such as "shop_234".
@@ -42,7 +55,7 @@ However, keep in mind, that there is a small delay before thumbnails are returne
 ### Image Lookup
 A client is able to request a metadata object for any image uploaded earlier, providing an image identifier. 
 A metadata object will also contain an image URL, which leads directly to the image blob storage or CDN (depending on configuration settings).
-PartitionKey is an optional parameter in this request. However, if you look up objects located in one partition, it's highly recommended to pass the partition key, as it will significantly improve this operation's performance.
+`ImageGroup` is an optional parameter in this request. However, if you look up objects located in one partition, it's highly recommended to pass it, as it will significantly improve this operation's performance.
 
 ![](docs/GetImageRequest.png)
 

@@ -27,6 +27,9 @@ namespace IK.Imager.Storage.Abstractions.Models
         /// </summary>
         TIFF,
 
+        /// <summary>
+        /// WebP, Google's image format
+        /// </summary>
         WEBP
     }
 }

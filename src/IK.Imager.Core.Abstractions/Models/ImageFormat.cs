@@ -1,3 +1,5 @@
+using IK.Imager.Storage.Abstractions.Models;
+
 namespace IK.Imager.Core.Abstractions.Models;
 
 /// <summary>

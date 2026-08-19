@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading.Tasks;
 using IK.Imager.Api.Extensions;
-using IK.Imager.ImageMetadataStorage.CosmosDB;
+using IK.Imager.Storage.CosmosDb;
 using IK.Imager.TestsBase;
 using MassTransit;
 using Microsoft.AspNetCore.Hosting;
@@ -39,7 +39,7 @@ public sealed class ImagerApiFixture : IAsyncLifetime
 
     private readonly AzuriteContainer _azurite = new AzuriteBuilder(Constants.AzureBlobStorage.AzuriteImage)
         // Azure.Storage.Blobs sends a newer x-ms-version than Azurite recognises - same reason as in
-        // ImageBlobsStorageFixture.
+        // AzureBlobStorageFixture.
         .WithCommand("--skipApiVersionCheck")
         .WithInMemoryPersistence()
         .Build();
@@ -126,7 +126,7 @@ public sealed class ImagerApiFixture : IAsyncLifetime
     /// <summary>
     /// The options the .NET SDK needs to talk to the containerized Cosmos emulator - gateway mode, pinned to
     /// the endpoint it was given, and the module's URI-rewriting handler on top. Identical to what
-    /// ImageMetadataStorageFixture passes, and the reason CosmosDbClient takes an optional CosmosClientOptions
+    /// CosmosDbFixture passes, and the reason ImageContainerFactory takes an optional CosmosClientOptions
     /// at all. Production leaves it null and keeps the SDK defaults.
     /// </summary>
     private CosmosClientOptions CreateEmulatorClientOptions() =>
@@ -149,9 +149,9 @@ public sealed class ImagerApiFixture : IAsyncLifetime
         {
             builder.ConfigureTestServices(services =>
             {
-                services.RemoveAll<ICosmosDbClient>();
-                services.AddSingleton<ICosmosDbClient>(s => new CosmosDbClient(
-                    s.GetRequiredService<IOptions<ImageMetadataCosmosDbStorageSettings>>(), cosmosClientOptions));
+                services.RemoveAll<IImageContainerFactory>();
+                services.AddSingleton<IImageContainerFactory>(s => new ImageContainerFactory(
+                    s.GetRequiredService<IOptions<CosmosDbSettings>>(), cosmosClientOptions));
             });
         }
     }

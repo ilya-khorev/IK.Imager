@@ -44,7 +44,7 @@
       <None Update="Images/bmp/1068-800x1600.bmp">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
-      <None Update="textFile.txt">
+      <None Update="Files/not-an-image.txt">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
       <None Update="Images/gif/giphy_200x200.gif">
