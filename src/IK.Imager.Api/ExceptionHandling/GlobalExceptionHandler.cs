@@ -37,10 +37,10 @@ internal sealed class GlobalExceptionHandler : IExceptionHandler
 
     public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
     {
-        _logger.LogError(new EventId(exception.HResult), exception, exception.Message);
-
         if (exception is ValidationException)
         {
+            _logger.RequestRejected(httpContext.Request.Path, exception.Message);
+
             var problemDetails = new ValidationProblemDetails
             {
                 Instance = httpContext.Request.Path,
@@ -54,6 +54,8 @@ internal sealed class GlobalExceptionHandler : IExceptionHandler
             await httpContext.Response.WriteAsJsonAsync(problemDetails, cancellationToken);
             return true;
         }
+
+        _logger.UnhandledException(exception, httpContext.Request.Path);
 
         var error = new JsonErrorResponse
         {

@@ -2,6 +2,7 @@ using System.Threading.Tasks;
 using Azure.Storage.Blobs;
 using IK.Imager.Storage.AzureBlobs;
 using IK.Imager.TestsBase;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Testcontainers.Azurite;
 using Xunit;
@@ -54,7 +55,8 @@ public sealed class AzureBlobStorageFixture : IAsyncLifetime
         BlobServiceClient = new BlobServiceClient(connectionString);
         Repository = new AzureBlobImageRepository(
             new OptionsWrapper<AzureBlobStorageSettings>(Settings),
-            new BlobContainerFactory(connectionString));
+            new BlobContainerFactory(connectionString),
+            NullLogger<AzureBlobImageRepository>.Instance);
     }
 
     public Task DisposeAsync() => _azurite.DisposeAsync().AsTask();

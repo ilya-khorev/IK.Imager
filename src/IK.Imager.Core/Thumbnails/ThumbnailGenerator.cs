@@ -24,17 +24,6 @@ public class ThumbnailGenerator(
     private readonly List<int> _thumbnailTargetWidths =
         imageThumbnailsSettings.Value.TargetWidth.OrderByDescending(x => x).ToList();
 
-    private const string ImageNotFound =
-        "Image metadata object with id = {0} was not found. Stopping to generate thumbnails.";
-
-    private const string MetadataReceived = "Received original image id = {0}, width = {1}, height = {0}";
-    private const string ImageDownloaded = "Downloaded original image id = {0} from storage.";
-    private const string ImageResized = "Resized image id = {0} with {1}.";
-    private const string ThumbnailsGenerated = "Generated {0} thumbnails for image id = {1}.";
-
-    private const string ImageSmallerThanTargetWidth =
-        "Image id = {0}, width = {1} is smaller than the smallest thumbnail width.";
-
     private const string PngMimeType = "image/png";
     private const string PngFileExtension = ".png";
 
@@ -44,21 +33,21 @@ public class ThumbnailGenerator(
         var imageMetadataList = await metadataRepository.GetMetadata(new List<string> { imageId }, imageGroup, cancellationToken);
         if (imageMetadataList == null || !imageMetadataList.Any())
         {
-            logger.LogInformation(ImageNotFound, imageId);
+            logger.ImageNotFound(imageId, imageGroup);
             return;
         }
 
         var imageMetadata = imageMetadataList[0];
         imageMetadata.Thumbnails = new List<ImageThumbnail>();
-        logger.LogDebug(MetadataReceived, imageMetadata.Id, imageMetadata.Width, imageMetadata.Height);
+        logger.ImageMetadataRead(imageMetadata.Id, imageMetadata.Width, imageMetadata.Height);
         if (imageMetadata.Width <= _thumbnailTargetWidths.Last())
         {
-            logger.LogInformation(ImageSmallerThanTargetWidth, imageMetadata.Id, imageMetadata.Width);
+            logger.ImageSmallerThanTargetWidth(imageMetadata.Id, imageMetadata.Width);
             return;
         }
 
         await using var originalImageStream = await blobRepository.DownloadImage(imageMetadata.Name, ImageVariant.Original, cancellationToken);
-        logger.LogDebug(ImageDownloaded, imageMetadata.Id);
+        logger.OriginalImageDownloaded(imageMetadata.Id);
 
         ImageType imageType = imageMetadata.ImageType;
         string mimeType = imageMetadata.MimeType;
@@ -81,7 +70,7 @@ public class ThumbnailGenerator(
                 continue;
 
             var resizingResult = imageResizer.Resize(imageStream, imageType, targetWidth);
-            logger.LogDebug(ImageResized, imageMetadata.Id, resizingResult.Size);
+            logger.ImageResized(imageMetadata.Id, targetWidth, resizingResult.Size.Width, resizingResult.Size.Height, resizingResult.Size.Bytes);
 
             var thumbnailImageId = imageNameGenerator.NewImageId();
             var thumbnailImageName = imageNameGenerator.ToFileName(thumbnailImageId, fileExtension);
@@ -108,6 +97,6 @@ public class ThumbnailGenerator(
 
         imageMetadata.Thumbnails.Reverse(); //smaller thumbnails come first
         await metadataRepository.SetMetadata(imageMetadata, cancellationToken);
-        logger.LogInformation(ThumbnailsGenerated, imageMetadata.Thumbnails.Count, imageId);
+        logger.ThumbnailsGenerated(imageMetadata.Thumbnails.Count, imageId);
     }
 }

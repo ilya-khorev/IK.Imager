@@ -18,15 +18,13 @@ public class ImageLookup(
     IImageMetadataRepository metadataRepository,
     IImageUrlBuilder imageUrlBuilder) : IImageLookup
 {
-    private const string FoundImages = "Found {0} image(s) for requested {1} image id(s)";
-
     public async Task<ImageLookupResult> LookupByIds(string[] imageIds, string? imageGroup, CancellationToken cancellationToken)
     {
         var imagesMetadata = await metadataRepository.GetMetadata(imageIds, imageGroup, cancellationToken);
 
         var images = imagesMetadata.Select(ToImageDetails).ToList();
 
-        logger.LogInformation(FoundImages, images.Count, imageIds.Length);
+        logger.ImagesFound(images.Count, imageIds.Length);
 
         return new ImageLookupResult
         {

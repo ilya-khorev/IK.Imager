@@ -26,8 +26,6 @@ public class CloudflareCdnPurger(
     /// </summary>
     private const int MaxUrisPerRequest = 100;
 
-    private const string Purged = "Cloudflare accepted a purge of {0} uri(s) in zone {1}";
-
     public async Task Purge(IReadOnlyCollection<Uri> contentUris, CancellationToken cancellationToken)
     {
         if (contentUris.Count == 0)
@@ -36,7 +34,7 @@ public class CloudflareCdnPurger(
         foreach (var batch in contentUris.Chunk(MaxUrisPerRequest))
             await PurgeBatch(batch, cancellationToken);
 
-        logger.LogInformation(Purged, contentUris.Count, settings.Value.ZoneId);
+        logger.Purged(contentUris.Count, settings.Value.ZoneId);
     }
 
     private async Task PurgeBatch(IReadOnlyCollection<Uri> batch, CancellationToken cancellationToken)
@@ -47,16 +45,22 @@ public class CloudflareCdnPurger(
             $"client/v4/zones/{settings.Value.ZoneId}/purge_cache", request, cancellationToken);
 
         if (!response.IsSuccessStatusCode)
+        {
+            logger.PurgeFailed((int)response.StatusCode, batch.Count, settings.Value.ZoneId);
             throw new HttpRequestException(
                 $"Cloudflare returned {(int)response.StatusCode} for a purge of {batch.Count} uri(s): " +
                 await response.Content.ReadAsStringAsync(cancellationToken));
+        }
 
         //Cloudflare does not promise that the status code and the envelope agree, so a 200 carrying
         //success:false has to be caught here or the purge silently does nothing
         var result = await response.Content.ReadFromJsonAsync<PurgeResponse>(cancellationToken);
         if (result is { Success: false })
-            throw new HttpRequestException(
-                $"Cloudflare rejected a purge of {batch.Count} uri(s): {Describe(result.Errors)}");
+        {
+            var purgeErrors = Describe(result.Errors);
+            logger.PurgeRejected(batch.Count, settings.Value.ZoneId, purgeErrors);
+            throw new HttpRequestException($"Cloudflare rejected a purge of {batch.Count} uri(s): {purgeErrors}");
+        }
     }
 
     private static string Describe(IReadOnlyCollection<PurgeError>? errors) =>

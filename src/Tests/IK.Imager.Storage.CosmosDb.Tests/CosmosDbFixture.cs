@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using IK.Imager.TestsBase;
 using Microsoft.Azure.Cosmos;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Testcontainers.CosmosDb;
 using Xunit;
@@ -45,7 +46,8 @@ public sealed class CosmosDbFixture : IAsyncLifetime
         };
 
         Repository = new CosmosImageMetadataRepository(
-            new ImageContainerFactory(new OptionsWrapper<CosmosDbSettings>(Settings), CreateEmulatorClientOptions()));
+            new ImageContainerFactory(new OptionsWrapper<CosmosDbSettings>(Settings), CreateEmulatorClientOptions()),
+            NullLogger<CosmosImageMetadataRepository>.Instance);
 
         _client = new CosmosClient(Settings.ConnectionString, CreateEmulatorClientOptions());
     }

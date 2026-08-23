@@ -230,7 +230,7 @@ Two of those need spelling out. **Front Door is not a chunk-and-fire provider** 
 | `AddImagerCore(IConfiguration, Action<IHttpClientBuilder>?)` | `IK.Imager.Core` | `Cdn`, `Thumbnails`, `ImageLimitations` |
 | `AddAzureImageBlobStorage(IConfiguration)` | `IK.Imager.Storage.AzureBlobs` | `AzureStorage` |
 | `AddCosmosImageMetadataStorage(IConfiguration)` | `IK.Imager.Storage.CosmosDb` | `CosmosDb` |
-| `AddApiServices()` / `AddOpenApiDocumentation()` / `AddIntegrationEventMessaging(IConfiguration)` / `AddObservability(IConfiguration)` | `IK.Imager.Api/Extensions` | `Topics` |
+| `AddApiServices()` / `AddOpenApiDocumentation()` / `AddIntegrationEventMessaging(IConfiguration)` / `AddObservability(IConfiguration)` | `IK.Imager.Api/Extensions` | `Topics`, `Telemetry` |
 
 The convention: each method takes the **configuration root** and owns its section name as a `public const SectionName` next to the settings class it binds — so the magic string never appears at the call site. All of them return `IServiceCollection` and chain.
 
@@ -262,6 +262,51 @@ The `[FromForm]` model of `POST /images/upload` needs nothing special. A minimal
 ### Validation is two-layered
 
 FluentValidation validators live next to the feature they guard under `IK.Imager.Api/Features` and check the *request shape* (URL well-formed, `ImageGroup` length 3–30, ≤200 image ids); they also surface into the OpenAPI document. FluentValidation 12 dropped built-in ASP.NET Core auto-validation, so `IK.Imager.Api/Validation/ValidationEndpointFilter.cs` runs the validator over the argument and short-circuits with a 400 `ValidationProblemDetails`. It is attached per endpoint with `.WithValidation<TRequest>()`, which also declares the 400 in the document — an endpoint that takes a validated model and forgets the call silently accepts anything, so add it alongside the `Map…` line. `IK.Imager.Core.Upload.ImageValidator` checks the *image itself* (format/size/dimensions/aspect ratio) against the `ImageLimitations` config section. Note the core services currently throw `ValidationException` on failure (there are `//todo`s about returning an error model instead); `IK.Imager.Api/ExceptionHandling/GlobalExceptionHandler.cs` maps it to a 400 and everything else to a 500 (with the full exception in `developerMessage` in Development). It is an `IExceptionHandler` registered on the pipeline rather than an MVC filter, because an endpoint filter cannot see an exception thrown by another filter; there is no developer exception page, since the MVC filter suppressed it for every action exception anyway.
+
+## Logging
+
+**Every log call goes through the `[LoggerMessage]` source generator.** One `internal static partial class <ClassName>Log` per logging class, in the same folder and namespace, holding `this ILogger` extension methods. It is a *static* class because the generator finds the logger by scanning the containing type for an `ILogger` **field**, and a primary constructor parameter is not one — an instance `[LoggerMessage]` on any of these services fails the build with `SYSLIB1019`. Every service here uses a primary constructor, so the static form is the only one that compiles without adding a redundant field.
+
+This replaced `private const string` templates with **positional** `{0}` / `{1}` placeholders. Those still rendered correctly, but the structured property was literally named `"0"` — the same key meaning `imageId` in one event and `imageUrl` in the next, which made the structured half of the pipeline worthless. Four call sites were worse: they passed an already-rendered string as the *template* (`string.Format(...)`, a `StringBuilder`, and twice a record's generated `ToString()`, braces included), so those events carried no properties at all and a unique template each.
+
+**One property name per concept, solution-wide.** `{ImageId}` `{ImageGroup}` `{ImageName}` `{ImageUrl}` `{ImageType}` `{MimeType}` `{FileExtension}` `{Width}` `{Height}` `{SizeBytes}` `{AspectRatio}` `{TargetWidth}` `{ThumbnailCount}` `{FoundCount}` `{RequestedCount}` `{DeletedCount}` `{UriCount}` `{RequestCharge}` `{Variant}` `{ValidationErrorKeys}` `{MessageType}` `{RequestPath}` `{StatusCode}` `{ZoneId}` `{EndpointName}`. The same field used to be spelled `imageId=`, `imageId = `, `ImageId = ` and `image id = ` across four files.
+
+**EventIds are allocated in ranges**, listed once at the top of `IK.Imager.Core/Upload/ImageUploaderLog.cs` and nowhere else. `SYSLIB1006` catches a collision inside one class; the ranges are what keep classes apart.
+
+### Levels
+
+- **Debug** — steps inside one operation, off in every deployment. A Debug call must cost nothing when off. The generator guards the *call*, not the argument expressions, so aggregation goes behind an explicit `if (logger.IsEnabled(LogLevel.Debug))` — see `ImageDeleter.DeleteFiles`.
+- **Information** — one line per completed unit of work that **changed state**. Never per item, never for a read. `ImageLookup` is Debug for exactly that reason.
+- **Warning** — the operation was refused or failed for the caller's or a dependency's reason, and the service handled it. No exception argument. A rejected image, a url that yielded nothing, a thumbnail job for metadata that is gone.
+- **Error** — the service could not do its job. The exception is always the **first** parameter of the generated method, never interpolated into the message.
+
+`GlobalExceptionHandler` used to log *every* exception at Error, including the `ValidationException` it deliberately turns into a 400 — so an ordinary bad upload url raised an Error-level alert. It now logs `RequestRejected` at Warning in the `ValidationException` branch and `UnhandledException` at Error in the other, and no longer uses `exception.Message` as a template or `exception.HResult` as an `EventId`.
+
+### The url is always redacted
+
+`UrlRedactor.Redact` (`Core/Upload/UrlRedactor.cs`) keeps scheme, authority and path. Upload-by-url accepts anything `Uri.IsWellFormedUriString` likes, so a caller can hand the service a SAS or a pre-signed S3 url whose credential is in the query string — and the failure path logged it verbatim, at Information. A `[LoggerMessage]` method is `partial` with a generated body, so the redaction lives in a public wrapper that calls a private `…Core` method. It builds the result from `Uri.Authority` rather than `GetLeftPart(UriPartial.Path)`, because `GetLeftPart` keeps the userinfo; `UrlRedactorTests` pins both cases.
+
+### Scopes
+
+`BeginScope` with a `Dictionary<string, object>` — never an interpolated string, which produces no properties. `ImageUploader.Upload` opens one on `ImageId`/`ImageGroup` right after the id is generated (it cannot be earlier; the id does not exist yet), and each of the three consumers opens one so that `ThumbnailGenerator`, `ImageDeleter` and the CDN purgers inherit it. Trace context ties an upload to the consumer that thumbnails it seconds later, but only **when telemetry is configured** — see the `AddSource` note below — and even then a trace id does not say *which image* the lines are about, which is what an operator greps for. The scope is the half that works either way. `IncludeScopes` has to be on in two places: the console formatter and `OpenTelemetryLoggerOptions`.
+
+## Observability
+
+`AddImagerLogging` (`Api/Extensions/ObservabilityExtensions.cs`) clears the providers and adds **`AddJsonConsole`** with `IncludeScopes` — one object per line, which is what a log shipper can read, and what preserves the named properties the generator now produces. It replaced `AddSystemdConsole`, whose journald priority prefixes did nothing in a container. `ActivityTrackingOptions` puts `TraceId`/`SpanId` on every line, so the console and Azure Monitor name the same operation.
+
+**Only the console is registered there.** The OpenTelemetry provider is registered later, by `AddObservability` — `ClearProviders()` drops whatever exists at the moment it runs, and `Program.cs` calls `AddImagerLogging` before the module registrations. Do not move the OTel wiring earlier.
+
+**Telemetry is OpenTelemetry through `Azure.Monitor.OpenTelemetry.AspNetCore`**, not the classic `Microsoft.ApplicationInsights.AspNetCore` 2.x SDK. The distro rather than the bare exporter, because it is what still produces Live Metrics (the `QuickPulseTelemetryModule` replacement) and the standard metrics the Application Insights blades query. `ApplicationInsights:AuthenticationApiKey` has no successor — secure Live Metrics is a managed identity now.
+
+Three things worth not re-deriving:
+
+- **`UseAzureMonitor` throws when it finds no connection string**, it does not degrade. `AddImagerTelemetry` therefore gates on the value and returns early, and a deployment without telemetry keeps the json console untouched. The gate checks `Telemetry:ConnectionString` **and** `APPLICATIONINSIGHTS_CONNECTION_STRING`, because the distro reads the latter on its own — checking only one is wrong in one direction or the other. `ImagerApiFixture` blanks both.
+- **`Telemetry:EnableDependencyTracing` defaults to `false`, and that is deliberate.** The old deployment set `EnableDependencyTrackingTelemetryModule: false` because it "produces a lot of logs and is therefore quite expensive", so there were zero dependency spans. The distro always installs HttpClient instrumentation, so migrating would have silently switched them all on and changed what the deployment costs. When the flag is off, `HttpClientTraceInstrumentationOptions.FilterHttpRequestMessage` drops them.
+- **Cosmos spans are not subscribed.** They need `CosmosClientTelemetryOptions.DisableDistributedTracing = false` on the client `ImageContainerFactory` builds, which production leaves at the SDK default — so an `AddSource("Azure.Cosmos.Operation")` would be dead configuration. `CosmosImageMetadataRepository` logs the RU charge of every operation instead, which is the cost signal nothing else reported. Azure Blob calls go over `HttpClient` and are covered by the HTTP instrumentation once dependency tracing is on; do not turn on the experimental `Azure.Experimental.EnableActivitySource` switch, which would duplicate those spans.
+
+The per-provider log level section is `Logging:OpenTelemetry` — the `[ProviderAlias]` on `OpenTelemetryLoggerProvider`, verified by reflection rather than assumed, because a wrong alias fails silently.
+
+`ObservabilityExtensionsTests` (`IK.Imager.Api.Tests/Extensions`, no Docker) pins the gate in both directions and builds the container with `ValidateScopes` + `ValidateOnBuild`, which is what proves the telemetry pipeline survives the validation `Program.cs` turns on in every environment.
 
 ## Configuration
 

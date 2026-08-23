@@ -8,16 +8,20 @@ using IK.Imager.Storage.Abstractions.Models;
 using IK.Imager.Storage.Abstractions.Repositories;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Azure.Cosmos.Linq;
+using Microsoft.Extensions.Logging;
 
 namespace IK.Imager.Storage.CosmosDb
 {
     public class CosmosImageMetadataRepository : IImageMetadataRepository
     {
         private readonly IImageContainerFactory _cosmosDbClient;
+        private readonly ILogger<CosmosImageMetadataRepository> _logger;
 
-        public CosmosImageMetadataRepository(IImageContainerFactory cosmosDbClient)
+        public CosmosImageMetadataRepository(IImageContainerFactory cosmosDbClient,
+            ILogger<CosmosImageMetadataRepository> logger)
         {
             _cosmosDbClient = cosmosDbClient;
+            _logger = logger;
         }
 
         /// <inheritdoc />
@@ -37,8 +41,10 @@ namespace IK.Imager.Storage.CosmosDb
 
             var container = await _cosmosDbClient.CreateImagesContainerIfNotExists();
 
-            await container.UpsertItemAsync(metadata, new PartitionKey(metadata.ImageGroup), cancellationToken: cancellationToken)
+            var response = await container.UpsertItemAsync(metadata, new PartitionKey(metadata.ImageGroup), cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
+
+            _logger.MetadataUpserted(metadata.Id, response.RequestCharge);
         }
 
         /*
@@ -69,11 +75,15 @@ namespace IK.Imager.Storage.CosmosDb
                 .ToFeedIterator();
 
             List<ImageMetadata> result = new List<ImageMetadata>();
+            double requestCharge = 0;
             while (queryIterator.HasMoreResults)
             {
                 FeedResponse<ImageMetadata> response = await queryIterator.ReadNextAsync(cancellationToken);
+                requestCharge += response.RequestCharge;
                 result.AddRange(response);
             }
+
+            _logger.MetadataRead(result.Count, imageIds.Count, requestCharge);
 
             return result;
         }
@@ -104,6 +114,8 @@ namespace IK.Imager.Storage.CosmosDb
 
                 throw;
             }
+
+            _logger.MetadataRemoved(imageId, response.RequestCharge);
 
             return response.StatusCode == HttpStatusCode.NoContent;
         }

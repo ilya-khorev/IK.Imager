@@ -76,15 +76,17 @@ Parameter  |   Description
 :--- | :--- 
 ServiceBus__ConnectionString   |   Connection string to Azure Service Bus
 AzureStorage__ConnectionString   |   Connection string to Azure Storage account
-APPINSIGHTS_INSTRUMENTATIONKEY   |   Instrumentation key of your Application Insights 
-ApplicationInsights__AuthenticationApiKey   |   Authentication API key of your Application Insights 
 
 #### Optional Parameters
 
 Parameter  |   Default value   |   Description
 :--- | :--- | :---
-Logging__LogLevel__Default   |   Information   |   Minimum log level, from which logs are passed to logger providers. Only 2 logger providers are added: Console and Application Insights
-Logging__ApplicationInsights__LogLevel__Default   |   Information   |   Minimum log level, from which logs are sent to Application Insights
+Logging__LogLevel__Default   |   Information   |   Minimum log level, from which logs are passed to logger providers. Two are added: a json console, and OpenTelemetry once telemetry is configured
+Logging__OpenTelemetry__LogLevel__Default   |   Information   |   Minimum log level, from which logs are exported to Azure Monitor
+Telemetry__ConnectionString   |   *empty*   |   Application Insights connection string. Nothing is exported when it is not set and the service keeps running on the console alone. `APPLICATIONINSIGHTS_CONNECTION_STRING` is read as well
+Telemetry__EnableDependencyTracing   |   false   |   Exports a client span for every blob call, CDN purge and image download. Off by default, because this is what makes telemetry expensive
+Telemetry__EnableLiveMetrics   |   true   |   Live Metrics, which replaces the QuickPulse module the classic SDK had
+Telemetry__SamplingRatio   |   1.0   |   Fraction of traces exported
 Cdn__Uri   |   *empty*   |   Base URI of the CDN in front of the blob storage. Image URLs point straight at blob storage when it is not set
 Cdn__Provider   |   *empty*   |   CDN whose cache is purged when an image is deleted: `Cloudflare`, `AzureFrontDoor`, `Fastly` or `Akamai`. Nothing is purged when it is not set, and an unrecognised value stops the service from starting
 Cdn__Cloudflare__ZoneId, Cdn__Cloudflare__ApiToken   |   *empty*   |   Zone and API token with the Zone - Cache Purge - Purge permission. Required for `Cloudflare`

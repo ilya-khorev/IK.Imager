@@ -18,8 +18,6 @@ namespace IK.Imager.Cdn.Fastly;
 /// </remarks>
 public class FastlyCdnPurger(HttpClient httpClient, ILogger<FastlyCdnPurger> logger) : ICdnPurger
 {
-    private const string Purged = "Fastly accepted a purge of {0} uri(s)";
-
     public async Task Purge(IReadOnlyCollection<Uri> contentUris, CancellationToken cancellationToken)
     {
         if (contentUris.Count == 0)
@@ -28,7 +26,7 @@ public class FastlyCdnPurger(HttpClient httpClient, ILogger<FastlyCdnPurger> log
         foreach (var contentUri in contentUris)
             await PurgeOne(contentUri, cancellationToken);
 
-        logger.LogInformation(Purged, contentUris.Count);
+        logger.Purged(contentUris.Count);
     }
 
     private async Task PurgeOne(Uri contentUri, CancellationToken cancellationToken)
@@ -38,9 +36,12 @@ public class FastlyCdnPurger(HttpClient httpClient, ILogger<FastlyCdnPurger> log
         var response = await httpClient.PostAsync(ToPurgeTarget(contentUri), null, cancellationToken);
 
         if (!response.IsSuccessStatusCode)
+        {
+            logger.PurgeFailed((int)response.StatusCode, contentUri);
             throw new HttpRequestException(
                 $"Fastly returned {(int)response.StatusCode} for a purge of {contentUri}: " +
                 await response.Content.ReadAsStringAsync(cancellationToken));
+        }
     }
 
     //Fastly addresses a cached object by host and path with the scheme stripped

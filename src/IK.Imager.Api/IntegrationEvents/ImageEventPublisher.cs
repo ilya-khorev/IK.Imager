@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using IK.Imager.Api.IntegrationEvents.Events;
 using IK.Imager.Core.Abstractions;
 using MassTransit;
+using Microsoft.Extensions.Logging;
 
 #pragma warning disable 1591
 
@@ -12,14 +13,10 @@ namespace IK.Imager.Api.IntegrationEvents;
 /// The single place where something the core announced becomes a message on Azure Service Bus. It lives in
 /// the API rather than in IK.Imager.Core, which is what keeps MassTransit out of the core project.
 /// </summary>
-public class ImageEventPublisher : IImageEvents
+public class ImageEventPublisher(
+    IPublishEndpoint publishEndpoint,
+    ILogger<ImageEventPublisher> logger) : IImageEvents
 {
-    private readonly IPublishEndpoint _publishEndpoint;
-
-    public ImageEventPublisher(IPublishEndpoint publishEndpoint)
-    {
-        _publishEndpoint = publishEndpoint;
-    }
 
     public async Task ImageUploaded(string imageId, string imageGroup, CancellationToken cancellationToken)
     {
@@ -27,11 +24,15 @@ public class ImageEventPublisher : IImageEvents
         //If the program fails at this stage, this message is not sent and therefore thumbnails are not generated for the image.
         //Such cases are handled when requesting an image metadata object later by resending this event again.
 
-        await _publishEndpoint.Publish(new OriginalImageUploadedIntegrationEvent(imageId, imageGroup), cancellationToken);
+        await publishEndpoint.Publish(new OriginalImageUploadedIntegrationEvent(imageId, imageGroup), cancellationToken);
+
+        logger.EventPublished(nameof(OriginalImageUploadedIntegrationEvent), imageId);
     }
 
     public async Task ImageMetadataDeleted(string imageId, string imageName, string[] thumbnailNames, CancellationToken cancellationToken)
     {
-        await _publishEndpoint.Publish(new ImageMetadataDeletedIntegrationEvent(imageId, imageName, thumbnailNames), cancellationToken);
+        await publishEndpoint.Publish(new ImageMetadataDeletedIntegrationEvent(imageId, imageName, thumbnailNames), cancellationToken);
+
+        logger.EventPublished(nameof(ImageMetadataDeletedIntegrationEvent), imageId);
     }
 }

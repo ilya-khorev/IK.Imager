@@ -107,6 +107,11 @@ public sealed class ImagerApiFixture : IAsyncLifetime
         Set("CosmosDb__ContainerId", ContainerId);
 
         Set("ServiceBus__Transport", MessagingServiceCollectionExtensions.InMemoryTransport);
+
+        //both, because AddImagerTelemetry falls back to the variable the Azure Monitor distro reads on its
+        //own - otherwise a workstation that has it set exports every test run into a real workspace
+        Set("Telemetry__ConnectionString", string.Empty);
+        Set("APPLICATIONINSIGHTS_CONNECTION_STRING", string.Empty);
     }
 
     private void Set(string name, string value)

@@ -29,8 +29,6 @@ public class AkamaiCdnPurger(HttpClient httpClient, ILogger<AkamaiCdnPurger> log
 
     private const int EnvelopeBytes = 14;
 
-    private const string Purged = "Akamai accepted a purge of {0} uri(s)";
-
     public async Task Purge(IReadOnlyCollection<Uri> contentUris, CancellationToken cancellationToken)
     {
         if (contentUris.Count == 0)
@@ -39,7 +37,7 @@ public class AkamaiCdnPurger(HttpClient httpClient, ILogger<AkamaiCdnPurger> log
         foreach (var batch in Batch(contentUris))
             await PurgeBatch(batch, cancellationToken);
 
-        logger.LogInformation(Purged, contentUris.Count);
+        logger.Purged(contentUris.Count);
     }
 
     private async Task PurgeBatch(IReadOnlyCollection<string> batch, CancellationToken cancellationToken)
@@ -48,9 +46,12 @@ public class AkamaiCdnPurger(HttpClient httpClient, ILogger<AkamaiCdnPurger> log
             DeleteByUrlPath, new PurgeRequest(batch), cancellationToken);
 
         if (!response.IsSuccessStatusCode)
+        {
+            logger.PurgeFailed((int)response.StatusCode, batch.Count);
             throw new HttpRequestException(
                 $"Akamai returned {(int)response.StatusCode} for a purge of {batch.Count} uri(s): " +
                 await response.Content.ReadAsStringAsync(cancellationToken));
+        }
     }
 
     /// <summary>

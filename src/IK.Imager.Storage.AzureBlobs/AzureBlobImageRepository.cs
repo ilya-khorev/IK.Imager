@@ -8,6 +8,7 @@ using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using IK.Imager.Storage.Abstractions.Models;
 using IK.Imager.Storage.Abstractions.Repositories;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace IK.Imager.Storage.AzureBlobs
@@ -16,10 +17,14 @@ namespace IK.Imager.Storage.AzureBlobs
     {
         private readonly Lazy<BlobContainerClient> _imagesContainer;
         private readonly Lazy<BlobContainerClient> _thumbnailsContainer;
+        private readonly ILogger<AzureBlobImageRepository> _logger;
 
-        public AzureBlobImageRepository(IOptions<AzureBlobStorageSettings> settings, IBlobContainerFactory blobClient)
+        public AzureBlobImageRepository(IOptions<AzureBlobStorageSettings> settings, IBlobContainerFactory blobClient,
+            ILogger<AzureBlobImageRepository> logger)
         {
             ArgumentNullException.ThrowIfNull(settings);
+
+            _logger = logger;
 
             _imagesContainer = new Lazy<BlobContainerClient>(() => blobClient.CreateContainerIfNotExists(settings.Value.ImagesContainerName.ToLowerInvariant()));
             _thumbnailsContainer = new Lazy<BlobContainerClient>(() => blobClient.CreateContainerIfNotExists(settings.Value.ThumbnailsContainerName.ToLowerInvariant()));
@@ -69,6 +74,7 @@ namespace IK.Imager.Storage.AzureBlobs
             {
                 //IImageBlobRepository documents a missing image as null. GetBlobClient always hands back a
                 //client, so the only way to learn the blob is not there is to ask for it.
+                _logger.BlobNotFound(variant, imageName);
                 await memoryStream.DisposeAsync().ConfigureAwait(false);
                 return null;
             }

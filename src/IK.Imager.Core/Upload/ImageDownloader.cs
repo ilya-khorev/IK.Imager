@@ -4,6 +4,7 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using IK.Imager.Core.Abstractions.Upload;
+using Microsoft.Extensions.Logging;
 
 namespace IK.Imager.Core.Upload;
 
@@ -11,7 +12,7 @@ namespace IK.Imager.Core.Upload;
 /// Downloads the bytes of an image the client only gave us a url for. A typed client - the host owns its
 /// HTTP resilience, see the hook on AddImagerCore.
 /// </summary>
-public class ImageDownloader(HttpClient httpClient) : IImageDownloader
+public class ImageDownloader(HttpClient httpClient, ILogger<ImageDownloader> logger) : IImageDownloader
 {
     /// <summary>
     /// Returns image memory stream by a given url.
@@ -26,8 +27,10 @@ public class ImageDownloader(HttpClient httpClient) : IImageDownloader
             await stream.CopyToAsync(imageStream, cancellationToken);
             imageStream.Position = 0;
         }
-        catch (Exception)
+        catch (Exception exception)
         {
+            //the caller turns a null into a 400, so this is the only place the reason is ever visible
+            logger.DownloadFailed(exception, url);
             return null;
         }
 

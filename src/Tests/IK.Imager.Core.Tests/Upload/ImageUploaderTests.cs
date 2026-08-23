@@ -3,6 +3,7 @@ using System.IO;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using Divergic.Logging.Xunit;
 using IK.Imager.Core.Abstractions;
 using IK.Imager.Core.Abstractions.Cdn;
 using IK.Imager.Core.Abstractions.Models;
@@ -10,7 +11,6 @@ using IK.Imager.Core.Abstractions.Upload;
 using IK.Imager.Core.Upload;
 using IK.Imager.Storage.Abstractions.Models;
 using IK.Imager.Storage.Abstractions.Repositories;
-using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
 using Xunit.Abstractions;
@@ -37,7 +37,7 @@ public class ImageUploaderTests
     private readonly Mock<IImageUrlBuilder> _imageUrlBuilderMock;
     private readonly Mock<IImageEvents> _imageEventsMock;
     private readonly ImageDownloader _imageDownloader;
-    private readonly ILogger<ImageUploader> _logger;
+    private readonly ICacheLogger<ImageUploader> _logger;
 
     public ImageUploaderTests(ITestOutputHelper output)
     {
@@ -49,7 +49,7 @@ public class ImageUploaderTests
         _imageNameGeneratorMock = new Mock<IImageNameGenerator>();
         _imageUrlBuilderMock = new Mock<IImageUrlBuilder>();
         _imageEventsMock = new Mock<IImageEvents>();
-        _imageDownloader = new ImageDownloader(new HttpClient());
+        _imageDownloader = new ImageDownloader(new HttpClient(), output.BuildLoggerFor<ImageDownloader>());
 
         _imageUrlBuilderMock.Setup(x => x.Build(ImageName, ImageVariant.Original)).Returns(PublicUrl);
 
@@ -146,5 +146,45 @@ public class ImageUploaderTests
             x => x.SetMetadata(It.IsAny<ImageMetadata>(), It.IsAny<CancellationToken>()), Times.Never);
         _imageEventsMock.Verify(
             x => x.ImageUploaded(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+    /// <summary>
+    /// Upload-by-url accepts any absolute url, so a caller can hand us a SAS whose signature is in the
+    /// query string. Both url lines on this path go through the redaction.
+    /// </summary>
+    [Fact]
+    public async Task UploadByUrl_SasUrl_DoesNotLogTheSignature()
+    {
+        const string sasUrl = "https://account.blob.core.windows.net/images/photo.jpg?sv=2024-11-04&sig=TOPSECRET";
+
+        var downloaderMock = new Mock<IImageDownloader>();
+        downloaderMock.Setup(x => x.GetMemoryStream(sasUrl, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((MemoryStream?)null);
+
+        var uploader = new ImageUploader(_logger, _imageInspectorMock.Object, _blobRepositoryMock.Object,
+            _metadataRepositoryMock.Object, _imageValidatorMock.Object, _imageNameGeneratorMock.Object,
+            downloaderMock.Object, _imageUrlBuilderMock.Object, _imageEventsMock.Object);
+
+        await Assert.ThrowsAsync<System.ComponentModel.DataAnnotations.ValidationException>(() =>
+            uploader.UploadByUrl(sasUrl, ImageGroup, CancellationToken.None));
+
+        Assert.NotEmpty(_logger.Entries);
+        Assert.All(_logger.Entries, entry => Assert.DoesNotContain("TOPSECRET", entry.Message));
+        Assert.All(_logger.Entries, entry => Assert.DoesNotContain("sig=", entry.Message));
+    }
+
+    /// <summary>
+    /// The reason the validator computed used to be discarded, which left the 400 body saying nothing.
+    /// </summary>
+    [Fact]
+    public async Task Upload_InvalidFormat_ExceptionCarriesTheReason()
+    {
+        _imageValidatorMock.Setup(x => x.CheckFormat(It.IsAny<ImageFormat?>()))
+            .Returns(new ImageValidationResult(
+                new ImageValidationError("image/unsupported-format", "Unsupported image format.")));
+
+        var exception = await Assert.ThrowsAsync<System.ComponentModel.DataAnnotations.ValidationException>(() =>
+            CreateUploader().Upload(new MemoryStream([1, 2, 3]), ImageGroup, CancellationToken.None));
+
+        Assert.Contains("Unsupported image format.", exception.Message);
     }
 }

@@ -1,5 +1,7 @@
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using IK.Imager.Core.Abstractions;
@@ -25,22 +27,17 @@ public class ImageUploader(
     IImageUrlBuilder imageUrlBuilder,
     IImageEvents imageEvents) : IImageUploader
 {
-    private const string CheckingImage = "Starting to check the image.";
-    private const string UploadedToBlobStorage = "Uploaded the image to the blob storage, imageId={0}.";
-    private const string UploadingFinished = "Image with id={0} and its metadata have been saved.";
-    private const string DownloadingByUrl = "Downloading an image by url {0}.";
-    private const string DownloadedByUrl = "Downloaded an image by url {0}.";
-    private const string NotDownloadedByUrl = "Nothing could be downloaded by url {0}.";
     private const string CouldNotDownloadImage = "An image could not be downloaded by the given url.";
+    private const string CouldNotReadImageSize = "The size of the image could not be read.";
 
     public async Task<ImageDetails> UploadByUrl(string imageUrl, string imageGroup, CancellationToken cancellationToken)
     {
-        logger.LogDebug(DownloadingByUrl, imageUrl);
+        logger.DownloadingByUrl(imageUrl);
 
         var imageStream = await imageDownloader.GetMemoryStream(imageUrl, cancellationToken);
         if (imageStream == null)
         {
-            logger.LogInformation(NotDownloadedByUrl, imageUrl);
+            logger.NotDownloadedByUrl(imageUrl);
 
             //the request is well formed - the url simply yielded nothing - so this is the caller's error and
             //not a fault. ValidationException is what GlobalExceptionHandler turns into a 400, which is what
@@ -48,7 +45,7 @@ public class ImageUploader(
             throw new ValidationException(CouldNotDownloadImage);
         }
 
-        logger.LogDebug(DownloadedByUrl, imageUrl);
+        logger.DownloadedByUrl(imageUrl, imageStream.Length);
 
         return await Upload(imageStream, imageGroup, cancellationToken);
     }
@@ -61,13 +58,21 @@ public class ImageUploader(
         string imageId = imageNameGenerator.NewImageId();
         string imageName = imageNameGenerator.ToFileName(imageId, imageFormat.FileExtension);
 
+        //the id does not exist before this point, so this is the earliest the rest of the upload - and the
+        //thumbnail consumer that picks the event up later - can be tied to one image on the console
+        using var scope = logger.BeginScope(new Dictionary<string, object>
+        {
+            ["ImageId"] = imageId,
+            ["ImageGroup"] = imageGroup
+        });
+
         //todo original: id_with_height.jpg
         //todo thumbnail: widthxheight/originalid_width_height.jpg
 
         //todo check if such name already exist (it's unlikely, but worth checking)
 
         var uploadImageResult = await blobRepository.UploadImage(imageName, imageStream, ImageVariant.Original, imageFormat.MimeType, cancellationToken);
-        logger.LogDebug(UploadedToBlobStorage, imageId);
+        logger.UploadedToBlobStorage(imageId, imageName);
 
         //Image stream is no longer needed at this stage
         imageStream.Dispose();
@@ -93,7 +98,7 @@ public class ImageUploader(
             ImageGroup = imageGroup
         }, cancellationToken);
 
-        logger.LogInformation(string.Format(UploadingFinished, imageId));
+        logger.UploadFinished(imageId, imageGroup, imageSize.Bytes);
 
         await imageEvents.ImageUploaded(imageId, imageGroup, cancellationToken);
 
@@ -116,22 +121,35 @@ public class ImageUploader(
     /// </summary>
     private (ImageFormat Format, ImageSize Size) Inspect(Stream imageStream)
     {
-        logger.LogDebug(CheckingImage);
+        logger.CheckingImage();
 
         var imageFormat = imageInspector.DetectFormat(imageStream);
+        var formatResult = imageValidator.CheckFormat(imageFormat);
         //CheckFormat already reports a null format as invalid; the explicit null test is what tells the compiler so
-        if (!imageValidator.CheckFormat(imageFormat).IsValid || imageFormat == null)
-            throw new ValidationException(); //todo return error model instead of exception
+        if (!formatResult.IsValid || imageFormat == null)
+            throw Reject(formatResult);
 
-        logger.LogDebug(imageFormat.ToString());
+        logger.ImageFormatDetected(imageFormat.MimeType, imageFormat.ImageType, imageFormat.FileExtension);
 
         //ReadSize only returns null for a stream ImageSharp cannot identify, which DetectFormat has just ruled out
         var imageSize = imageInspector.ReadSize(imageStream);
-        if (imageSize == null || !imageValidator.CheckSize(imageSize).IsValid)
-            throw new ValidationException(); //todo return error model instead of exception
+        if (imageSize == null)
+            throw new ValidationException(CouldNotReadImageSize);
 
-        logger.LogDebug(imageSize.ToString());
+        var sizeResult = imageValidator.CheckSize(imageSize);
+        if (!sizeResult.IsValid)
+            throw Reject(sizeResult);
+
+        logger.ImageSizeRead(imageSize.Width, imageSize.Height, imageSize.Bytes, imageSize.AspectRatio);
 
         return (imageFormat, imageSize);
+    }
+
+    //the keys are a bounded set, so they stay queryable as a log property; the messages are for the 400 body
+    private ValidationException Reject(ImageValidationResult validationResult)
+    {
+        logger.ImageRejected(string.Join(", ", validationResult.ValidationErrors.Select(x => x.Key)));
+
+        return new ValidationException(string.Join(" ", validationResult.ValidationErrors.Select(x => x.ErrorMessage)));
     }
 }

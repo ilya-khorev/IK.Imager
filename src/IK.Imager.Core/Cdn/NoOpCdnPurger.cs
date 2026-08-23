@@ -15,12 +15,10 @@ namespace IK.Imager.Core.Cdn;
 /// </summary>
 public class NoOpCdnPurger(ILogger<NoOpCdnPurger> logger) : ICdnPurger
 {
-    private const string NoPurger = "No CDN purger is registered - not purging {0} uri(s): {1}";
-
     public Task Purge(IReadOnlyCollection<Uri> contentUris, CancellationToken cancellationToken)
     {
         if (contentUris.Count > 0)
-            logger.LogDebug(NoPurger, contentUris.Count, string.Join(", ", contentUris));
+            logger.NotPurging(contentUris.Count);
 
         return Task.CompletedTask;
     }

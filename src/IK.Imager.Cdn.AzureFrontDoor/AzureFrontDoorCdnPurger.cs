@@ -28,18 +28,19 @@ public class AzureFrontDoorCdnPurger(
     /// </summary>
     private const int MaxUrisPerRequest = 100;
 
-    private const string Purged = "Front Door accepted a purge of {0} path(s) on endpoint {1}";
-
     public async Task Purge(IReadOnlyCollection<Uri> contentUris, CancellationToken cancellationToken)
     {
         if (contentUris.Count == 0)
             return;
 
         if (contentUris.Count > MaxUrisPerRequest)
+        {
+            logger.BatchTooLarge(contentUris.Count, settings.Value.EndpointName, MaxUrisPerRequest);
             throw new ArgumentException(
                 $"Front Door purges at most {MaxUrisPerRequest} uris at a time and refuses a second purge " +
                 $"until the first one completes, so {contentUris.Count} uris cannot be purged as a batch.",
                 nameof(contentUris));
+        }
 
         var content = new FrontDoorPurgeContent(contentUris.Select(x => x.AbsolutePath).ToArray());
 
@@ -52,7 +53,7 @@ public class AzureFrontDoorCdnPurger(
         //takes minutes and waiting for it would hold the Service Bus message lock
         await GetEndpoint().PurgeContentAsync(WaitUntil.Started, content, cancellationToken);
 
-        logger.LogInformation(Purged, contentUris.Count, settings.Value.EndpointName);
+        logger.Purged(contentUris.Count, settings.Value.EndpointName);
     }
 
     private FrontDoorEndpointResource GetEndpoint()
