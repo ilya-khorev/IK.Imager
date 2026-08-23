@@ -63,6 +63,23 @@ public class DeleteEndpointTests(ImagerApiFixture fixture) : ImagerApiTests(fixt
         await Fixture.ConsumedEvents.FilesRemoved(uploaded.Id);
     }
 
+    /// <summary>
+    /// The blob removal publishes a second event that PurgeCdnFilesConsumer picks up. No CDN is configured
+    /// here, so the purge itself is a no-op - what this covers is that the chain is wired at all.
+    /// </summary>
+    [Fact]
+    public async Task DeleteImage_ImageWithThumbnails_PurgesTheCdnAfterTheFilesAreRemoved()
+    {
+        var imageGroup = NewImageGroup();
+        var uploaded = await Api.Upload(TestImages.Jpeg1200X900, imageGroup);
+        await Fixture.ConsumedEvents.ThumbnailsGenerated(uploaded.Id);
+
+        await Api.Delete(uploaded.Id, imageGroup);
+
+        await Fixture.ConsumedEvents.FilesRemoved(uploaded.Id);
+        await Fixture.ConsumedEvents.CdnPurged(uploaded.Id);
+    }
+
     [Fact]
     public async Task DeleteImage_ImageThatWasAlreadyDeleted_ReturnsNotFound()
     {

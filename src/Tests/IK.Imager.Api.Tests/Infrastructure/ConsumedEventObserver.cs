@@ -36,6 +36,13 @@ public sealed class ConsumedEventObserver : IConsumeObserver
     public Task FilesRemoved(string imageId, TimeSpan? timeout = null) =>
         Wait(Key<ImageMetadataDeletedIntegrationEvent>(imageId), timeout);
 
+    /// <summary>
+    /// Waits until the <see cref="ImageFilesDeletedIntegrationEvent"/> for this image has been consumed,
+    /// i.e. until the CDN purge that follows the blob removal has finished.
+    /// </summary>
+    public Task CdnPurged(string imageId, TimeSpan? timeout = null) =>
+        Wait(Key<ImageFilesDeletedIntegrationEvent>(imageId), timeout);
+
     private async Task Wait(string key, TimeSpan? timeout)
     {
         var completion = _consumed.GetOrAdd(key, _ => NewCompletion());
@@ -79,6 +86,7 @@ public sealed class ConsumedEventObserver : IConsumeObserver
         {
             OriginalImageUploadedIntegrationEvent uploaded => Key<OriginalImageUploadedIntegrationEvent>(uploaded.ImageId),
             ImageMetadataDeletedIntegrationEvent deleted => Key<ImageMetadataDeletedIntegrationEvent>(deleted.ImageId),
+            ImageFilesDeletedIntegrationEvent purged => Key<ImageFilesDeletedIntegrationEvent>(purged.ImageId),
             _ => null
         };
 

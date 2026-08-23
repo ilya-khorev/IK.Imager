@@ -3,6 +3,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using IK.Imager.Core.Abstractions;
+using IK.Imager.Core.Abstractions.Cdn;
 using IK.Imager.Core.Abstractions.Models;
 using IK.Imager.Core.Abstractions.Upload;
 using IK.Imager.Storage.Abstractions.Models;
@@ -21,6 +22,7 @@ public class ImageUploader(
     IImageValidator imageValidator,
     IImageNameGenerator imageNameGenerator,
     IImageDownloader imageDownloader,
+    IImageUrlBuilder imageUrlBuilder,
     IImageEvents imageEvents) : IImageUploader
 {
     private const string CheckingImage = "Starting to check the image.";
@@ -101,7 +103,7 @@ public class ImageUploader(
             Name = imageName,
             Hash = uploadImageResult.Hash,
             DateAdded = uploadImageResult.DateAdded,
-            Url = uploadImageResult.Url,
+            Url = imageUrlBuilder.Build(imageName, ImageVariant.Original),
             Bytes = imageSize.Bytes,
             Height = imageSize.Height,
             Width = imageSize.Width,

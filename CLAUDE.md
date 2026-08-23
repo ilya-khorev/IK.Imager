@@ -61,13 +61,13 @@ Nullable reference types are on everywhere. Config-bound options classes and mod
 A model is a `record` when it is built once and only read afterwards. Two shapes are in use, deliberately:
 
 - **Positional**, for the small core value objects — `ImageFormat`, `ImageSize`, `ImageResizeResult`, and the two integration events. Everything is passed at construction, so there is nothing to say twice.
+- **`init` properties, not positional**, for the core lookup and upload models — `ImageDetails`, `ImageDetailsWithThumbnails`, `ImageLookupResult`. Nine properties read better as named assignments than as a nine-argument constructor call, and `ImageDetailsWithThumbnails` inherits `ImageDetails`, so all three had to move together — a record can only inherit a record. They were classes until `IImageUrlBuilder` landed, because the CDN decorators rewrote `Url` in place, including on thumbnails nested in a list. Nothing patches them now: `ImageLookup` builds each one complete and never touches it again.
 - **`init` properties, not positional**, for every `IK.Imager.Api.Contract` model. The OpenAPI schema descriptions come from the `<summary>` of each property, which a positional record would have to express as `<param>` on the primary constructor; keeping properties keeps the document identical and keeps the object-initializer call sites in the endpoint mappings readable. Model binding populates `init` properties fine — verified against a running host for JSON bodies, for a record inheriting `UploadImageRequestBase`, and for the multipart `UploadImageFileRequest` including its `IFormFile`.
 
 `IK.Imager.Api.Contract` is `netstandard2.1`, which predates `System.Runtime.CompilerServices.IsExternalInit` — the type every `init` accessor compiles a reference to. `IsExternalInit.cs` declares it `internal` so it never collides with the real one in a consumer. Removing that file breaks every `init` in the project.
 
 These stay classes, each for a reason worth not re-litigating:
 
-- **`IK.Imager.Core.Abstractions` `ImageDetails` / `ImageDetailsWithThumbnails` / `ImageLookupResult`** — the CDN decorators rewrite `Url` in place, including on thumbnails nested in a list. Immutability would mean rebuilding those lists with `with`, which is more code than the assignment it replaces.
 - **`ImageMetadata`** — hand-writes `IEquatable` with a *sequence* comparison of `Thumbnails`. A generated record equality would silently downgrade that to reference equality on the `List<>`. It is also Newtonsoft-bound for Cosmos and mutated in place before the upsert.
 - **The options classes** (`CdnSettings`, `ImageThumbnailsSettings`, `ImageLimitationsSettings`, `TopicsSettings`) — `IOptions<T>` resolves through `Activator.CreateInstance<T>()` and needs a public parameterless constructor, which a positional record does not have. That failure appears at first resolve, not at compile time.
 
@@ -97,6 +97,39 @@ Note the value equality of `ImageLookupResult` and `ImageDetailsWithThumbnails` 
 CI (`.github/workflows/dotnetcore.yml`) runs on `ubuntu-latest` and now builds **and** tests — the hosted Windows runners cannot run Linux containers.
 
 Test naming convention (stated in `AzureBlobImageRepositoryTests`): `MethodUnderTest_Scenario_ExpectedBehavior`.
+
+## Code style
+
+- Prefer clean, self-explanatory code over comments.
+- Do not add comments that merely describe what the code does.
+- Add comments only when they explain:
+  - a non-obvious decision;
+  - an important constraint;
+  - a workaround;
+  - behavior that would otherwise be surprising.
+- Keep comments short and simple.
+- Use plain English.
+- Avoid complex words, idioms, and long sentences.
+- Do not use comments as documentation for obvious methods or variables.
+- Do not add comments like:
+  - "Initialize the service"
+  - "Get the user by ID"
+  - "Check if the value is null"
+  - "Return the result"
+- Do not add comments describing changes you just made.
+- Prefer descriptive names instead of explanatory comments.
+- Do not add `// Arrange`, `// Act`, `// Assert` comments to tests unless
+  they improve readability.
+
+## Language
+
+When writing code comments, documentation, commit messages, or developer-facing text:
+
+- Use simple and direct English.
+- Prefer short sentences.
+- Avoid sophisticated or unusual vocabulary when a common word works.
+- Avoid idioms and marketing-style language.
+- Write as an experienced developer communicating with other developers.
 
 ## Architecture
 
@@ -147,11 +180,38 @@ Two things minimal APIs need that MVC did implicitly:
 
 Upload → `ImageUploader.Upload` (validate format/size → blob storage → metadata) → `IImageEvents.ImageUploaded` → published as the integration event `OriginalImageUploadedIntegrationEvent` on Service Bus → `CreateThumbnailsConsumer` consumes it and calls `IThumbnailGenerator.Generate`. Hence the ~2s delay before thumbnails appear in lookup results.
 
-Delete → `ImageDeleter.DeleteMetadata` removes only the metadata (image disappears from lookup results immediately) → `IImageEvents.ImageMetadataDeleted` → `ImageMetadataDeletedIntegrationEvent` → `RemoveImageFilesConsumer` → `ImageDeleter.DeleteFiles` deletes the original blob and thumbnail blobs.
+Delete → `ImageDeleter.DeleteMetadata` removes only the metadata (image disappears from lookup results immediately) → `IImageEvents.ImageMetadataDeleted` → `ImageMetadataDeletedIntegrationEvent` → `RemoveImageFilesConsumer` → `ImageDeleter.DeleteFiles` deletes the original blob and thumbnail blobs → `ImageFilesDeletedIntegrationEvent` → `PurgeCdnFilesConsumer` purges them from the CDN.
 
 **`IImageEvents` is how the core reaches the bus without depending on it.** It is declared in `IK.Imager.Core.Abstractions` as two plain methods and implemented once, by `IK.Imager.Api/IntegrationEvents/ImageEventPublisher.cs`, which publishes over MassTransit; `AddIntegrationEventMessaging` registers it alongside the bus it publishes onto. It replaced an `IDomainEvent` / `IDomainEventHandler<T>` / `IDomainEventDispatcher` trio plus a dispatcher that resolved handlers out of the container — three interfaces, two event records and two handler classes, for two events that had exactly one handler each. If an event ever genuinely needs several independent reactions, add them on the bus side rather than reviving in-process dispatch.
 
-CDN rewriting is applied outside the services, by a decorator sitting next to the service it wraps — `Upload/CdnImageUploader.cs` and `Lookup/CdnImageLookup.cs`. A service always returns the raw blob URL and the decorator swaps in the CDN host when `Cdn:Uri` is configured. This is the one reason the services have interfaces at all, and it is what the by-type-then-interface pair in `AddImagerCore` is for: `AddScoped<ImageLookup>()` registers the concrete service, and `AddScoped<IImageLookup>(…)` resolves to the decorator wrapping it. `IImageDeleter` and `IThumbnailGenerator` return no URLs and are registered plainly. Add a decorator in the feature folder rather than touching a service when a new response needs URL rewriting.
+**Urls are built, never rewritten.** `ImageMetadata` stores only the blob name, so every url in the system comes from one place — `IImageUrlBuilder` (`Core/Cdn/ImageUrlBuilder.cs`), which asks the blob repository for the blob uri and swaps in the CDN host when `Cdn:Uri` is configured. `ImageUploader` and `ImageLookup` call it directly, and the services are registered plainly.
+
+An earlier version returned raw blob urls from the services and had `CdnImageUploader` / `CdnImageLookup` decorators patch them afterwards. That cost more than the wiring it saved: it was the only reason `IImageUploader` and `IImageLookup` had interfaces, it forced the core models to stay mutable so a decorator could assign `Url`, and it corrected a url one layer above the code that had just produced it. Building the url once is also where a SAS signature goes if images ever stop being public — CDN host and signature answer the same question, so they belong in the same function.
+
+**The CDN purge is a bus consumer, not a step inside deleting.** Removing a blob does not clear an edge cache, so a deleted image keeps being served until its TTL expires. `RemoveImageFilesConsumer` deletes the blobs and then publishes `ImageFilesDeletedIntegrationEvent`; `PurgeCdnFilesConsumer` consumes it and purges. The order is structural rather than a comment — purging while the blobs still exist only makes the edge fetch them again. Splitting it also means a slow or failing purge retries on its own queue instead of re-running the blob removal, and cannot hold up the delete subscription. This is the case `IImageEvents` was always meant to grow into: several independent reactions belong on the bus, not in in-process dispatch.
+
+`ICdnPurger` (`IK.Imager.Core.Abstractions/Cdn`) is provider-agnostic on purpose. It takes absolute uris already on the CDN host, since Cloudflare, Akamai and Fastly purge by full url while Azure Front Door and CloudFront want `Uri.AbsolutePath`, and it takes them as a batch because providers rate limit the request rather than the uri — splitting a batch down to a provider's own maximum belongs in the implementation. Core registers `NoOpCdnPurger` with `TryAddSingleton`, so **adding a CDN is one class plus one registration in its own module**, with no change to Core, and a deployment without a CDN keeps working untouched. Implementations throw on failure, so MassTransit retries and finally dead-letters; they should return once the purge is *accepted* rather than propagated, because a purge takes minutes and blocking would hold the Service Bus message lock.
+
+**Four provider modules implement it**, one project each under the `Cdn` solution folder — `IK.Imager.Cdn.Cloudflare`, `IK.Imager.Cdn.AzureFrontDoor`, `IK.Imager.Cdn.Fastly`, `IK.Imager.Cdn.Akamai`. Each references only `IK.Imager.Core.Abstractions` and exposes its own `Add…CdnPurger(IConfiguration)` binding `Cdn:<Provider>`. One project per provider rather than one assembly with a switch, so a Cloudflare deployment does not carry `Azure.ResourceManager.Cdn`. There is deliberately no shared `IK.Imager.Cdn.Common`: the only common logic is batching, which is `.Chunk(n)`, and an assembly holding one helper is what `IK.Imager.Utils` used to be.
+
+**A provider module must `RemoveAll<ICdnPurger>()` before registering, never `TryAdd`.** `AddImagerCore` runs first in `Program.cs` and its `TryAddSingleton<ICdnPurger, NoOpCdnPurger>()` wins over any later `TryAdd` — the service would then silently never purge, with nothing logged and nothing failing. `RemoveAll` plus a plain add works whichever order the modules run in. `CdnServiceCollectionExtensionsTests` in `IK.Imager.Api.Tests` pins this down against the real composition order.
+
+**The host picks the provider, not the modules.** `Cdn:Provider` (`Api/Extensions/CdnServiceCollectionExtensions.cs`) selects one of the four; empty keeps `NoOpCdnPurger`, and an unrecognised value **throws** rather than falling back, because a typo in `Cdn__Provider` would otherwise look like a deployment that purges. The selection sits in the host for the same reason health checks do — which CDN is in front of a deployment is an operational decision — and it means switching CDN is configuration rather than a rebuild.
+
+The per-provider quirks worth knowing, all of them verified against vendor docs rather than assumed:
+
+| Provider | Purges by | Batching | Auth |
+|---|---|---|---|
+| Cloudflare | full url | 100 urls per call (500 on Enterprise) | `Authorization: Bearer` |
+| Fastly | full url, scheme stripped | **no bulk purge by url exists** — one request per uri | `Fastly-Key` |
+| Azure Front Door | `Uri.AbsolutePath` | 100 paths, and **no second purge until the first propagates** | `DefaultAzureCredential` |
+| Akamai | full url | 50 KB of request body, no object count limit | EdgeGrid `EG1-HMAC-SHA256` |
+
+Two of those need spelling out. **Front Door is not a chunk-and-fire provider** — it rejects a purge submitted before the previous one finishes, which takes about ten minutes, so `AzureFrontDoorCdnPurger` throws above 100 uris instead of splitting. Real purge sets are one original plus its thumbnails, so the guard exists to be honest rather than to be hit. And **Cloudflare can answer 200 with `success: false`**, so the envelope is checked as well as the status code; it publishes no guarantee that the two agree.
+
+**Akamai's EdgeGrid signer is hand-written, and tested against pinned vectors for a reason.** The official `Akamai.EdgeGrid.Auth` is a preview whose last stable release targets .NET Framework 4.0. A signer is the kind of code that passes every test a stub `HttpMessageHandler` can express — the header is *present* — and then fails in production with a 401, so `EdgeGridSignerTests` compares whole signatures against values generated by Akamai's own Python reference implementation. Four traps live in there: the empty header list means the signing string carries two adjacent tabs; the second HMAC is keyed with the **base64 text** of the first, not its bytes; the content hash is POST-only and omitted for an empty body; and the unsigned header keeps its trailing `;`. Note Akamai's own API reference shows a stale `Authorization: EdgeGrid …` sample — do not implement from it.
+
+**`PurgeCdnFilesConsumerDefinition` is what makes "retries and finally dead-letters" true.** It was not before: nothing in the solution configured `UseMessageRetry`, so a throwing purger burned every delivery attempt in milliseconds. Every CDN here rate limits purging, so the common failure is a 429 that would succeed moments later. Backing off is safe because purging is idempotent — a retry purges the same uris again. It is a `ConsumerDefinition` rather than endpoint configuration so it also applies on the in-memory transport the tests run on, and it is scoped to this one consumer; the thumbnail and blob-removal consumers keep their existing behaviour.
 
 ### Project layout
 

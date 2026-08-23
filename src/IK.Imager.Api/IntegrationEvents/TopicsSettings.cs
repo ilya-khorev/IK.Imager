@@ -5,6 +5,7 @@ public class TopicsSettings
 {
     public string UploadedImagesTopicName { get; set; } = null!;
     public string DeletedImagesTopicName { get; set; } = null!;
+    public string DeletedImageFilesTopicName { get; set; } = null!;
     public string SubscriptionName { get; set; } = null!;
     public int MaxConcurrentCalls { get; set; }
 }

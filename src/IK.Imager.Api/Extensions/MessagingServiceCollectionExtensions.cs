@@ -71,6 +71,8 @@ public static class MessagingServiceCollectionExtensions
                     c.SetEntityName(topicsSettings.Value.UploadedImagesTopicName));
                 cfg.Message<ImageMetadataDeletedIntegrationEvent>(c =>
                     c.SetEntityName(topicsSettings.Value.DeletedImagesTopicName));
+                cfg.Message<ImageFilesDeletedIntegrationEvent>(c =>
+                    c.SetEntityName(topicsSettings.Value.DeletedImageFilesTopicName));
 
                 cfg.ConcurrentMessageLimit = topicsSettings.Value.MaxConcurrentCalls;
 
@@ -83,6 +85,11 @@ public static class MessagingServiceCollectionExtensions
                     configurator =>
                     {
                         configurator.ConfigureConsumer<RemoveImageFilesConsumer>(context);
+                    });
+                cfg.SubscriptionEndpoint<ImageFilesDeletedIntegrationEvent>(topicsSettings.Value.SubscriptionName,
+                    configurator =>
+                    {
+                        configurator.ConfigureConsumer<PurgeCdnFilesConsumer>(context);
                     });
             });
         });

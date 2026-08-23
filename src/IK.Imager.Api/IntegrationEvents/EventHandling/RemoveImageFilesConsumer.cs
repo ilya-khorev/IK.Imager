@@ -25,5 +25,10 @@ public class RemoveImageFilesConsumer : IConsumer<ImageMetadataDeletedIntegratio
     {
         await _imageDeleter.DeleteFiles(context.Message.ImageId, context.Message.ImageName,
             context.Message.ThumbnailNames, context.CancellationToken);
+
+        //published only after the blobs are gone - a CDN purge that runs while they still exist just makes
+        //the edge fetch them again
+        await context.Publish(new ImageFilesDeletedIntegrationEvent(context.Message.ImageId,
+            context.Message.ImageName, context.Message.ThumbnailNames));
     }
 }
