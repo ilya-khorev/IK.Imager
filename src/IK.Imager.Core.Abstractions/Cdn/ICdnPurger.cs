@@ -18,8 +18,9 @@ namespace IK.Imager.Core.Abstractions.Cdn;
 /// </description></item>
 /// <item><description>
 /// Uris arrive as a batch because providers rate limit the request, not the uri. Splitting a batch down
-/// to a provider's own limit (30 urls per Cloudflare call, 3000 paths per CloudFront invalidation)
-/// belongs in the implementation.
+/// to a provider's own limit (100 urls per Cloudflare call, 50 KB of body per Akamai call) belongs in
+/// the implementation. Azure Front Door is the exception: it caps a purge at 100 paths and refuses a
+/// second one until the first has propagated, so its implementation rejects a larger batch instead.
 /// </description></item>
 /// <item><description>
 /// The task completes when the purge is accepted, not when it has propagated. Every provider runs this

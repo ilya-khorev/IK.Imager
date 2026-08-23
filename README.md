@@ -85,6 +85,12 @@ Parameter  |   Default value   |   Description
 :--- | :--- | :---
 Logging__LogLevel__Default   |   Information   |   Minimum log level, from which logs are passed to logger providers. Only 2 logger providers are added: Console and Application Insights
 Logging__ApplicationInsights__LogLevel__Default   |   Information   |   Minimum log level, from which logs are sent to Application Insights
+Cdn__Uri   |   *empty*   |   Base URI of the CDN in front of the blob storage. Image URLs point straight at blob storage when it is not set
+Cdn__Provider   |   *empty*   |   CDN whose cache is purged when an image is deleted: `Cloudflare`, `AzureFrontDoor`, `Fastly` or `Akamai`. Nothing is purged when it is not set, and an unrecognised value stops the service from starting
+Cdn__Cloudflare__ZoneId, Cdn__Cloudflare__ApiToken   |   *empty*   |   Zone and API token with the Zone - Cache Purge - Purge permission. Required for `Cloudflare`
+Cdn__AzureFrontDoor__SubscriptionId, __ResourceGroupName, __ProfileName, __EndpointName   |   *empty*   |   Locate the Front Door endpoint. Required for `AzureFrontDoor`, which authenticates with `DefaultAzureCredential`
+Cdn__Fastly__ApiToken   |   *empty*   |   API token with the purge_select scope. Required for `Fastly`
+Cdn__Akamai__Host, __ClientToken, __ClientSecret, __AccessToken   |   *empty*   |   EdgeGrid credentials of an API client with the Fast Purge permission. Required for `Akamai`
 
 The full list of configuration parameters can be found in the appsettings file   
 

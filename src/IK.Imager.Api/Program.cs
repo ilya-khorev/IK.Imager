@@ -39,6 +39,7 @@ builder.Services
     .AddOpenApiDocumentation()
     .AddImagerCore(builder.Configuration, httpClient => httpClient.AddTransientHttpErrorPolicy(p =>
         p.WaitAndRetryAsync(3, _ => TimeSpan.FromMilliseconds(500))))
+    .AddCdnPurger(builder.Configuration)
     .AddAzureImageBlobStorage(builder.Configuration)
     .AddCosmosImageMetadataStorage(builder.Configuration)
     .AddIntegrationEventMessaging(builder.Configuration)

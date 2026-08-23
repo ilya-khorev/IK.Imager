@@ -24,6 +24,10 @@
 
     <ItemGroup>
       <ProjectReference Include="..\IK.Imager.Api.Contract\IK.Imager.Api.Contract.csproj" />
+      <ProjectReference Include="..\IK.Imager.Cdn.Akamai\IK.Imager.Cdn.Akamai.csproj" />
+      <ProjectReference Include="..\IK.Imager.Cdn.AzureFrontDoor\IK.Imager.Cdn.AzureFrontDoor.csproj" />
+      <ProjectReference Include="..\IK.Imager.Cdn.Cloudflare\IK.Imager.Cdn.Cloudflare.csproj" />
+      <ProjectReference Include="..\IK.Imager.Cdn.Fastly\IK.Imager.Cdn.Fastly.csproj" />
       <ProjectReference Include="..\IK.Imager.Core.Abstractions\IK.Imager.Core.Abstractions.csproj" />
       <ProjectReference Include="..\IK.Imager.Core\IK.Imager.Core.csproj" />
       <ProjectReference Include="..\IK.Imager.Storage.AzureBlobs\IK.Imager.Storage.AzureBlobs.csproj" />
