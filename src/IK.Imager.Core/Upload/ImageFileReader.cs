@@ -1,0 +1,78 @@
+using System;
+using System.IO;
+using System.Linq;
+using IK.Imager.Core.Abstractions.Models;
+using IK.Imager.Storage.Abstractions.Models;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Formats;
+using SixLabors.ImageSharp.Formats.Bmp;
+using SixLabors.ImageSharp.Formats.Gif;
+using SixLabors.ImageSharp.Formats.Jpeg;
+using SixLabors.ImageSharp.Formats.Png;
+using SixLabors.ImageSharp.Formats.Tiff;
+using SixLabors.ImageSharp.Formats.Webp;
+
+namespace IK.Imager.Core.Upload;
+
+/// <summary>
+/// Everything ImageSharp is asked about an image. Static because it has no state and no dependencies -
+/// <see cref="ImageInspector"/> is the seam the rest of the system mocks.
+/// </summary>
+public static class ImageFileReader
+{
+    public static ImageFormat? DetectFormat(Stream imageStream)
+    {
+        ArgumentNullException.ThrowIfNull(imageStream);
+
+        imageStream.Position = 0;
+
+        IImageFormat imageFormat;
+        try
+        {
+            imageFormat = Image.DetectFormat(imageStream);
+        }
+        catch (UnknownImageFormatException)
+        {
+            //ImageSharp throws instead of returning null when it cannot recognise the stream at all
+            return null;
+        }
+
+        ImageType imageType;
+
+        if (imageFormat is PngFormat)
+            imageType = ImageType.PNG;
+        else if (imageFormat is JpegFormat)
+            imageType = ImageType.JPEG;
+        else if (imageFormat is GifFormat)
+            imageType = ImageType.GIF;
+        else if (imageFormat is BmpFormat)
+            imageType = ImageType.BMP;
+        else if (imageFormat is TiffFormat)
+            imageType = ImageType.TIFF;
+        else if (imageFormat is WebpFormat)
+            imageType = ImageType.WEBP;
+        else
+            throw new NotSupportedException($"Image format {imageFormat.Name} is not supported");
+
+        return new ImageFormat(imageFormat.DefaultMimeType, imageFormat.FileExtensions.First(), imageType);
+    }
+
+    public static ImageSize? ReadSize(Stream imageStream)
+    {
+        ArgumentNullException.ThrowIfNull(imageStream);
+
+        imageStream.Position = 0;
+
+        SixLabors.ImageSharp.ImageInfo identify;
+        try
+        {
+            identify = Image.Identify(imageStream);
+        }
+        catch (UnknownImageFormatException)
+        {
+            return null;
+        }
+
+        return new ImageSize(identify.Width, identify.Height, imageStream.Length);
+    }
+}

@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.IO;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using IK.Imager.Core.Abstractions;
@@ -21,14 +20,12 @@ public class ImageUploader(
     IImageInspector imageInspector,
     IImageBlobRepository blobRepository,
     IImageMetadataRepository metadataRepository,
-    IImageValidator imageValidator,
     IImageNameGenerator imageNameGenerator,
     IImageDownloader imageDownloader,
     IImageUrlBuilder imageUrlBuilder,
     IImageEvents imageEvents) : IImageUploader
 {
     private const string CouldNotDownloadImage = "An image could not be downloaded by the given url.";
-    private const string CouldNotReadImageSize = "The size of the image could not be read.";
 
     public async Task<ImageDetails> UploadByUrl(string imageUrl, string imageGroup, CancellationToken cancellationToken)
     {
@@ -52,7 +49,7 @@ public class ImageUploader(
 
     public async Task<ImageDetails> Upload(Stream imageStream, string imageGroup, CancellationToken cancellationToken)
     {
-        var (imageFormat, imageSize) = Inspect(imageStream);
+        var (imageFormat, imageSize) = imageInspector.Inspect(imageStream);
 
         //Firstly, saving the image stream to the blob storage
         string imageId = imageNameGenerator.NewImageId();
@@ -114,42 +111,5 @@ public class ImageUploader(
             Width = imageSize.Width,
             MimeType = imageFormat.MimeType
         };
-    }
-
-    /// <summary>
-    /// Reads the format and the size off the stream and checks both against the configured limits.
-    /// </summary>
-    private (ImageFormat Format, ImageSize Size) Inspect(Stream imageStream)
-    {
-        logger.CheckingImage();
-
-        var imageFormat = imageInspector.DetectFormat(imageStream);
-        var formatResult = imageValidator.CheckFormat(imageFormat);
-        //CheckFormat already reports a null format as invalid; the explicit null test is what tells the compiler so
-        if (!formatResult.IsValid || imageFormat == null)
-            throw Reject(formatResult);
-
-        logger.ImageFormatDetected(imageFormat.MimeType, imageFormat.ImageType, imageFormat.FileExtension);
-
-        //ReadSize only returns null for a stream ImageSharp cannot identify, which DetectFormat has just ruled out
-        var imageSize = imageInspector.ReadSize(imageStream);
-        if (imageSize == null)
-            throw new ValidationException(CouldNotReadImageSize);
-
-        var sizeResult = imageValidator.CheckSize(imageSize);
-        if (!sizeResult.IsValid)
-            throw Reject(sizeResult);
-
-        logger.ImageSizeRead(imageSize.Width, imageSize.Height, imageSize.Bytes, imageSize.AspectRatio);
-
-        return (imageFormat, imageSize);
-    }
-
-    //the keys are a bounded set, so they stay queryable as a log property; the messages are for the 400 body
-    private ValidationException Reject(ImageValidationResult validationResult)
-    {
-        logger.ImageRejected(string.Join(", ", validationResult.ValidationErrors.Select(x => x.Key)));
-
-        return new ValidationException(string.Join(" ", validationResult.ValidationErrors.Select(x => x.ErrorMessage)));
     }
 }

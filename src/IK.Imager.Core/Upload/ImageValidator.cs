@@ -7,7 +7,10 @@ using Microsoft.Extensions.Options;
 
 namespace IK.Imager.Core.Upload;
 
-public class ImageValidator(IOptionsSnapshot<ImageLimitationsSettings> limitationSettings) : IImageValidator
+/// <summary>
+/// Checks an image against the configured limits. Reached through <see cref="ImageInspector"/>.
+/// </summary>
+public class ImageValidator(IOptionsSnapshot<ImageLimitationsSettings> limitationSettings)
 {
 
     private const string UnsupportedFormat = "Unsupported image format. Please use one of the following formats: {0}.";

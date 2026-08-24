@@ -32,7 +32,6 @@ public class ImageUploaderTests
     private readonly Mock<IImageMetadataRepository> _metadataRepositoryMock;
     private readonly Mock<IImageBlobRepository> _blobRepositoryMock;
     private readonly Mock<IImageInspector> _imageInspectorMock;
-    private readonly Mock<IImageValidator> _imageValidatorMock;
     private readonly Mock<IImageNameGenerator> _imageNameGeneratorMock;
     private readonly Mock<IImageUrlBuilder> _imageUrlBuilderMock;
     private readonly Mock<IImageEvents> _imageEventsMock;
@@ -45,7 +44,6 @@ public class ImageUploaderTests
         _metadataRepositoryMock = new Mock<IImageMetadataRepository>();
         _blobRepositoryMock = new Mock<IImageBlobRepository>();
         _imageInspectorMock = new Mock<IImageInspector>();
-        _imageValidatorMock = new Mock<IImageValidator>();
         _imageNameGeneratorMock = new Mock<IImageNameGenerator>();
         _imageUrlBuilderMock = new Mock<IImageUrlBuilder>();
         _imageEventsMock = new Mock<IImageEvents>();
@@ -53,10 +51,7 @@ public class ImageUploaderTests
 
         _imageUrlBuilderMock.Setup(x => x.Build(ImageName, ImageVariant.Original)).Returns(PublicUrl);
 
-        _imageInspectorMock.Setup(x => x.DetectFormat(It.IsAny<Stream>())).Returns(Jpeg);
-        _imageInspectorMock.Setup(x => x.ReadSize(It.IsAny<Stream>())).Returns(Size);
-        _imageValidatorMock.Setup(x => x.CheckFormat(It.IsAny<ImageFormat?>())).Returns(ImageValidationResult.Success);
-        _imageValidatorMock.Setup(x => x.CheckSize(It.IsAny<ImageSize>())).Returns(ImageValidationResult.Success);
+        _imageInspectorMock.Setup(x => x.Inspect(It.IsAny<Stream>())).Returns((Jpeg, Size));
         _imageNameGeneratorMock.Setup(x => x.NewImageId()).Returns(ImageId);
         _imageNameGeneratorMock.Setup(x => x.ToFileName(ImageId, Jpeg.FileExtension)).Returns(ImageName);
         _blobRepositoryMock
@@ -72,8 +67,7 @@ public class ImageUploaderTests
 
     private ImageUploader CreateUploader() =>
         new(_logger, _imageInspectorMock.Object, _blobRepositoryMock.Object, _metadataRepositoryMock.Object,
-            _imageValidatorMock.Object, _imageNameGeneratorMock.Object, _imageDownloader,
-            _imageUrlBuilderMock.Object, _imageEventsMock.Object);
+            _imageNameGeneratorMock.Object, _imageDownloader, _imageUrlBuilderMock.Object, _imageEventsMock.Object);
 
     [Fact]
     public async Task Upload_ValidImage_ReturnsDetailsOfTheStoredImage()
@@ -132,10 +126,10 @@ public class ImageUploaderTests
     }
 
     [Fact]
-    public async Task Upload_InvalidFormat_ThrowsAndStoresNothing()
+    public async Task Upload_RejectedImage_ThrowsAndStoresNothing()
     {
-        _imageValidatorMock.Setup(x => x.CheckFormat(It.IsAny<ImageFormat?>()))
-            .Returns(new ImageValidationResult(new ImageValidationError("key", "unsupported")));
+        _imageInspectorMock.Setup(x => x.Inspect(It.IsAny<Stream>()))
+            .Throws(new System.ComponentModel.DataAnnotations.ValidationException("unsupported"));
 
         await Assert.ThrowsAsync<System.ComponentModel.DataAnnotations.ValidationException>(() =>
             CreateUploader().Upload(new MemoryStream([1, 2, 3]), ImageGroup, CancellationToken.None));
@@ -161,8 +155,8 @@ public class ImageUploaderTests
             .ReturnsAsync((MemoryStream?)null);
 
         var uploader = new ImageUploader(_logger, _imageInspectorMock.Object, _blobRepositoryMock.Object,
-            _metadataRepositoryMock.Object, _imageValidatorMock.Object, _imageNameGeneratorMock.Object,
-            downloaderMock.Object, _imageUrlBuilderMock.Object, _imageEventsMock.Object);
+            _metadataRepositoryMock.Object, _imageNameGeneratorMock.Object, downloaderMock.Object,
+            _imageUrlBuilderMock.Object, _imageEventsMock.Object);
 
         await Assert.ThrowsAsync<System.ComponentModel.DataAnnotations.ValidationException>(() =>
             uploader.UploadByUrl(sasUrl, ImageGroup, CancellationToken.None));
@@ -170,21 +164,5 @@ public class ImageUploaderTests
         Assert.NotEmpty(_logger.Entries);
         Assert.All(_logger.Entries, entry => Assert.DoesNotContain("TOPSECRET", entry.Message));
         Assert.All(_logger.Entries, entry => Assert.DoesNotContain("sig=", entry.Message));
-    }
-
-    /// <summary>
-    /// The reason the validator computed used to be discarded, which left the 400 body saying nothing.
-    /// </summary>
-    [Fact]
-    public async Task Upload_InvalidFormat_ExceptionCarriesTheReason()
-    {
-        _imageValidatorMock.Setup(x => x.CheckFormat(It.IsAny<ImageFormat?>()))
-            .Returns(new ImageValidationResult(
-                new ImageValidationError("image/unsupported-format", "Unsupported image format.")));
-
-        var exception = await Assert.ThrowsAsync<System.ComponentModel.DataAnnotations.ValidationException>(() =>
-            CreateUploader().Upload(new MemoryStream([1, 2, 3]), ImageGroup, CancellationToken.None));
-
-        Assert.Contains("Unsupported image format.", exception.Message);
     }
 }

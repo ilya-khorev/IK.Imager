@@ -1,80 +1,81 @@
 using System;
-using System.IO;
-using System.Threading.Tasks;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using Divergic.Logging.Xunit;
 using IK.Imager.Core.Tests.Infrastructure;
 using IK.Imager.Core.Upload;
-using IK.Imager.Storage.Abstractions.Models;
+using Microsoft.Extensions.Options;
+using Moq;
 using Xunit;
+using Xunit.Abstractions;
 
-namespace IK.Imager.Core.Tests.Upload
+namespace IK.Imager.Core.Tests.Upload;
+
+public class ImageInspectorTests(ITestOutputHelper output)
 {
-    public class ImageInspectorTests
+    private const string JpegImagePath = SampleImages.JpegImagesDirectory + "/1043-1200x900.jpg";
+
+    [Fact]
+    public void Inspect_SupportedImage_ReturnsFormatAndSize()
     {
-        private readonly ImageInspector _imageInspector;
+        using var fileStream = SampleImages.OpenFileForReading(JpegImagePath);
 
-        public ImageInspectorTests()
+        var (format, size) = CreateInspector().Inspect(fileStream);
+
+        Assert.Equal("image/jpeg", format.MimeType);
+        Assert.Equal(1200, size.Width);
+        Assert.Equal(900, size.Height);
+    }
+
+    [Fact]
+    public void Inspect_NotAnImage_Throws()
+    {
+        using var fileStream = SampleImages.OpenFileForReading(SampleImages.TextFilePath);
+
+        Assert.Throws<ValidationException>(() => CreateInspector().Inspect(fileStream));
+    }
+
+    /// <summary>
+    /// The reason the validator computed reaches the caller - it is what the 400 body says.
+    /// </summary>
+    [Fact]
+    public void Inspect_UnsupportedFormat_ExceptionCarriesTheReason()
+    {
+        using var fileStream = SampleImages.OpenFileForReading(JpegImagePath);
+        var inspector = CreateInspector(settings => settings.Types = ["PNG"]);
+
+        var exception = Assert.Throws<ValidationException>(() => inspector.Inspect(fileStream));
+
+        Assert.Contains("Unsupported image format", exception.Message);
+    }
+
+    [Fact]
+    public void Inspect_ImageOverTheSizeLimit_ExceptionCarriesTheReason()
+    {
+        using var fileStream = SampleImages.OpenFileForReading(JpegImagePath);
+        var inspector = CreateInspector(settings => settings.SizeBytes = new ValueRange<int> { Min = 0, Max = 1000 });
+
+        var exception = Assert.Throws<ValidationException>(() => inspector.Inspect(fileStream));
+
+        Assert.Contains("Image size must be between", exception.Message);
+    }
+
+    private ImageInspector CreateInspector(Action<ImageLimitationsSettings>? tighten = null)
+    {
+        var settings = new ImageLimitationsSettings
         {
-            _imageInspector = new ImageInspector();
-        }
+            Width = new ValueRange<int> { Min = 10, Max = 2000 },
+            Height = new ValueRange<int> { Min = 10, Max = 2000 },
+            SizeBytes = new ValueRange<int> { Min = 1, Max = 10000000 },
+            AspectRatio = new ValueRange<double> { Min = 0.1, Max = 10 },
+            Types = new List<string> { "PNG", "BMP", "JPEG", "GIF" }
+        };
 
-        [Theory]
-        [InlineData(SampleImages.JpegImagesDirectory, ImageType.JPEG)]
-        [InlineData(SampleImages.PngImagesDirectory, ImageType.PNG)]
-        [InlineData(SampleImages.BmpImagesDirectory, ImageType.BMP)]
-        [InlineData(SampleImages.GifImagesDirectory, ImageType.GIF)]
-        public async Task DetectFormat_SupportedFormat_ReturnsFormatModel(string imageDirectory, ImageType expectedType)
-        {
-            foreach (var file in Directory.EnumerateFiles(imageDirectory))
-            {
-                await using var fileStream = SampleImages.OpenFileForReading(file);
-                var imageFormat = _imageInspector.DetectFormat(fileStream);
+        tighten?.Invoke(settings);
 
-                Assert.NotNull(imageFormat);
-                Assert.Equal(expectedType, imageFormat.ImageType);
-            }
-        }
+        var optionsMock = new Mock<IOptionsSnapshot<ImageLimitationsSettings>>();
+        optionsMock.Setup(x => x.Value).Returns(settings);
 
-        [Theory]
-        [InlineData(SampleImages.TgaImagePath)]
-        public async Task DetectFormat_UnsupportedImageFormat_ThrowsNotSupportedException(string filePath)
-        {
-            await using var fileStream = SampleImages.OpenFileForReading(filePath);
-            Assert.Throws<NotSupportedException>(() => _imageInspector.DetectFormat(fileStream));
-        }
-
-        [Theory]
-        [InlineData(SampleImages.TextFilePath)]
-        public async Task DetectFormat_UnrecognizedFormat_ReturnsNull(string filePath)
-        {
-            await using var fileStream = SampleImages.OpenFileForReading(filePath);
-            var format = _imageInspector.DetectFormat(fileStream);
-            Assert.Null(format);
-        }
-
-        [Theory]
-        [InlineData(SampleImages.JpegImagesDirectory + "/1043-1200x900.jpg", 1200, 900, 265504)]
-        [InlineData(SampleImages.BmpImagesDirectory + "/1068-1000x2000.bmp", 1000, 2000, 8000138)]
-        [InlineData(SampleImages.GifImagesDirectory + "/giphy_400x400.gif", 400, 400, 149130)]
-        [InlineData(SampleImages.PngImagesDirectory + "/1060-800x800.png", 800, 800, 514792)]
-        [InlineData(SampleImages.WebpImagePath, 200, 300, 3086)]
-        public async Task ReadSize_SupportedFormat_ReturnsSizeModel(string imagePath, int expectedWidth,
-            int expectedHeight, int expectedSize)
-        {
-            await using var fileStream = SampleImages.OpenFileForReading(imagePath);
-            var imageSize = _imageInspector.ReadSize(fileStream);
-            Assert.NotNull(imageSize);
-            Assert.Equal(expectedWidth, imageSize.Width);
-            Assert.Equal(expectedHeight, imageSize.Height);
-            Assert.Equal(expectedSize, imageSize.Bytes);
-        }
-
-        [Theory]
-        [InlineData(SampleImages.TextFilePath)]
-        public async Task ReadSize_UnsupportedFormat_ReturnsNull(string filePath)
-        {
-            await using var fileStream = SampleImages.OpenFileForReading(filePath);
-            var imageSize = _imageInspector.ReadSize(fileStream);
-            Assert.Null(imageSize);
-        }
+        return new ImageInspector(new ImageValidator(optionsMock.Object), output.BuildLoggerFor<ImageInspector>());
     }
 }

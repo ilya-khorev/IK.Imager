@@ -39,15 +39,16 @@ public static class CoreServiceCollectionExtensions
         services.Configure<ImageThumbnailsSettings>(configuration.GetSection(ThumbnailsSectionName));
         services.Configure<ImageLimitationsSettings>(configuration.GetSection(ImageLimitationsSectionName));
 
-        services.AddSingleton<IImageInspector, ImageInspector>();
         services.AddSingleton<IImageNameGenerator, ImageNameGenerator>();
         services.AddSingleton<IImageResizer, ImageResizer>();
 
         //TryAdd so that a provider module can register its own purger without Core knowing it exists
         services.TryAddSingleton<ICdnPurger, NoOpCdnPurger>();
 
-        //ImageValidator takes IOptionsSnapshot, which is scoped - it cannot be a singleton
-        services.AddScoped<IImageValidator, ImageValidator>();
+        //ImageValidator takes IOptionsSnapshot, which is scoped - neither it nor the inspector built
+        //on it can be a singleton
+        services.AddScoped<ImageValidator>();
+        services.AddScoped<IImageInspector, ImageInspector>();
 
         //scoped because IImageBlobRepository is
         services.AddScoped<IImageUrlBuilder, ImageUrlBuilder>();

@@ -1,23 +1,17 @@
+using System.ComponentModel.DataAnnotations;
 using System.IO;
 using IK.Imager.Core.Abstractions.Models;
 
 namespace IK.Imager.Core.Abstractions.Upload;
 
+/// <summary>
+/// Reads what an image is off its stream and checks it against the configured limits.
+/// </summary>
 public interface IImageInspector
 {
     /// <summary>
-    /// Detects the image format by reading its header
-    /// Returns null if the system cannot recognize the given stream as an image, or the image format is different from jpg, png, bmp, or gif.
+    /// Reads the format and the size of the image and checks both.
     /// </summary>
-    /// <param name="imageStream">Image stream</param>
-    /// <returns></returns>
-    ImageFormat? DetectFormat(Stream imageStream);
-
-    /// <summary>
-    /// Read image size and resolution by reading its header
-    /// Returns null if the system cannot recognize the given stream as an image
-    /// </summary>
-    /// <param name="imageStream">Image stream</param>
-    /// <returns></returns>
-    ImageSize? ReadSize(Stream imageStream);
+    /// <exception cref="ValidationException">The image was rejected. The message carries the reasons.</exception>
+    (ImageFormat Format, ImageSize Size) Inspect(Stream imageStream);
 }

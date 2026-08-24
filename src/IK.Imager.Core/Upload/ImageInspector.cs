@@ -1,75 +1,47 @@
-using System;
+using System.ComponentModel.DataAnnotations;
 using System.IO;
 using System.Linq;
 using IK.Imager.Core.Abstractions.Models;
 using IK.Imager.Core.Abstractions.Upload;
-using IK.Imager.Storage.Abstractions.Models;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Formats;
-using SixLabors.ImageSharp.Formats.Bmp;
-using SixLabors.ImageSharp.Formats.Gif;
-using SixLabors.ImageSharp.Formats.Jpeg;
-using SixLabors.ImageSharp.Formats.Png;
-using SixLabors.ImageSharp.Formats.Tiff;
-using SixLabors.ImageSharp.Formats.Webp;
+using Microsoft.Extensions.Logging;
 
 namespace IK.Imager.Core.Upload;
 
-public class ImageInspector : IImageInspector
+public class ImageInspector(ImageValidator imageValidator, ILogger<ImageInspector> logger) : IImageInspector
 {
-    public ImageFormat? DetectFormat(Stream imageStream)
+    private const string CouldNotReadImageSize = "The size of the image could not be read.";
+
+    public (ImageFormat Format, ImageSize Size) Inspect(Stream imageStream)
     {
-        ArgumentNullException.ThrowIfNull(imageStream);
+        logger.CheckingImage();
 
-        imageStream.Position = 0;
+        var imageFormat = ImageFileReader.DetectFormat(imageStream);
+        var formatResult = imageValidator.CheckFormat(imageFormat);
+        //CheckFormat already reports a null format as invalid; the explicit null test is what tells the compiler so
+        if (!formatResult.IsValid || imageFormat == null)
+            throw Reject(formatResult);
 
-        IImageFormat imageFormat;
-        try
-        {
-            imageFormat = Image.DetectFormat(imageStream);
-        }
-        catch (UnknownImageFormatException)
-        {
-            //ImageSharp throws instead of returning null when it cannot recognise the stream at all
-            return null;
-        }
+        logger.ImageFormatDetected(imageFormat.MimeType, imageFormat.ImageType, imageFormat.FileExtension);
 
-        ImageType imageType;
+        //ReadSize only returns null for a stream ImageSharp cannot identify, which DetectFormat has just ruled out
+        var imageSize = ImageFileReader.ReadSize(imageStream);
+        if (imageSize == null)
+            throw new ValidationException(CouldNotReadImageSize);
 
-        if (imageFormat is PngFormat)
-            imageType = ImageType.PNG;
-        else if (imageFormat is JpegFormat)
-            imageType = ImageType.JPEG;
-        else if (imageFormat is GifFormat)
-            imageType = ImageType.GIF;
-        else if (imageFormat is BmpFormat)
-            imageType = ImageType.BMP;
-        else if (imageFormat is TiffFormat)
-            imageType = ImageType.TIFF;
-        else if (imageFormat is WebpFormat)
-            imageType = ImageType.WEBP;
-        else
-            throw new NotSupportedException($"Image format {imageFormat.Name} is not supported");
+        var sizeResult = imageValidator.CheckSize(imageSize);
+        if (!sizeResult.IsValid)
+            throw Reject(sizeResult);
 
-        return new ImageFormat(imageFormat.DefaultMimeType, imageFormat.FileExtensions.First(), imageType);
+        logger.ImageSizeRead(imageSize.Width, imageSize.Height, imageSize.Bytes, imageSize.AspectRatio);
+
+        return (imageFormat, imageSize);
     }
 
-    public ImageSize? ReadSize(Stream imageStream)
+    //the keys are a bounded set, so they stay queryable as a log property; the messages are for the 400 body
+    private ValidationException Reject(ImageValidationResult validationResult)
     {
-        ArgumentNullException.ThrowIfNull(imageStream);
+        logger.ImageRejected(string.Join(", ", validationResult.ValidationErrors.Select(x => x.Key)));
 
-        imageStream.Position = 0;
-
-        SixLabors.ImageSharp.ImageInfo identify;
-        try
-        {
-            identify = Image.Identify(imageStream);
-        }
-        catch (UnknownImageFormatException)
-        {
-            return null;
-        }
-
-        return new ImageSize(identify.Width, identify.Height, imageStream.Length);
+        return new ValidationException(string.Join(" ", validationResult.ValidationErrors.Select(x => x.ErrorMessage)));
     }
 }
