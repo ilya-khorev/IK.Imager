@@ -12,7 +12,8 @@ namespace IK.Imager.Core.Abstractions.Upload;
 public interface IImageDownloader
 {
     /// <summary>
-    /// Returns the image as a memory stream, or null when nothing could be downloaded from the url.
+    /// Returns the image as a memory stream, or null when nothing could be downloaded from the url, or
+    /// when the response is larger than the configured size limit.
     /// </summary>
     Task<MemoryStream?> GetMemoryStream(string url, CancellationToken cancellationToken);
 }

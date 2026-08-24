@@ -8,6 +8,7 @@ using IK.Imager.Core.Abstractions;
 using IK.Imager.Core.Abstractions.Cdn;
 using IK.Imager.Core.Abstractions.Models;
 using IK.Imager.Core.Abstractions.Upload;
+using IK.Imager.Core.Tests.Infrastructure;
 using IK.Imager.Core.Upload;
 using IK.Imager.Storage.Abstractions.Models;
 using IK.Imager.Storage.Abstractions.Repositories;
@@ -47,7 +48,8 @@ public class ImageUploaderTests
         _imageNameGeneratorMock = new Mock<IImageNameGenerator>();
         _imageUrlBuilderMock = new Mock<IImageUrlBuilder>();
         _imageEventsMock = new Mock<IImageEvents>();
-        _imageDownloader = new ImageDownloader(new HttpClient(), output.BuildLoggerFor<ImageDownloader>());
+        _imageDownloader = new ImageDownloader(new HttpClient(), ImageLimitations.WithMaxSizeBytes(int.MaxValue),
+            output.BuildLoggerFor<ImageDownloader>());
 
         _imageUrlBuilderMock.Setup(x => x.Build(ImageName, ImageVariant.Original)).Returns(PublicUrl);
 
