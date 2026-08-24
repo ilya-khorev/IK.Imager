@@ -1,4 +1,3 @@
-using IK.Imager.Storage.Abstractions.Models;
 using Microsoft.Extensions.Logging;
 
 namespace IK.Imager.Core.Upload;
@@ -7,12 +6,13 @@ namespace IK.Imager.Core.Upload;
  EventId ranges, so that two classes never claim the same id. SYSLIB1006 only catches a collision
  inside one class.
 
- 1000-1049 ImageUploaderLog        2000-2099 the consumers
- 1050-1099 ImageDownloaderLog      2100-2199 ImageEventPublisherLog
- 1100-1199 ThumbnailGeneratorLog   2200-2299 GlobalExceptionHandlerLog
- 1200-1299 ImageDeleterLog         3000-3099 AzureBlobImageRepositoryLog
- 1300-1399 ImageLookupLog          3100-3199 CosmosImageMetadataRepositoryLog
- 1400-1499 NoOpCdnPurgerLog        4000-4399 the four CDN purgers, 100 each
+ 1000-1049 ImageUploaderLog        1500-1599 ImageInspectorLog
+ 1050-1099 ImageDownloaderLog      2000-2099 the consumers
+ 1100-1199 ThumbnailGeneratorLog   2100-2199 ImageEventPublisherLog
+ 1200-1299 ImageDeleterLog         2200-2299 GlobalExceptionHandlerLog
+ 1300-1399 ImageLookupLog          3000-3099 AzureBlobImageRepositoryLog
+ 1400-1499 NoOpCdnPurgerLog        3100-3199 CosmosImageMetadataRepositoryLog
+                                   4000-4399 the four CDN purgers, 100 each
 */
 
 /// <summary>
@@ -21,20 +21,6 @@ namespace IK.Imager.Core.Upload;
 /// </summary>
 internal static partial class ImageUploaderLog
 {
-    [LoggerMessage(EventId = 1000, Level = LogLevel.Debug, Message = "Checking the image.")]
-    public static partial void CheckingImage(this ILogger logger);
-
-    [LoggerMessage(EventId = 1001, Level = LogLevel.Debug,
-        Message = "Detected image format {MimeType} ({ImageType}), extension {FileExtension}.")]
-    public static partial void ImageFormatDetected(this ILogger logger, string mimeType, ImageType imageType, string fileExtension);
-
-    [LoggerMessage(EventId = 1002, Level = LogLevel.Debug,
-        Message = "Read image size {Width}x{Height}, {SizeBytes} bytes, aspect ratio {AspectRatio}.")]
-    public static partial void ImageSizeRead(this ILogger logger, int width, int height, long sizeBytes, double aspectRatio);
-
-    [LoggerMessage(EventId = 1003, Level = LogLevel.Warning, Message = "Image rejected: {ValidationErrorKeys}.")]
-    public static partial void ImageRejected(this ILogger logger, string validationErrorKeys);
-
     [LoggerMessage(EventId = 1004, Level = LogLevel.Debug,
         Message = "Uploaded the image to blob storage, {ImageId} as {ImageName}.")]
     public static partial void UploadedToBlobStorage(this ILogger logger, string imageId, string imageName);
