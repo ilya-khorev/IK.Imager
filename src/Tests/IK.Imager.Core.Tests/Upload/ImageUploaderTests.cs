@@ -49,7 +49,7 @@ public class ImageUploaderTests
         _imageUrlBuilderMock = new Mock<IImageUrlBuilder>();
         _imageEventsMock = new Mock<IImageEvents>();
         _imageDownloader = new ImageDownloader(new HttpClient(), ImageLimitations.WithMaxSizeBytes(int.MaxValue),
-            output.BuildLoggerFor<ImageDownloader>());
+            DownloadSettings.WithMaxRedirects(), output.BuildLoggerFor<ImageDownloader>());
 
         _imageUrlBuilderMock.Setup(x => x.Build(ImageName, ImageVariant.Original)).Returns(PublicUrl);
 

@@ -14,6 +14,7 @@ using IK.Imager.Storage.Abstractions.Repositories;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Options;
 
 namespace IK.Imager.Core;
 
@@ -22,6 +23,7 @@ public static class CoreServiceCollectionExtensions
     public const string CdnSectionName = "Cdn";
     public const string ThumbnailsSectionName = "Thumbnails";
     public const string ImageLimitationsSectionName = "ImageLimitations";
+    public const string ImageDownloadSectionName = "ImageDownload";
 
     /// <summary>
     /// Registers the core services - one per feature, plus the pieces they are built from - and binds their settings.
@@ -38,6 +40,7 @@ public static class CoreServiceCollectionExtensions
         services.Configure<CdnSettings>(configuration.GetSection(CdnSectionName));
         services.Configure<ImageThumbnailsSettings>(configuration.GetSection(ThumbnailsSectionName));
         services.Configure<ImageLimitationsSettings>(configuration.GetSection(ImageLimitationsSectionName));
+        services.Configure<ImageDownloadSettings>(configuration.GetSection(ImageDownloadSectionName));
 
         services.AddSingleton<IImageNameGenerator, ImageNameGenerator>();
         services.AddSingleton<IImageResizer, ImageResizer>();
@@ -53,15 +56,33 @@ public static class CoreServiceCollectionExtensions
         //scoped because IImageBlobRepository is
         services.AddScoped<IImageUrlBuilder, ImageUrlBuilder>();
 
-        //typed client registered against the interface, so ImageUploader takes an abstraction like all
-        //of its other dependencies do
-        var imageDownloaderBuilder = services.AddHttpClient<IImageDownloader, ImageDownloader>();
-        configureImageDownloader?.Invoke(imageDownloaderBuilder);
-
+        RegisterImageDownloader(services, configureImageDownloader);
         RegisterFeatureServices(services);
 
         return services;
     }
+
+    /// <summary>
+    /// A typed client registered against the interface, so <see cref="ImageUploader"/> takes an abstraction
+    /// like all of its other dependencies do.
+    ///
+    /// The timeout and the primary handler are what the client is rather than host policy: the url comes from
+    /// the caller, so a client with no time bound and no address checks is a way into the deployment. The host
+    /// hook runs last and can still replace either.
+    /// </summary>
+    private static void RegisterImageDownloader(IServiceCollection services,
+        Action<IHttpClientBuilder>? configureImageDownloader)
+    {
+        var builder = services.AddHttpClient<IImageDownloader, ImageDownloader>()
+            .ConfigureHttpClient((provider, client) => client.Timeout = DownloadSettings(provider).Timeout)
+            .ConfigurePrimaryHttpMessageHandler(provider =>
+                ImageDownloadHandler.Create(DownloadSettings(provider).AllowPrivateAddresses));
+
+        configureImageDownloader?.Invoke(builder);
+    }
+
+    private static ImageDownloadSettings DownloadSettings(IServiceProvider provider) =>
+        provider.GetRequiredService<IOptionsMonitor<ImageDownloadSettings>>().CurrentValue;
 
     private static void RegisterFeatureServices(IServiceCollection services)
     {

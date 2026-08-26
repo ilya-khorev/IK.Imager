@@ -108,6 +108,10 @@ public sealed class ImagerApiFixture : IAsyncLifetime
 
         Set("ServiceBus__Transport", MessagingServiceCollectionExtensions.InMemoryTransport);
 
+        //Azurite serves the image the upload-by-url tests download on 127.0.0.1, and the download refuses
+        //private addresses everywhere else - see ImageDownloadSettings.AllowPrivateAddresses
+        Set("ImageDownload__AllowPrivateAddresses", "true");
+
         //both, because AddImagerTelemetry falls back to the variable the Azure Monitor distro reads on its
         //own - otherwise a workstation that has it set exports every test run into a real workspace
         Set("Telemetry__ConnectionString", string.Empty);
