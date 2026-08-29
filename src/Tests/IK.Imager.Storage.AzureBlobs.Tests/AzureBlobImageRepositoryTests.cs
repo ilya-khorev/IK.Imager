@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Azure;
 using IK.Imager.Storage.Abstractions.Models;
+using IK.Imager.Storage.Abstractions.Repositories;
 using IK.Imager.Storage.AzureBlobs;
 using IK.Imager.TestsBase;
 using Xunit;
@@ -66,7 +67,7 @@ public class AzureBlobImageRepositoryTests
         var blobPath = GenerateUniqueBlobPath();
         await using var imageStream = new MemoryStream(imageBytes);
 
-        var uploadImageResult = await _imageBlobAzureRepository.UploadImage(blobPath, imageStream, imageType, JpegType, CancellationToken.None);
+        var uploadImageResult = await _imageBlobAzureRepository.UploadImage(blobPath, imageStream, imageType, JpegType, false, CancellationToken.None);
 
         Assert.Equal(Convert.ToBase64String(MD5.HashData(imageBytes)), uploadImageResult.Hash);
     }
@@ -74,15 +75,35 @@ public class AzureBlobImageRepositoryTests
     [Theory]
     [InlineData(ImageVariant.Original)]
     [InlineData(ImageVariant.Thumbnail)]
-    public async Task UploadImage_ExistingImageName_ThrowsRequestFailedException(ImageVariant imageType)
+    public async Task UploadImage_ExistingBlobPath_ThrowsBlobAlreadyExists(ImageVariant imageType)
     {
         var (blobPath, _) = await UploadTestImage(imageType);
 
         await using var fileStream = OpenTestImageForReading();
-        var exception = await Assert.ThrowsAsync<RequestFailedException>(() =>
-            _imageBlobAzureRepository.UploadImage(blobPath, fileStream, imageType, JpegType, CancellationToken.None));
+        var exception = await Assert.ThrowsAsync<BlobAlreadyExistsException>(() =>
+            _imageBlobAzureRepository.UploadImage(blobPath, fileStream, imageType, JpegType, false, CancellationToken.None));
 
-        Assert.Equal((int)HttpStatusCode.Conflict, exception.Status);
+        Assert.Equal(blobPath, exception.BlobPath);
+        Assert.Equal((int)HttpStatusCode.Conflict, Assert.IsType<RequestFailedException>(exception.InnerException).Status);
+    }
+
+    /// <summary>
+    /// Thumbnail paths are derived from their original, so regeneration writes to the same paths and has to
+    /// replace what is there - otherwise a redelivered thumbnail job would fail forever.
+    /// </summary>
+    [Theory]
+    [InlineData(ImageVariant.Original)]
+    [InlineData(ImageVariant.Thumbnail)]
+    public async Task UploadImage_ExistingBlobPathWithOverwrite_ReplacesTheBlob(ImageVariant imageType)
+    {
+        var (blobPath, first) = await UploadTestImage(imageType);
+
+        await using var fileStream = OpenTestImageForReading();
+        var second = await _imageBlobAzureRepository.UploadImage(blobPath, fileStream, imageType, JpegType, true,
+            CancellationToken.None);
+
+        Assert.Equal(first.Hash, second.Hash);
+        Assert.True(await _imageBlobAzureRepository.ImageExists(blobPath, imageType, CancellationToken.None));
     }
 
     [Theory]
@@ -93,7 +114,7 @@ public class AzureBlobImageRepositoryTests
         await using var fileStream = OpenTestImageForReading();
 
         await Assert.ThrowsAsync<ArgumentException>(() =>
-            _imageBlobAzureRepository.UploadImage(string.Empty, fileStream, imageType, JpegType, CancellationToken.None));
+            _imageBlobAzureRepository.UploadImage(string.Empty, fileStream, imageType, JpegType, false, CancellationToken.None));
     }
 
     [Theory]
@@ -102,7 +123,7 @@ public class AzureBlobImageRepositoryTests
     public async Task UploadImage_NullStream_ThrowsArgumentNullException(ImageVariant imageType)
     {
         await Assert.ThrowsAsync<ArgumentNullException>(() =>
-            _imageBlobAzureRepository.UploadImage(GenerateUniqueBlobPath(), null!, imageType, JpegType, CancellationToken.None));
+            _imageBlobAzureRepository.UploadImage(GenerateUniqueBlobPath(), null!, imageType, JpegType, false, CancellationToken.None));
     }
 
     [Theory]
@@ -149,7 +170,7 @@ public class AzureBlobImageRepositoryTests
         await fileStream.CopyToAsync(imageStream);
         imageStream.Position = 0;
         string blobPath = GenerateUniqueBlobPath();
-        await _imageBlobAzureRepository.UploadImage(blobPath, imageStream, imageType, JpegType, CancellationToken.None);
+        await _imageBlobAzureRepository.UploadImage(blobPath, imageStream, imageType, JpegType, false, CancellationToken.None);
 
         await using var downloadedImageStream = await _imageBlobAzureRepository.DownloadImage(blobPath, imageType, CancellationToken.None);
 
@@ -180,9 +201,9 @@ public class AzureBlobImageRepositoryTests
         var thumbnailBytes = await File.ReadAllBytesAsync(TestImages[1]);
 
         await using (var originalStream = new MemoryStream(originalBytes))
-            await _imageBlobAzureRepository.UploadImage(sharedImageName, originalStream, ImageVariant.Original, JpegType, CancellationToken.None);
+            await _imageBlobAzureRepository.UploadImage(sharedImageName, originalStream, ImageVariant.Original, JpegType, false, CancellationToken.None);
         await using (var thumbnailStream = new MemoryStream(thumbnailBytes))
-            await _imageBlobAzureRepository.UploadImage(sharedImageName, thumbnailStream, ImageVariant.Thumbnail, JpegType, CancellationToken.None);
+            await _imageBlobAzureRepository.UploadImage(sharedImageName, thumbnailStream, ImageVariant.Thumbnail, JpegType, false, CancellationToken.None);
 
         await using var downloadedOriginal = await _imageBlobAzureRepository.DownloadImage(sharedImageName, ImageVariant.Original, CancellationToken.None);
         await using var downloadedThumbnail = await _imageBlobAzureRepository.DownloadImage(sharedImageName, ImageVariant.Thumbnail, CancellationToken.None);
@@ -201,7 +222,7 @@ public class AzureBlobImageRepositoryTests
         var expectedLength = new FileInfo(TestImages[0]).Length;
         string blobPath = GenerateUniqueBlobPath();
         await using (var fileStream = OpenTestImageForReading())
-            await _imageBlobAzureRepository.UploadImage(blobPath, fileStream, imageType, JpegType, CancellationToken.None);
+            await _imageBlobAzureRepository.UploadImage(blobPath, fileStream, imageType, JpegType, false, CancellationToken.None);
 
         var imageUri = _imageBlobAzureRepository.GetImageUri(blobPath, imageType);
 
@@ -268,9 +289,9 @@ public class AzureBlobImageRepositoryTests
     {
         var sharedImageName = GenerateUniqueBlobPath();
         await using (var originalStream = OpenTestImageForReading())
-            await _imageBlobAzureRepository.UploadImage(sharedImageName, originalStream, ImageVariant.Original, JpegType, CancellationToken.None);
+            await _imageBlobAzureRepository.UploadImage(sharedImageName, originalStream, ImageVariant.Original, JpegType, false, CancellationToken.None);
         await using (var thumbnailStream = OpenTestImageForReading(1))
-            await _imageBlobAzureRepository.UploadImage(sharedImageName, thumbnailStream, ImageVariant.Thumbnail, JpegType, CancellationToken.None);
+            await _imageBlobAzureRepository.UploadImage(sharedImageName, thumbnailStream, ImageVariant.Thumbnail, JpegType, false, CancellationToken.None);
 
         await _imageBlobAzureRepository.TryDeleteImage(sharedImageName, ImageVariant.Original, CancellationToken.None);
 
@@ -322,7 +343,7 @@ public class AzureBlobImageRepositoryTests
         await using var fileStream = OpenTestImageForReading();
         var blobPath = GenerateUniqueBlobPath();
 
-        var uploadImageResult = await _imageBlobAzureRepository.UploadImage(blobPath, fileStream, imageType, JpegType, CancellationToken.None);
+        var uploadImageResult = await _imageBlobAzureRepository.UploadImage(blobPath, fileStream, imageType, JpegType, false, CancellationToken.None);
         return (blobPath, uploadImageResult);
     }
 

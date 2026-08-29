@@ -52,6 +52,7 @@ public static class UploadEndpoints
     /// <response code="200">Returns the newly added image info</response>
     /// <response code="400">If the image size is greater or smaller then the system threshold values.
     /// Or if the image type is different from what the system supports.</response>
+    /// <response code="409">If the given image id is already used by another image in this tenant.</response>
     internal static async Task<Ok<ImageInfo>> UploadImageFile(
         [FromForm] UploadImageFileRequest imageFileRequest,
         IImageUploader imageUploader,
@@ -60,7 +61,7 @@ public static class UploadEndpoints
     {
         var uploadImageResult = await imageUploader.Upload(
             imageFileRequest.File.OpenReadStream(), tenantContext.TenantId,
-            new ImageUploadOptions(imageFileRequest.Collection), cancellationToken);
+            imageFileRequest.ToOptions(), cancellationToken);
 
         return TypedResults.Ok(uploadImageResult.ToContract());
     }
@@ -81,6 +82,7 @@ public static class UploadEndpoints
     /// Or if the image is not found by the given image url.
     /// Or if the image size is greater or smaller then the system threshold values.
     /// Or if the image type is different from what the system supports.</response>
+    /// <response code="409">If the given image id is already used by another image in this tenant.</response>
     internal static async Task<Ok<ImageInfo>> UploadImageByUrl(
         UploadImageByUrlRequest uploadImageByUrlRequest,
         IImageUploader imageUploader,
@@ -89,10 +91,13 @@ public static class UploadEndpoints
     {
         var uploadImageResult = await imageUploader.UploadByUrl(
             uploadImageByUrlRequest.ImageUrl, tenantContext.TenantId,
-            new ImageUploadOptions(uploadImageByUrlRequest.Collection), cancellationToken);
+            uploadImageByUrlRequest.ToOptions(), cancellationToken);
 
         return TypedResults.Ok(uploadImageResult.ToContract());
     }
+
+    private static ImageUploadOptions ToOptions(this UploadImageRequestBase source) =>
+        new(source.ImageId, source.Collection, source.IncludeCollectionInPath, source.AddUniquePrefix);
 
     //hand-written, there is no AutoMapper - and it stays inside the feature that returns the model
     private static ImageInfo ToContract(this ImageDetails source) =>
@@ -100,6 +105,7 @@ public static class UploadEndpoints
         {
             Id = source.Id,
             Url = source.Url.ToString(),
+            Collection = source.Collection,
             Hash = source.Hash,
             DateAdded = source.DateAdded,
             Width = source.Width,

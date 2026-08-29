@@ -24,9 +24,17 @@ namespace IK.Imager.Storage.Abstractions.Repositories
         /// <param name="imageStream">Image stream</param>
         /// <param name="variant">Original or thumbnail</param>
         /// <param name="contentType">Image content type (e.g. jpeg, png)</param>
+        /// <param name="allowOverwrite">
+        /// Whether an existing blob at that path may be replaced. False for an original, whose path is the
+        /// caller's to choose and must not silently overwrite someone else's image. True for a thumbnail,
+        /// whose path is derived from its original and is therefore regenerated in place - a redelivered
+        /// thumbnail job would otherwise fail forever.
+        /// </param>
         /// <param name="cancellationToken">Cancellation token to stop operation</param>
-        /// <returns></returns>
-        Task<BlobUploadResult> UploadImage(string blobPath, Stream imageStream, ImageVariant variant, string contentType, CancellationToken cancellationToken);
+        /// <exception cref="BlobAlreadyExistsException">
+        /// A blob already exists at that path and <paramref name="allowOverwrite"/> is false.
+        /// </exception>
+        Task<BlobUploadResult> UploadImage(string blobPath, Stream imageStream, ImageVariant variant, string contentType, bool allowOverwrite, CancellationToken cancellationToken);
 
         /// <summary>
         /// Downloads an image stream for a given blob path

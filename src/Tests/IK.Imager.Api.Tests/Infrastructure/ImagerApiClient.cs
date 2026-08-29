@@ -35,7 +35,8 @@ public sealed class ImagerApiClient(HttpClient httpClient)
     //minimal APIs serialize with the web defaults, so the responses are camelCase
     private static readonly JsonSerializerOptions SerializerOptions = new(JsonSerializerDefaults.Web);
 
-    public Task<HttpResponseMessage> PostUpload(string? fileName, string? tenantId, string? collection = null)
+    public Task<HttpResponseMessage> PostUpload(string? fileName, string? tenantId, string? collection = null,
+        string? imageId = null, bool includeCollectionInPath = false, bool addUniquePrefix = false)
     {
         var content = new MultipartFormDataContent();
 
@@ -48,6 +49,15 @@ public sealed class ImagerApiClient(HttpClient httpClient)
 
         if (collection != null)
             content.Add(new StringContent(collection), "Collection");
+
+        if (imageId != null)
+            content.Add(new StringContent(imageId), "ImageId");
+
+        if (includeCollectionInPath)
+            content.Add(new StringContent("true"), "IncludeCollectionInPath");
+
+        if (addUniquePrefix)
+            content.Add(new StringContent("true"), "AddUniquePrefix");
 
         return Send(HttpMethod.Post, UploadRoute, tenantId, content);
     }
@@ -65,8 +75,10 @@ public sealed class ImagerApiClient(HttpClient httpClient)
     public Task<HttpResponseMessage> SendDelete(string imageId, string? tenantId) =>
         Send(HttpMethod.Delete, $"{DeleteRoute}/{Uri.EscapeDataString(imageId)}", tenantId, content: null);
 
-    public async Task<ImageInfo> Upload(string fileName, string tenantId, string? collection = null) =>
-        await ReadContract<ImageInfo>(await PostUpload(fileName, tenantId, collection));
+    public async Task<ImageInfo> Upload(string fileName, string tenantId, string? collection = null,
+        string? imageId = null, bool includeCollectionInPath = false, bool addUniquePrefix = false) =>
+        await ReadContract<ImageInfo>(
+            await PostUpload(fileName, tenantId, collection, imageId, includeCollectionInPath, addUniquePrefix));
 
     public async Task<ImageInfo> UploadByUrl(string imageUrl, string tenantId, string? collection = null) =>
         await ReadContract<ImageInfo>(

@@ -68,6 +68,7 @@ public static class LookupEndpoints
         {
             Id = source.Id,
             Url = source.Url.ToString(),
+            Collection = source.Collection,
             Hash = source.Hash,
             DateAdded = source.DateAdded,
             Width = source.Width,

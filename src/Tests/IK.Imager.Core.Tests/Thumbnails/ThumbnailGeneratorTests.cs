@@ -157,7 +157,7 @@ namespace IK.Imager.Core.Tests.Thumbnails
                     It.IsAny<Stream>(),
                     It.IsAny<ImageVariant>(),
                     It.IsAny<string>(),
-                    It.IsAny<CancellationToken>()))
+                    It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new Fixture().Create<BlobUploadResult>());
 
             _imageResizerMock.Setup(x => x.Resize(

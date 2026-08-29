@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -33,6 +34,43 @@ public class ThumbnailsGenerationTests(ImagerApiFixture fixture) : ImagerApiTest
         //smallest first, and 1200x900 scales to 200x150, 400x300 and 1000x750
         Assert.Equal([(200, 150), (400, 300), (1000, 750)],
             found.Thumbnails.Select(thumbnail => (thumbnail.Width, thumbnail.Height)));
+    }
+
+    /// <summary>
+    /// A thumbnail path is derived from its original's, so it inherits the tenant, the collection and the
+    /// unique prefix without being told any of them - and carries the width it was resized to.
+    /// </summary>
+    [Fact]
+    public async Task Generate_OriginalWithCollectionAndPrefix_ThumbnailsInheritTheWholePath()
+    {
+        var tenantId = NewTenantId();
+        var collection = NewCollection();
+        var uploaded = await Api.Upload(TestImages.Jpeg1200X900, tenantId, collection, "sku-9",
+            includeCollectionInPath: true, addUniquePrefix: true);
+
+        await Fixture.ConsumedEvents.ThumbnailsGenerated(uploaded.Id);
+        var found = await Api.LookupSingle(uploaded.Id, tenantId);
+
+        //thumbnails live in their own container, so only the path from the tenant segment on is shared
+        var relative = uploaded.Url[uploaded.Url.IndexOf($"/{tenantId}/", StringComparison.Ordinal)..];
+        var stem = relative[..^".jpg".Length];
+
+        Assert.StartsWith($"/{tenantId}/{collection}/", relative);
+        Assert.Equal([$"{stem}_200.jpg", $"{stem}_400.jpg", $"{stem}_1000.jpg"],
+            found.Thumbnails.Select(thumbnail => thumbnail.Url[thumbnail.Url.IndexOf($"/{tenantId}/", StringComparison.Ordinal)..]));
+    }
+
+    [Fact]
+    public async Task Generate_PlainOriginal_ThumbnailUrlIsTheOriginalPlusItsWidth()
+    {
+        var tenantId = NewTenantId();
+        var uploaded = await Api.Upload(TestImages.Jpeg800X600, tenantId, imageId: "sku-8");
+
+        await Fixture.ConsumedEvents.ThumbnailsGenerated(uploaded.Id);
+        var found = await Api.LookupSingle(uploaded.Id, tenantId);
+
+        Assert.All(found.Thumbnails, thumbnail => Assert.EndsWith($"/{tenantId}/sku-8_{thumbnail.Width}.jpg",
+            thumbnail.Url));
     }
 
     [Fact]

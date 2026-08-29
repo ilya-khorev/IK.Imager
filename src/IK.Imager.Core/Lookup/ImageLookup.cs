@@ -37,6 +37,7 @@ public class ImageLookup(
         new()
         {
             Id = imageMetadata.Id,
+            Collection = imageMetadata.Collection,
             Bytes = imageMetadata.SizeBytes,
             Hash = imageMetadata.MD5Hash,
             Height = imageMetadata.Height,

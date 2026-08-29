@@ -15,7 +15,10 @@ public record ImageInfo
     /// </summary>
     public string Url { get; init; } = null!;
 
-    //todo image name
+    /// <summary>
+    /// Collection this image was uploaded into, if any.
+    /// </summary>
+    public string? Collection { get; init; }
 
     /// <summary>
     /// Image hashcode

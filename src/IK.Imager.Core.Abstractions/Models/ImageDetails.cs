@@ -13,9 +13,14 @@ namespace IK.Imager.Core.Abstractions.Models
         public string Id { get; init; } = null!;
 
         /// <summary>
-        /// Unique image name
+        /// Path of the image blob within its container, extension included.
         /// </summary>
         public string BlobPath { get; init; } = null!;
+
+        /// <summary>
+        /// Collection this image was uploaded into, if any.
+        /// </summary>
+        public string? Collection { get; init; }
 
         /// <summary>
         /// Image https url

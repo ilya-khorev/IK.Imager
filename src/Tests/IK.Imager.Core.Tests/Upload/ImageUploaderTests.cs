@@ -30,7 +30,7 @@ public class ImageUploaderTests
     private static readonly Uri PublicUrl = new("https://cdn.test/images/image-id.jpg");
     private static readonly ImageFormat Jpeg = new("image/jpeg", ".jpg", ImageType.JPEG);
     private static readonly ImageSize Size = new(800, 600, 12345);
-    private static readonly ImageUploadOptions Options = new(Collection);
+    private static readonly ImageUploadOptions Options = new(Collection: Collection);
 
     private readonly Mock<IImageMetadataRepository> _metadataRepositoryMock;
     private readonly Mock<IImageBlobRepository> _blobRepositoryMock;
@@ -57,10 +57,12 @@ public class ImageUploaderTests
 
         _imageInspectorMock.Setup(x => x.Inspect(It.IsAny<Stream>())).Returns((Jpeg, Size));
         _imageNameGeneratorMock.Setup(x => x.NewImageId()).Returns(ImageId);
-        _imageNameGeneratorMock.Setup(x => x.ToFileName(ImageId, Jpeg.FileExtension)).Returns(BlobPath);
+        _imageNameGeneratorMock
+            .Setup(x => x.BuildBlobPath(TenantId, It.IsAny<string?>(), It.IsAny<string?>(), ImageId, Jpeg.FileExtension))
+            .Returns(BlobPath);
         _blobRepositoryMock
             .Setup(x => x.UploadImage(BlobPath, It.IsAny<Stream>(), ImageVariant.Original, Jpeg.MimeType,
-                It.IsAny<CancellationToken>()))
+                false, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new BlobUploadResult
             {
                 Hash = Hash,
@@ -100,7 +102,7 @@ public class ImageUploaderTests
 
         _blobRepositoryMock.Verify(
             x => x.UploadImage(BlobPath, It.IsAny<Stream>(), ImageVariant.Original, Jpeg.MimeType,
-                It.IsAny<CancellationToken>()), Times.Once);
+                false, It.IsAny<CancellationToken>()), Times.Once);
 
         _metadataRepositoryMock.Verify(x => x.CreateMetadata(
             It.Is<ImageMetadata>(m =>
@@ -140,7 +142,7 @@ public class ImageUploaderTests
             CreateUploader().Upload(new MemoryStream([1, 2, 3]), TenantId, Options, CancellationToken.None));
 
         _blobRepositoryMock.Verify(x => x.UploadImage(It.IsAny<string>(), It.IsAny<Stream>(), It.IsAny<ImageVariant>(),
-            It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+            It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
         _metadataRepositoryMock.Verify(
             x => x.CreateMetadata(It.IsAny<ImageMetadata>(), It.IsAny<CancellationToken>()), Times.Never);
         _imageEventsMock.Verify(

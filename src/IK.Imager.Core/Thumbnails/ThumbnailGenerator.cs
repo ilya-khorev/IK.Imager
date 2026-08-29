@@ -25,7 +25,7 @@ public class ThumbnailGenerator(
         imageThumbnailsSettings.Value.TargetWidth.OrderByDescending(x => x).ToList();
 
     private const string PngMimeType = "image/png";
-    private const string PngFileExtension = ".png";
+    private const string PngFileExtension = "png";
 
     public async Task Generate(string imageId, string tenantId, CancellationToken cancellationToken)
     {
@@ -72,15 +72,17 @@ public class ThumbnailGenerator(
             var resizingResult = imageResizer.Resize(imageStream, imageType, targetWidth);
             logger.ImageResized(imageMetadata.Id, targetWidth, resizingResult.Size.Width, resizingResult.Size.Height, resizingResult.Size.Bytes);
 
-            var thumbnailImageId = imageNameGenerator.NewImageId();
-            var thumbnailImageName = imageNameGenerator.ToFileName(thumbnailImageId, fileExtension);
+            //derived from the original's path, so a thumbnail inherits its tenant, collection and unique
+            //prefix - and so regenerating overwrites the previous set instead of orphaning it
+            var thumbnailBlobPath = imageNameGenerator.BuildThumbnailBlobPath(imageMetadata.BlobPath,
+                resizingResult.Size.Width, fileExtension);
 
-            var uploadedBlob = await blobRepository.UploadImage(thumbnailImageName, resizingResult.Image,
-                ImageVariant.Thumbnail, mimeType, cancellationToken);
+            var uploadedBlob = await blobRepository.UploadImage(thumbnailBlobPath, resizingResult.Image,
+                ImageVariant.Thumbnail, mimeType, allowOverwrite: true, cancellationToken);
             imageMetadata.Thumbnails.Add(new ImageThumbnail
             {
-                Id = thumbnailImageId,
-                BlobPath = thumbnailImageName,
+                Id = $"{imageMetadata.Id}_{resizingResult.Size.Width}",
+                BlobPath = thumbnailBlobPath,
                 MD5Hash = uploadedBlob.Hash,
                 DateAddedUtc = uploadedBlob.DateAdded.DateTime,
                 MimeType = mimeType,

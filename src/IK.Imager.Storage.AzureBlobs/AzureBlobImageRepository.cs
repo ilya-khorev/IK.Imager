@@ -32,7 +32,7 @@ namespace IK.Imager.Storage.AzureBlobs
 
         /// <inheritdoc />
         public async Task<BlobUploadResult> UploadImage(string blobPath, Stream imageStream, ImageVariant variant,
-            string imageContentType, CancellationToken cancellationToken)
+            string imageContentType, bool allowOverwrite, CancellationToken cancellationToken)
         {
             ArgumentException.ThrowIfNullOrEmpty(blobPath);
             ArgumentNullException.ThrowIfNull(imageStream);
@@ -40,14 +40,27 @@ namespace IK.Imager.Storage.AzureBlobs
             var blobClient = GetBlobClient(blobPath, variant);
 
             imageStream.Position = 0;
+
             //the content type has to go on with the upload - these blobs are served straight to browsers
             //by url, and without it every one of them comes back as application/octet-stream.
             //IfNoneMatch is what the stream-only overload sets for you: this overload leaves the conditions
             //null and would silently overwrite an existing blob instead of failing with a 409.
-            var uploadResult = await blobClient.UploadAsync(imageStream,
-                new BlobHttpHeaders { ContentType = imageContentType },
-                conditions: new BlobRequestConditions { IfNoneMatch = ETag.All },
-                cancellationToken: cancellationToken).ConfigureAwait(false);
+            var conditions = allowOverwrite ? null : new BlobRequestConditions { IfNoneMatch = ETag.All };
+
+            Response<BlobContentInfo> uploadResult;
+            try
+            {
+                uploadResult = await blobClient.UploadAsync(imageStream,
+                    new BlobHttpHeaders { ContentType = imageContentType },
+                    conditions: conditions,
+                    cancellationToken: cancellationToken).ConfigureAwait(false);
+            }
+            catch (RequestFailedException ex) when (ex.Status == (int)HttpStatusCode.Conflict)
+            {
+                //the caller picks the path an original lands on, so a clash here is their error and has to
+                //be distinguishable from a fault
+                throw new BlobAlreadyExistsException(blobPath, ex);
+            }
 
             return new BlobUploadResult
             {
