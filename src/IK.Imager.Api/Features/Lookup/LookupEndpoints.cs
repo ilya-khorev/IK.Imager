@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using IK.Imager.Api.Contract;
 using IK.Imager.Api.Contract.Lookup;
+using IK.Imager.Api.Tenancy;
 using IK.Imager.Api.Validation;
 using IK.Imager.Core.Abstractions.Lookup;
 using IK.Imager.Core.Abstractions.Models;
@@ -35,6 +36,7 @@ public static class LookupEndpoints
     /// </summary>
     /// <param name="lookupImagesRequest">Image lookup request model</param>
     /// <param name="imageLookup"></param>
+    /// <param name="tenantContext"></param>
     /// <param name="cancellationToken"></param>
     /// <returns>A model with full info about just found images. Each image is represented with the nested object.
     /// These objects are returned in the same order as they were requested.
@@ -45,10 +47,11 @@ public static class LookupEndpoints
     internal static async Task<Ok<LookupImagesResult>> LookupImages(
         LookupImagesRequest lookupImagesRequest,
         IImageLookup imageLookup,
+        ITenantContext tenantContext,
         CancellationToken cancellationToken)
     {
         var lookupResult = await imageLookup.LookupByIds(
-            lookupImagesRequest.ImageIds, lookupImagesRequest.ImageGroup, cancellationToken);
+            lookupImagesRequest.ImageIds, tenantContext.TenantId, cancellationToken);
 
         return TypedResults.Ok(lookupResult.ToContract());
     }

@@ -24,11 +24,11 @@ public class ThumbnailsGenerationTests(ImagerApiFixture fixture) : ImagerApiTest
     [Fact]
     public async Task Generate_ImageWiderThanEveryTargetWidth_ProducesAThumbnailPerTarget()
     {
-        var imageGroup = NewImageGroup();
-        var uploaded = await Api.Upload(TestImages.Jpeg1200X900, imageGroup);
+        var tenantId = NewTenantId();
+        var uploaded = await Api.Upload(TestImages.Jpeg1200X900, tenantId);
 
         await Fixture.ConsumedEvents.ThumbnailsGenerated(uploaded.Id);
-        var found = await Api.LookupSingle(uploaded.Id, imageGroup);
+        var found = await Api.LookupSingle(uploaded.Id, tenantId);
 
         //smallest first, and 1200x900 scales to 200x150, 400x300 and 1000x750
         Assert.Equal([(200, 150), (400, 300), (1000, 750)],
@@ -38,11 +38,11 @@ public class ThumbnailsGenerationTests(ImagerApiFixture fixture) : ImagerApiTest
     [Fact]
     public async Task Generate_ImageNarrowerThanTheWidestTargetWidth_SkipsThatTargetOnly()
     {
-        var imageGroup = NewImageGroup();
-        var uploaded = await Api.Upload(TestImages.Jpeg800X600, imageGroup);
+        var tenantId = NewTenantId();
+        var uploaded = await Api.Upload(TestImages.Jpeg800X600, tenantId);
 
         await Fixture.ConsumedEvents.ThumbnailsGenerated(uploaded.Id);
-        var found = await Api.LookupSingle(uploaded.Id, imageGroup);
+        var found = await Api.LookupSingle(uploaded.Id, tenantId);
 
         //1000 is wider than the 800px original, so only 200 and 400 are generated
         Assert.Equal([(200, 150), (400, 300)],
@@ -52,11 +52,11 @@ public class ThumbnailsGenerationTests(ImagerApiFixture fixture) : ImagerApiTest
     [Fact]
     public async Task Generate_ImageExactlyAsWideAsATargetWidth_DoesNotProduceThatThumbnail()
     {
-        var imageGroup = NewImageGroup();
-        var uploaded = await Api.Upload(TestImages.Png1000X1000, imageGroup);
+        var tenantId = NewTenantId();
+        var uploaded = await Api.Upload(TestImages.Png1000X1000, tenantId);
 
         await Fixture.ConsumedEvents.ThumbnailsGenerated(uploaded.Id);
-        var found = await Api.LookupSingle(uploaded.Id, imageGroup);
+        var found = await Api.LookupSingle(uploaded.Id, tenantId);
 
         //a thumbnail as wide as the original is not a thumbnail - the 1000 target is dropped
         Assert.Equal([(200, 200), (400, 400)],
@@ -66,13 +66,13 @@ public class ThumbnailsGenerationTests(ImagerApiFixture fixture) : ImagerApiTest
     [Fact]
     public async Task Generate_ImageNoWiderThanTheNarrowestTargetWidth_ProducesNoThumbnails()
     {
-        var imageGroup = NewImageGroup();
-        var uploaded = await Api.Upload(TestImages.Gif200X200, imageGroup);
+        var tenantId = NewTenantId();
+        var uploaded = await Api.Upload(TestImages.Gif200X200, tenantId);
 
         //the generator gives up before resizing anything, but it still consumes the event - which is what
         //makes "nothing was generated" assertable rather than a race
         await Fixture.ConsumedEvents.ThumbnailsGenerated(uploaded.Id);
-        var found = await Api.LookupSingle(uploaded.Id, imageGroup);
+        var found = await Api.LookupSingle(uploaded.Id, tenantId);
 
         Assert.Empty(found.Thumbnails);
     }
@@ -80,11 +80,11 @@ public class ThumbnailsGenerationTests(ImagerApiFixture fixture) : ImagerApiTest
     [Fact]
     public async Task Generate_Thumbnails_AreStoredAsDistinctImagesOfTheOriginalsMimeType()
     {
-        var imageGroup = NewImageGroup();
-        var uploaded = await Api.Upload(TestImages.Jpeg1200X900, imageGroup);
+        var tenantId = NewTenantId();
+        var uploaded = await Api.Upload(TestImages.Jpeg1200X900, tenantId);
 
         await Fixture.ConsumedEvents.ThumbnailsGenerated(uploaded.Id);
-        var found = await Api.LookupSingle(uploaded.Id, imageGroup);
+        var found = await Api.LookupSingle(uploaded.Id, tenantId);
 
         Assert.All(found.Thumbnails, thumbnail =>
         {
@@ -102,11 +102,11 @@ public class ThumbnailsGenerationTests(ImagerApiFixture fixture) : ImagerApiTest
     [Fact]
     public async Task Generate_Thumbnails_AreReachableByTheUrlTheLookupReturns()
     {
-        var imageGroup = NewImageGroup();
-        var uploaded = await Api.Upload(TestImages.Jpeg1200X900, imageGroup);
+        var tenantId = NewTenantId();
+        var uploaded = await Api.Upload(TestImages.Jpeg1200X900, tenantId);
 
         await Fixture.ConsumedEvents.ThumbnailsGenerated(uploaded.Id);
-        var found = await Api.LookupSingle(uploaded.Id, imageGroup);
+        var found = await Api.LookupSingle(uploaded.Id, tenantId);
 
         //the thumbnails live in their own public blob container, so the url is enough - no client here
         using var anonymousClient = new HttpClient();
@@ -122,13 +122,13 @@ public class ThumbnailsGenerationTests(ImagerApiFixture fixture) : ImagerApiTest
     [Fact]
     public async Task Generate_UploadByUrl_GeneratesThumbnailsForTheCopyToo()
     {
-        var imageGroup = NewImageGroup();
-        var source = await Api.Upload(TestImages.Jpeg1200X900, imageGroup);
+        var tenantId = NewTenantId();
+        var source = await Api.Upload(TestImages.Jpeg1200X900, tenantId);
 
-        var copy = await Api.UploadByUrl(source.Url, imageGroup);
+        var copy = await Api.UploadByUrl(source.Url, tenantId);
 
         await Fixture.ConsumedEvents.ThumbnailsGenerated(copy.Id);
-        var found = await Api.LookupSingle(copy.Id, imageGroup);
+        var found = await Api.LookupSingle(copy.Id, tenantId);
 
         Assert.Equal(3, found.Thumbnails.Count);
     }

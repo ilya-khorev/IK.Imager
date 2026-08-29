@@ -14,7 +14,7 @@ public interface IImageEvents
     /// A new image and its metadata have been saved. Thumbnail generation follows from here, which is why
     /// thumbnails only appear in a lookup after a short delay.
     /// </summary>
-    Task ImageUploaded(string imageId, string imageGroup, CancellationToken cancellationToken);
+    Task ImageUploaded(string tenantId, string imageId, CancellationToken cancellationToken);
 
     /// <summary>
     /// The metadata of an image has been removed, so the image is already gone from lookups. Its blob and

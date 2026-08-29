@@ -27,7 +27,7 @@ public class ImageUploader(
 {
     private const string CouldNotDownloadImage = "An image could not be downloaded by the given url.";
 
-    public async Task<ImageDetails> UploadByUrl(string imageUrl, string imageGroup, CancellationToken cancellationToken)
+    public async Task<ImageDetails> UploadByUrl(string imageUrl, string tenantId, ImageUploadOptions options, CancellationToken cancellationToken)
     {
         logger.DownloadingByUrl(imageUrl);
 
@@ -44,10 +44,10 @@ public class ImageUploader(
 
         logger.DownloadedByUrl(imageUrl, imageStream.Length);
 
-        return await Upload(imageStream, imageGroup, cancellationToken);
+        return await Upload(imageStream, tenantId, options, cancellationToken);
     }
 
-    public async Task<ImageDetails> Upload(Stream imageStream, string imageGroup, CancellationToken cancellationToken)
+    public async Task<ImageDetails> Upload(Stream imageStream, string tenantId, ImageUploadOptions options, CancellationToken cancellationToken)
     {
         var (imageFormat, imageSize) = imageInspector.Inspect(imageStream);
 
@@ -60,7 +60,7 @@ public class ImageUploader(
         using var scope = logger.BeginScope(new Dictionary<string, object>
         {
             ["ImageId"] = imageId,
-            ["ImageGroup"] = imageGroup
+            ["TenantId"] = tenantId
         });
 
         //todo original: id_with_height.jpg
@@ -80,9 +80,11 @@ public class ImageUploader(
          If the program unexpectedly fails at this stage, there will be just a blob file, not connected to any metadata object. In this case,
          the image itself will be unavailable to the clients. And in most cases it is just fine, so an additional handling is not needed here.
         */
-        await metadataRepository.SetMetadata(new ImageMetadata
+        await metadataRepository.CreateMetadata(new ImageMetadata
         {
             Id = imageId,
+            TenantId = tenantId,
+            Collection = options.Collection,
             BlobPath = imageName,
             DateAddedUtc = uploadImageResult.DateAdded.DateTime,
             Height = imageSize.Height,
@@ -91,13 +93,12 @@ public class ImageUploader(
             SizeBytes = imageSize.Bytes,
             MimeType = imageFormat.MimeType,
             ImageType = imageFormat.ImageType,
-            FileExtension = imageFormat.FileExtension,
-            ImageGroup = imageGroup
+            FileExtension = imageFormat.FileExtension
         }, cancellationToken);
 
-        logger.UploadFinished(imageId, imageGroup, imageSize.Bytes);
+        logger.UploadFinished(imageId, imageSize.Bytes);
 
-        await imageEvents.ImageUploaded(imageId, imageGroup, cancellationToken);
+        await imageEvents.ImageUploaded(tenantId, imageId, cancellationToken);
 
         return new ImageDetails
         {

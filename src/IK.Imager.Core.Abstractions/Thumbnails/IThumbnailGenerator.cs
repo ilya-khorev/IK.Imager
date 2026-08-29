@@ -12,5 +12,5 @@ public interface IThumbnailGenerator
     /// Generates a thumbnail per configured target width for the given image. Does nothing when the image
     /// is not found, or when it is narrower than the smallest target width.
     /// </summary>
-    Task Generate(string imageId, string imageGroup, CancellationToken cancellationToken);
+    Task Generate(string imageId, string tenantId, CancellationToken cancellationToken);
 }

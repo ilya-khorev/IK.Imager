@@ -22,13 +22,15 @@ public class ImageUploaderTests
 {
     private const string ImageId = "image-id";
     private const string BlobPath = "image-id.jpg";
-    private const string ImageGroup = "test-group";
+    private const string TenantId = "test-tenant";
+    private const string Collection = "test-collection";
     private const string Hash = "hash";
 
     private static readonly Uri BlobUrl = new("https://blobs.test/images/image-id.jpg");
     private static readonly Uri PublicUrl = new("https://cdn.test/images/image-id.jpg");
     private static readonly ImageFormat Jpeg = new("image/jpeg", ".jpg", ImageType.JPEG);
     private static readonly ImageSize Size = new(800, 600, 12345);
+    private static readonly ImageUploadOptions Options = new(Collection);
 
     private readonly Mock<IImageMetadataRepository> _metadataRepositoryMock;
     private readonly Mock<IImageBlobRepository> _blobRepositoryMock;
@@ -74,7 +76,7 @@ public class ImageUploaderTests
     [Fact]
     public async Task Upload_ValidImage_ReturnsDetailsOfTheStoredImage()
     {
-        var result = await CreateUploader().Upload(new MemoryStream([1, 2, 3]), ImageGroup, CancellationToken.None);
+        var result = await CreateUploader().Upload(new MemoryStream([1, 2, 3]), TenantId, Options, CancellationToken.None);
 
         Assert.Equal(ImageId, result.Id);
         Assert.Equal(BlobPath, result.BlobPath);
@@ -94,17 +96,18 @@ public class ImageUploaderTests
     [Fact]
     public async Task Upload_ValidImage_StoresBlobThenMetadata()
     {
-        await CreateUploader().Upload(new MemoryStream([1, 2, 3]), ImageGroup, CancellationToken.None);
+        await CreateUploader().Upload(new MemoryStream([1, 2, 3]), TenantId, Options, CancellationToken.None);
 
         _blobRepositoryMock.Verify(
             x => x.UploadImage(BlobPath, It.IsAny<Stream>(), ImageVariant.Original, Jpeg.MimeType,
                 It.IsAny<CancellationToken>()), Times.Once);
 
-        _metadataRepositoryMock.Verify(x => x.SetMetadata(
+        _metadataRepositoryMock.Verify(x => x.CreateMetadata(
             It.Is<ImageMetadata>(m =>
                 m.Id == ImageId &&
                 m.BlobPath == BlobPath &&
-                m.ImageGroup == ImageGroup &&
+                m.TenantId == TenantId &&
+                m.Collection == Collection &&
                 m.MD5Hash == Hash &&
                 m.MimeType == Jpeg.MimeType &&
                 m.ImageType == ImageType.JPEG &&
@@ -122,9 +125,9 @@ public class ImageUploaderTests
     [Fact]
     public async Task Upload_ValidImage_RaisesImageUploaded()
     {
-        await CreateUploader().Upload(new MemoryStream([1, 2, 3]), ImageGroup, CancellationToken.None);
+        await CreateUploader().Upload(new MemoryStream([1, 2, 3]), TenantId, Options, CancellationToken.None);
 
-        _imageEventsMock.Verify(x => x.ImageUploaded(ImageId, ImageGroup, It.IsAny<CancellationToken>()), Times.Once);
+        _imageEventsMock.Verify(x => x.ImageUploaded(TenantId, ImageId, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -134,12 +137,12 @@ public class ImageUploaderTests
             .Throws(new System.ComponentModel.DataAnnotations.ValidationException("unsupported"));
 
         await Assert.ThrowsAsync<System.ComponentModel.DataAnnotations.ValidationException>(() =>
-            CreateUploader().Upload(new MemoryStream([1, 2, 3]), ImageGroup, CancellationToken.None));
+            CreateUploader().Upload(new MemoryStream([1, 2, 3]), TenantId, Options, CancellationToken.None));
 
         _blobRepositoryMock.Verify(x => x.UploadImage(It.IsAny<string>(), It.IsAny<Stream>(), It.IsAny<ImageVariant>(),
             It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
         _metadataRepositoryMock.Verify(
-            x => x.SetMetadata(It.IsAny<ImageMetadata>(), It.IsAny<CancellationToken>()), Times.Never);
+            x => x.CreateMetadata(It.IsAny<ImageMetadata>(), It.IsAny<CancellationToken>()), Times.Never);
         _imageEventsMock.Verify(
             x => x.ImageUploaded(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
@@ -161,7 +164,7 @@ public class ImageUploaderTests
             _imageUrlBuilderMock.Object, _imageEventsMock.Object);
 
         await Assert.ThrowsAsync<System.ComponentModel.DataAnnotations.ValidationException>(() =>
-            uploader.UploadByUrl(sasUrl, ImageGroup, CancellationToken.None));
+            uploader.UploadByUrl(sasUrl, TenantId, Options, CancellationToken.None));
 
         Assert.NotEmpty(_logger.Entries);
         Assert.All(_logger.Entries, entry => Assert.DoesNotContain("TOPSECRET", entry.Message));

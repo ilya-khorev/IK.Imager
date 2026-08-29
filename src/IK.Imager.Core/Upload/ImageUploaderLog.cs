@@ -26,8 +26,8 @@ internal static partial class ImageUploaderLog
     public static partial void UploadedToBlobStorage(this ILogger logger, string imageId, string blobPath);
 
     [LoggerMessage(EventId = 1005, Level = LogLevel.Information,
-        Message = "Saved image {ImageId} in group {ImageGroup}, {SizeBytes} bytes.")]
-    public static partial void UploadFinished(this ILogger logger, string imageId, string imageGroup, long sizeBytes);
+        Message = "Saved image {ImageId}, {SizeBytes} bytes.")]
+    public static partial void UploadFinished(this ILogger logger, string imageId, long sizeBytes);
 
     //the url is redacted in a wrapper because a LoggerMessage method is partial - there is no body to do it in
     public static void DownloadingByUrl(this ILogger logger, string imageUrl) =>

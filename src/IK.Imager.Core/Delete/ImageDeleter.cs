@@ -19,17 +19,17 @@ public class ImageDeleter(
     IImageBlobRepository blobRepository,
     IImageEvents imageEvents) : IImageDeleter
 {
-    public async Task<bool> DeleteMetadata(string imageId, string? imageGroup, CancellationToken cancellationToken)
+    public async Task<bool> DeleteMetadata(string imageId, string tenantId, CancellationToken cancellationToken)
     {
-        logger.RemovingMetadata(imageId, imageGroup);
+        logger.RemovingMetadata(imageId);
 
-        var metadata = await metadataRepository.GetMetadata(new List<string> { imageId }, imageGroup, cancellationToken);
+        var metadata = await metadataRepository.GetMetadata(new List<string> { imageId }, tenantId, cancellationToken);
         if (metadata == null || !metadata.Any())
             return false;
 
         var imageMetadata = metadata[0];
 
-        var deletedMetadata = await metadataRepository.RemoveMetadata(imageMetadata.Id, imageMetadata.ImageGroup, cancellationToken);
+        var deletedMetadata = await metadataRepository.RemoveMetadata(imageMetadata.Id, imageMetadata.TenantId, cancellationToken);
         if (!deletedMetadata)
             return false;
 

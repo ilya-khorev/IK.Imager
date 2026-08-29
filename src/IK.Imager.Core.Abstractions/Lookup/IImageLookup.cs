@@ -11,8 +11,8 @@ public interface IImageLookup
 {
     /// <summary>
     /// Returns the images matching <paramref name="imageIds"/>, each with its thumbnails. An id with no image
-    /// behind it is simply absent from the result. <paramref name="imageGroup"/> is the partition to look in -
-    /// optional, but it makes the lookup considerably cheaper.
+    /// behind it is simply absent from the result. Ids are only ever resolved within
+    /// <paramref name="tenantId"/>.
     /// </summary>
-    Task<ImageLookupResult> LookupByIds(string[] imageIds, string? imageGroup, CancellationToken cancellationToken);
+    Task<ImageLookupResult> LookupByIds(string[] imageIds, string tenantId, CancellationToken cancellationToken);
 }

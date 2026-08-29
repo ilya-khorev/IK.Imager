@@ -6,13 +6,10 @@ namespace IK.Imager.Api.Contract.Upload;
 public abstract record UploadImageRequestBase
 {
     /// <summary>
-    /// Image group represents a logical group to which this image belong.
-    /// It's recommended to use meaningful values, such as userId, businessUnitId, or combination of multiple parameters.
-    /// For example, "user_1435", "unit_48", "products_store_11"
-    /// 
-    /// Image group is also used as partition to evenly spread data, and to make lookup requests more efficient.
+    /// Optional label grouping images within your tenant, such as "products" or "avatars".
+    ///
+    /// A collection organises images; it does not scope their identity. An image id is unique across the
+    /// whole tenant, so the same id cannot be used in two collections.
     /// </summary>
-    public string ImageGroup { get; init; } = null!;
-
-    //todo optional image name
+    public string? Collection { get; init; }
 }

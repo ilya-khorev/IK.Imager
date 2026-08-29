@@ -8,9 +8,14 @@ public class UploadImageFileRequestValidator : AbstractValidator<UploadImageFile
 {
     public UploadImageFileRequestValidator()
     {
-        RuleFor(x => x.ImageGroup)
-            .NotEmpty()
-            .MaximumLength(ImageGroupConstraints.MaxImageGroupLength)
-            .MinimumLength(ImageGroupConstraints.MinImageGroupLength);
+        RuleFor(x => x.Collection)
+            .MinimumLength(IdentifierConstraints.MinCollectionLength)
+            .MaximumLength(IdentifierConstraints.MaxCollectionLength)
+            .Must(IdentifierConstraints.IsWellFormed)
+            .WithMessage(InvalidCollection)
+            .When(x => x.Collection != null);
     }
+
+    internal const string InvalidCollection =
+        "Collection must be lowercase letters, digits, and dots, underscores or hyphens between them.";
 }

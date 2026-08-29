@@ -1,6 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using IK.Imager.Api.Contract.Delete;
+using IK.Imager.Api.Tenancy;
 using IK.Imager.Api.Validation;
 using IK.Imager.Core.Abstractions.Delete;
 using Microsoft.AspNetCore.Builder;
@@ -35,20 +36,22 @@ public static class DeleteEndpoints
     /// </summary>
     /// <param name="deleteImageRequest">Image removal request model</param>
     /// <param name="imageDeleter"></param>
+    /// <param name="tenantContext"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     /// <response code="204">The image has been removed.</response>
     /// <response code="400">If the image id is not specified.</response>
     /// <response code="404">The requested image was not found.</response>
-    //the id is a route value and the group a query string, so there is no body to bind - which is what
-    //keeps this off the one shape minimal APIs refuse to infer a body for
+    //the id is a route value, so there is no body to bind - which is what keeps this off the one shape
+    //minimal APIs refuse to infer a body for
     internal static async Task<Results<NoContent, NotFound<string>>> DeleteImage(
         [AsParameters] DeleteImageRequest deleteImageRequest,
         IImageDeleter imageDeleter,
+        ITenantContext tenantContext,
         CancellationToken cancellationToken)
     {
         var imageDeleted = await imageDeleter.DeleteMetadata(
-            deleteImageRequest.ImageId, deleteImageRequest.ImageGroup, cancellationToken);
+            deleteImageRequest.ImageId, tenantContext.TenantId, cancellationToken);
 
         if (!imageDeleted)
             return TypedResults.NotFound(string.Format(ImageNotFound, deleteImageRequest.ImageId));

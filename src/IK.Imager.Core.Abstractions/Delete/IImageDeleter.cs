@@ -13,7 +13,7 @@ public interface IImageDeleter
     /// Removes the metadata of the given image and raises <see cref="IImageEvents.ImageMetadataDeleted"/>.
     /// Returns false when there is no such image.
     /// </summary>
-    Task<bool> DeleteMetadata(string imageId, string? imageGroup, CancellationToken cancellationToken);
+    Task<bool> DeleteMetadata(string imageId, string tenantId, CancellationToken cancellationToken);
 
     /// <summary>
     /// Removes the blob of the original image and of every thumbnail named in <paramref name="thumbnailBlobPaths"/>.

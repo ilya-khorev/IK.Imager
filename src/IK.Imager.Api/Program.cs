@@ -2,9 +2,11 @@ using System;
 using System.IO;
 using IK.Imager.Api.Extensions;
 using IK.Imager.Api.Features;
+using IK.Imager.Api.Tenancy;
 using IK.Imager.Core;
 using IK.Imager.Storage.AzureBlobs;
 using IK.Imager.Storage.CosmosDb;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -36,6 +38,7 @@ builder.Host.UseDefaultServiceProvider(options =>
 //Every module registers its own services - see the ServiceCollectionExtensions of each project
 builder.Services
     .AddApiServices()
+    .AddTenancy(builder.Configuration)
     .AddOpenApiDocumentation()
     .AddImagerCore(builder.Configuration, httpClient => httpClient.AddTransientHttpErrorPolicy(p =>
         p.WaitAndRetryAsync(3, _ => TimeSpan.FromMilliseconds(500))))
@@ -50,6 +53,14 @@ var app = builder.Build();
 //outermost, so it covers the endpoints and everything below alike. There is no developer exception page:
 //GlobalExceptionHandler already returns the full exception in the Development environment.
 app.UseExceptionHandler();
+
+//AddApiServices registers a scheme only when the host passed it an authentication hook. Without one there
+//is no IAuthenticationSchemeProvider at all, and UseAuthentication would throw rather than no-op.
+if (app.Services.GetService<IAuthenticationSchemeProvider>() != null)
+{
+    app.UseAuthentication();
+    app.UseAuthorization();
+}
 
 app.UseOpenApiDocumentation();
 

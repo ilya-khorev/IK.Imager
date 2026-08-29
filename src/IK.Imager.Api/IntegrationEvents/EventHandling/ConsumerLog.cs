@@ -8,8 +8,8 @@ namespace IK.Imager.Api.IntegrationEvents.EventHandling;
 internal static partial class ConsumerLog
 {
     [LoggerMessage(EventId = 2000, Level = LogLevel.Debug,
-        Message = "Generating thumbnails for image {ImageId} in group {ImageGroup}.")]
-    public static partial void ThumbnailJobReceived(this ILogger logger, string imageId, string imageGroup);
+        Message = "Generating thumbnails for image {ImageId}.")]
+    public static partial void ThumbnailJobReceived(this ILogger logger, string imageId);
 
     [LoggerMessage(EventId = 2010, Level = LogLevel.Debug,
         Message = "Removing the files of image {ImageId}, {ThumbnailCount} thumbnail(s).")]

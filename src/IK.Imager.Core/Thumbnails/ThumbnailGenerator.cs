@@ -27,13 +27,13 @@ public class ThumbnailGenerator(
     private const string PngMimeType = "image/png";
     private const string PngFileExtension = ".png";
 
-    public async Task Generate(string imageId, string imageGroup, CancellationToken cancellationToken)
+    public async Task Generate(string imageId, string tenantId, CancellationToken cancellationToken)
     {
         //firstly, receiving image metadata of the given image
-        var imageMetadataList = await metadataRepository.GetMetadata(new List<string> { imageId }, imageGroup, cancellationToken);
+        var imageMetadataList = await metadataRepository.GetMetadata(new List<string> { imageId }, tenantId, cancellationToken);
         if (imageMetadataList == null || !imageMetadataList.Any())
         {
-            logger.ImageNotFound(imageId, imageGroup);
+            logger.ImageNotFound(imageId);
             return;
         }
 
@@ -96,7 +96,7 @@ public class ThumbnailGenerator(
         await imageStream.DisposeAsync();
 
         imageMetadata.Thumbnails.Reverse(); //smaller thumbnails come first
-        await metadataRepository.SetMetadata(imageMetadata, cancellationToken);
+        await metadataRepository.UpdateMetadata(imageMetadata, cancellationToken);
         logger.ThumbnailsGenerated(imageMetadata.Thumbnails.Count, imageId);
     }
 }

@@ -10,10 +10,4 @@ public record DeleteImageRequest
     /// Image identifier
     /// </summary>
     public string ImageId { get; init; }
-
-    /// <summary>
-    /// Image group, that was specified when the image was uploaded.
-    /// This parameter is optional, however, specifying this value will increase this operation performance.
-    /// </summary>
-    public string? ImageGroup { get; init; }
 }

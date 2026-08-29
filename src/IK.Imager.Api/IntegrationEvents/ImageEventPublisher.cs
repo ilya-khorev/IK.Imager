@@ -18,13 +18,13 @@ public class ImageEventPublisher(
     ILogger<ImageEventPublisher> logger) : IImageEvents
 {
 
-    public async Task ImageUploaded(string imageId, string imageGroup, CancellationToken cancellationToken)
+    public async Task ImageUploaded(string tenantId, string imageId, CancellationToken cancellationToken)
     {
         //Once the image file and metadata object are saved, there is time to send a new message to the event bus topic
         //If the program fails at this stage, this message is not sent and therefore thumbnails are not generated for the image.
         //Such cases are handled when requesting an image metadata object later by resending this event again.
 
-        await publishEndpoint.Publish(new OriginalImageUploadedIntegrationEvent(imageId, imageGroup), cancellationToken);
+        await publishEndpoint.Publish(new OriginalImageUploadedIntegrationEvent(tenantId, imageId), cancellationToken);
 
         logger.EventPublished(nameof(OriginalImageUploadedIntegrationEvent), imageId);
     }

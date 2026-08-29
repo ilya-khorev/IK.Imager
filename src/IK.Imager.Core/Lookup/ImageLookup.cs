@@ -18,9 +18,9 @@ public class ImageLookup(
     IImageMetadataRepository metadataRepository,
     IImageUrlBuilder imageUrlBuilder) : IImageLookup
 {
-    public async Task<ImageLookupResult> LookupByIds(string[] imageIds, string? imageGroup, CancellationToken cancellationToken)
+    public async Task<ImageLookupResult> LookupByIds(string[] imageIds, string tenantId, CancellationToken cancellationToken)
     {
-        var imagesMetadata = await metadataRepository.GetMetadata(imageIds, imageGroup, cancellationToken);
+        var imagesMetadata = await metadataRepository.GetMetadata(imageIds, tenantId, cancellationToken);
 
         var images = imagesMetadata.Select(ToImageDetails).ToList();
 

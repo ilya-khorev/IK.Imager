@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using IK.Imager.Storage.Abstractions.Models;
 using Microsoft.Azure.Cosmos;
@@ -31,7 +32,20 @@ namespace IK.Imager.Storage.CosmosDb
 
             var databaseResponse = await _client.CreateDatabaseIfNotExistsAsync(_settings.Value.DatabaseId);
 
-            ContainerProperties containerProperties = new ContainerProperties(_settings.Value.ContainerId, "/" + nameof(ImageMetadata.ImageGroup));
+            /*
+             * A hierarchical partition key: the tenant, then the image id.
+             *
+             * The second level is what keeps a tenant from ever hitting the 20 GB logical partition
+             * limit, and it makes an id unique within its tenant - a logical partition holds exactly
+             * one document, so CreateItemAsync returning Conflict means "that id is taken here".
+             *
+             * Note CreateContainerIfNotExistsAsync matches on the container id alone. Pointing this at
+             * a container that already exists with a different partition key silently returns that one,
+             * and nothing fails until a read crosses tenants - so change CosmosDb:ContainerId rather
+             * than expecting an existing container to be migrated in place.
+             */
+            ContainerProperties containerProperties = new ContainerProperties(_settings.Value.ContainerId,
+                new List<string> { "/" + nameof(ImageMetadata.TenantId), "/id" });
 
             var indexingPolicy = new IndexingPolicy();
             indexingPolicy.IncludedPaths.Add(new IncludedPath { Path = "/*" });

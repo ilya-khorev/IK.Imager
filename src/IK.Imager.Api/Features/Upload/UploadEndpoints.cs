@@ -2,6 +2,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using IK.Imager.Api.Contract;
 using IK.Imager.Api.Contract.Upload;
+using IK.Imager.Api.Tenancy;
 using IK.Imager.Api.Validation;
 using IK.Imager.Core.Abstractions.Models;
 using IK.Imager.Core.Abstractions.Upload;
@@ -45,6 +46,7 @@ public static class UploadEndpoints
     /// </summary>
     /// <param name="imageFileRequest"></param>
     /// <param name="imageUploader"></param>
+    /// <param name="tenantContext"></param>
     /// <param name="cancellationToken"></param>
     /// <returns>A model with information about just uploaded image</returns>
     /// <response code="200">Returns the newly added image info</response>
@@ -53,10 +55,12 @@ public static class UploadEndpoints
     internal static async Task<Ok<ImageInfo>> UploadImageFile(
         [FromForm] UploadImageFileRequest imageFileRequest,
         IImageUploader imageUploader,
+        ITenantContext tenantContext,
         CancellationToken cancellationToken)
     {
         var uploadImageResult = await imageUploader.Upload(
-            imageFileRequest.File.OpenReadStream(), imageFileRequest.ImageGroup, cancellationToken);
+            imageFileRequest.File.OpenReadStream(), tenantContext.TenantId,
+            new ImageUploadOptions(imageFileRequest.Collection), cancellationToken);
 
         return TypedResults.Ok(uploadImageResult.ToContract());
     }
@@ -68,6 +72,7 @@ public static class UploadEndpoints
     /// </summary>
     /// <param name="uploadImageByUrlRequest">Image upload request model</param>
     /// <param name="imageUploader"></param>
+    /// <param name="tenantContext"></param>
     /// <param name="cancellationToken"></param>
     /// <returns>A model with information about just uploaded image</returns>
     /// <response code="200">Returns the newly added image info</response>
@@ -79,10 +84,12 @@ public static class UploadEndpoints
     internal static async Task<Ok<ImageInfo>> UploadImageByUrl(
         UploadImageByUrlRequest uploadImageByUrlRequest,
         IImageUploader imageUploader,
+        ITenantContext tenantContext,
         CancellationToken cancellationToken)
     {
         var uploadImageResult = await imageUploader.UploadByUrl(
-            uploadImageByUrlRequest.ImageUrl, uploadImageByUrlRequest.ImageGroup, cancellationToken);
+            uploadImageByUrlRequest.ImageUrl, tenantContext.TenantId,
+            new ImageUploadOptions(uploadImageByUrlRequest.Collection), cancellationToken);
 
         return TypedResults.Ok(uploadImageResult.ToContract());
     }

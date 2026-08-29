@@ -14,10 +14,10 @@ public interface IImageUploader
     /// <summary>
     /// Uploads the image carried by <paramref name="imageStream"/>. The stream is consumed and disposed.
     /// </summary>
-    Task<ImageDetails> Upload(Stream imageStream, string imageGroup, CancellationToken cancellationToken);
+    Task<ImageDetails> Upload(Stream imageStream, string tenantId, ImageUploadOptions options, CancellationToken cancellationToken);
 
     /// <summary>
     /// Downloads the image at <paramref name="imageUrl"/> and uploads it.
     /// </summary>
-    Task<ImageDetails> UploadByUrl(string imageUrl, string imageGroup, CancellationToken cancellationToken);
+    Task<ImageDetails> UploadByUrl(string imageUrl, string tenantId, ImageUploadOptions options, CancellationToken cancellationToken);
 }

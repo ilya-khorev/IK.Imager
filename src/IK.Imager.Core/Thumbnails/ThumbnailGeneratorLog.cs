@@ -5,8 +5,8 @@ namespace IK.Imager.Core.Thumbnails;
 internal static partial class ThumbnailGeneratorLog
 {
     [LoggerMessage(EventId = 1100, Level = LogLevel.Warning,
-        Message = "No metadata for image {ImageId} in group {ImageGroup}. Not generating thumbnails.")]
-    public static partial void ImageNotFound(this ILogger logger, string imageId, string? imageGroup);
+        Message = "No metadata for image {ImageId}. Not generating thumbnails.")]
+    public static partial void ImageNotFound(this ILogger logger, string imageId);
 
     [LoggerMessage(EventId = 1101, Level = LogLevel.Debug,
         Message = "Read metadata for image {ImageId}, {Width}x{Height}.")]
