@@ -42,13 +42,13 @@ public class CosmosImageMetadataRepositoryTests
         ImageMetadata imageMetadata = GenerateItem();
         await _imageMetadataCosmosDbRepository.SetMetadata(imageMetadata, CancellationToken.None);
 
-        imageMetadata.Name = "an updated name";
+        imageMetadata.BlobPath = "an updated name";
         await _imageMetadataCosmosDbRepository.SetMetadata(imageMetadata, CancellationToken.None);
 
         var receivedItems = await _imageMetadataCosmosDbRepository.GetMetadata(new[] { imageMetadata.Id },
             imageMetadata.ImageGroup, CancellationToken.None);
         var receivedItem = Assert.Single(receivedItems);
-        Assert.Equal("an updated name", receivedItem.Name);
+        Assert.Equal("an updated name", receivedItem.BlobPath);
     }
 
     [Fact]
@@ -234,7 +234,7 @@ public class CosmosImageMetadataRepositoryTests
             },
             MD5Hash = Guid.NewGuid().ToString(),
             DateAddedUtc = DateTime.UtcNow,
-            Name = Guid.NewGuid().ToString(),
+            BlobPath = Guid.NewGuid().ToString(),
             Thumbnails = new List<ImageThumbnail>()
         };
 

@@ -10,9 +10,10 @@ namespace IK.Imager.Storage.Abstractions.Models
         string Id { get; set; }
 
         /// <summary>
-        /// Image name
+        /// Path of the image blob within its storage container, extension included.
+        /// This is the storage key, not a display name.
         /// </summary>
-        string Name { get; set; }
+        string BlobPath { get; set; }
 
         /// <summary>
         /// Image size in bytes

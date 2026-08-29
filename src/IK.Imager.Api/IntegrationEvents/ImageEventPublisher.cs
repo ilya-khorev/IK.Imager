@@ -29,9 +29,9 @@ public class ImageEventPublisher(
         logger.EventPublished(nameof(OriginalImageUploadedIntegrationEvent), imageId);
     }
 
-    public async Task ImageMetadataDeleted(string imageId, string imageName, string[] thumbnailNames, CancellationToken cancellationToken)
+    public async Task ImageMetadataDeleted(string imageId, string blobPath, string[] thumbnailBlobPaths, CancellationToken cancellationToken)
     {
-        await publishEndpoint.Publish(new ImageMetadataDeletedIntegrationEvent(imageId, imageName, thumbnailNames), cancellationToken);
+        await publishEndpoint.Publish(new ImageMetadataDeletedIntegrationEvent(imageId, blobPath, thumbnailBlobPaths), cancellationToken);
 
         logger.EventPublished(nameof(ImageMetadataDeletedIntegrationEvent), imageId);
     }

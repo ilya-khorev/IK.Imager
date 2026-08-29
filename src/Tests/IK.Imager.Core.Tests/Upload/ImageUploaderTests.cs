@@ -21,7 +21,7 @@ namespace IK.Imager.Core.Tests.Upload;
 public class ImageUploaderTests
 {
     private const string ImageId = "image-id";
-    private const string ImageName = "image-id.jpg";
+    private const string BlobPath = "image-id.jpg";
     private const string ImageGroup = "test-group";
     private const string Hash = "hash";
 
@@ -51,13 +51,13 @@ public class ImageUploaderTests
         _imageDownloader = new ImageDownloader(new HttpClient(), ImageLimitations.WithMaxSizeBytes(int.MaxValue),
             DownloadSettings.WithMaxRedirects(), output.BuildLoggerFor<ImageDownloader>());
 
-        _imageUrlBuilderMock.Setup(x => x.Build(ImageName, ImageVariant.Original)).Returns(PublicUrl);
+        _imageUrlBuilderMock.Setup(x => x.Build(BlobPath, ImageVariant.Original)).Returns(PublicUrl);
 
         _imageInspectorMock.Setup(x => x.Inspect(It.IsAny<Stream>())).Returns((Jpeg, Size));
         _imageNameGeneratorMock.Setup(x => x.NewImageId()).Returns(ImageId);
-        _imageNameGeneratorMock.Setup(x => x.ToFileName(ImageId, Jpeg.FileExtension)).Returns(ImageName);
+        _imageNameGeneratorMock.Setup(x => x.ToFileName(ImageId, Jpeg.FileExtension)).Returns(BlobPath);
         _blobRepositoryMock
-            .Setup(x => x.UploadImage(ImageName, It.IsAny<Stream>(), ImageVariant.Original, Jpeg.MimeType,
+            .Setup(x => x.UploadImage(BlobPath, It.IsAny<Stream>(), ImageVariant.Original, Jpeg.MimeType,
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(new BlobUploadResult
             {
@@ -77,7 +77,7 @@ public class ImageUploaderTests
         var result = await CreateUploader().Upload(new MemoryStream([1, 2, 3]), ImageGroup, CancellationToken.None);
 
         Assert.Equal(ImageId, result.Id);
-        Assert.Equal(ImageName, result.Name);
+        Assert.Equal(BlobPath, result.BlobPath);
         Assert.Equal(Hash, result.Hash);
         //the built public url, not the raw blob url the repository reported
         Assert.Equal(PublicUrl, result.Url);
@@ -97,13 +97,13 @@ public class ImageUploaderTests
         await CreateUploader().Upload(new MemoryStream([1, 2, 3]), ImageGroup, CancellationToken.None);
 
         _blobRepositoryMock.Verify(
-            x => x.UploadImage(ImageName, It.IsAny<Stream>(), ImageVariant.Original, Jpeg.MimeType,
+            x => x.UploadImage(BlobPath, It.IsAny<Stream>(), ImageVariant.Original, Jpeg.MimeType,
                 It.IsAny<CancellationToken>()), Times.Once);
 
         _metadataRepositoryMock.Verify(x => x.SetMetadata(
             It.Is<ImageMetadata>(m =>
                 m.Id == ImageId &&
-                m.Name == ImageName &&
+                m.BlobPath == BlobPath &&
                 m.ImageGroup == ImageGroup &&
                 m.MD5Hash == Hash &&
                 m.MimeType == Jpeg.MimeType &&

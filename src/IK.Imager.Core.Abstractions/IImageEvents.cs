@@ -20,5 +20,5 @@ public interface IImageEvents
     /// The metadata of an image has been removed, so the image is already gone from lookups. Its blob and
     /// the blobs of its thumbnails are still to be deleted.
     /// </summary>
-    Task ImageMetadataDeleted(string imageId, string imageName, string[] thumbnailNames, CancellationToken cancellationToken);
+    Task ImageMetadataDeleted(string imageId, string blobPath, string[] thumbnailBlobPaths, CancellationToken cancellationToken);
 }

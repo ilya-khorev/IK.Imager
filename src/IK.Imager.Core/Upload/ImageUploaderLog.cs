@@ -22,8 +22,8 @@ namespace IK.Imager.Core.Upload;
 internal static partial class ImageUploaderLog
 {
     [LoggerMessage(EventId = 1004, Level = LogLevel.Debug,
-        Message = "Uploaded the image to blob storage, {ImageId} as {ImageName}.")]
-    public static partial void UploadedToBlobStorage(this ILogger logger, string imageId, string imageName);
+        Message = "Uploaded the image to blob storage, {ImageId} as {BlobPath}.")]
+    public static partial void UploadedToBlobStorage(this ILogger logger, string imageId, string blobPath);
 
     [LoggerMessage(EventId = 1005, Level = LogLevel.Information,
         Message = "Saved image {ImageId} in group {ImageGroup}, {SizeBytes} bytes.")]

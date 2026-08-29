@@ -33,15 +33,15 @@ public class PurgeCdnFilesConsumer(
             ["ImageId"] = context.Message.ImageId
         });
 
-        var thumbnailNames = context.Message.ThumbnailNames;
+        var thumbnailBlobPaths = context.Message.ThumbnailBlobPaths;
 
-        var contentUris = new List<Uri>(thumbnailNames.Length + 1)
+        var contentUris = new List<Uri>(thumbnailBlobPaths.Length + 1)
         {
-            imageUrlBuilder.Build(context.Message.ImageName, ImageVariant.Original)
+            imageUrlBuilder.Build(context.Message.BlobPath, ImageVariant.Original)
         };
 
-        foreach (var thumbnailName in thumbnailNames)
-            contentUris.Add(imageUrlBuilder.Build(thumbnailName, ImageVariant.Thumbnail));
+        foreach (var thumbnailBlobPath in thumbnailBlobPaths)
+            contentUris.Add(imageUrlBuilder.Build(thumbnailBlobPath, ImageVariant.Thumbnail));
 
         logger.PurgeJobReceived(contentUris.Count, context.Message.ImageId);
 

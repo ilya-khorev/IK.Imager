@@ -83,7 +83,7 @@ public class ImageUploader(
         await metadataRepository.SetMetadata(new ImageMetadata
         {
             Id = imageId,
-            Name = imageName,
+            BlobPath = imageName,
             DateAddedUtc = uploadImageResult.DateAdded.DateTime,
             Height = imageSize.Height,
             Width = imageSize.Width,
@@ -102,7 +102,7 @@ public class ImageUploader(
         return new ImageDetails
         {
             Id = imageId,
-            Name = imageName,
+            BlobPath = imageName,
             Hash = uploadImageResult.Hash,
             DateAdded = uploadImageResult.DateAdded,
             Url = imageUrlBuilder.Build(imageName, ImageVariant.Original),

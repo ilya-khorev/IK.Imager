@@ -46,7 +46,7 @@ public class ThumbnailGenerator(
             return;
         }
 
-        await using var originalImageStream = await blobRepository.DownloadImage(imageMetadata.Name, ImageVariant.Original, cancellationToken);
+        await using var originalImageStream = await blobRepository.DownloadImage(imageMetadata.BlobPath, ImageVariant.Original, cancellationToken);
         logger.OriginalImageDownloaded(imageMetadata.Id);
 
         ImageType imageType = imageMetadata.ImageType;
@@ -80,7 +80,7 @@ public class ThumbnailGenerator(
             imageMetadata.Thumbnails.Add(new ImageThumbnail
             {
                 Id = thumbnailImageId,
-                Name = thumbnailImageName,
+                BlobPath = thumbnailImageName,
                 MD5Hash = uploadedBlob.Hash,
                 DateAddedUtc = uploadedBlob.DateAdded.DateTime,
                 MimeType = mimeType,

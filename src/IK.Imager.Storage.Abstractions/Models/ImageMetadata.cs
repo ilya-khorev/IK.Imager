@@ -25,9 +25,10 @@ namespace IK.Imager.Storage.Abstractions.Models
         public DateTime DateAddedUtc { get; set; }
 
         /// <summary>
-        /// Image name
+        /// Path of the image blob within its storage container, extension included.
+        /// This is the storage key, not a display name.
         /// </summary>
-        public string Name { get; set; } = null!;
+        public string BlobPath { get; set; } = null!;
 
         /// <summary>
         /// Standard that indicates the nature and format of a file.
@@ -72,7 +73,7 @@ namespace IK.Imager.Storage.Abstractions.Models
                                             && Width == other.Width
                                             && Height == other.Height
                                             && DateAddedUtc.Equals(other.DateAddedUtc)
-                                            && Name == other.Name
+                                            && BlobPath == other.BlobPath
                                             && MimeType == other.MimeType
                                             && ImageType == other.ImageType
                                             && FileExtension == other.FileExtension;
@@ -141,7 +142,7 @@ namespace IK.Imager.Storage.Abstractions.Models
                 hashCode = (hashCode * 397) ^ Width;
                 hashCode = (hashCode * 397) ^ Height;
                 hashCode = (hashCode * 397) ^ DateAddedUtc.GetHashCode();
-                hashCode = (hashCode * 397) ^ (Name != null ? Name.GetHashCode() : 0);
+                hashCode = (hashCode * 397) ^ (BlobPath != null ? BlobPath.GetHashCode() : 0);
                 hashCode = (hashCode * 397) ^ (MimeType != null ? MimeType.GetHashCode() : 0);
                 hashCode = (hashCode * 397) ^ (FileExtension != null ? FileExtension.GetHashCode() : 0);
                 hashCode = (hashCode * 397) ^ (Tags != null ? Tags.GetHashCode() : 0);

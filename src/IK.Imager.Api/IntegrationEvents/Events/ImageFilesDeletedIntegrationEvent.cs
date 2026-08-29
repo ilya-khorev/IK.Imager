@@ -6,4 +6,4 @@ namespace IK.Imager.Api.IntegrationEvents.Events;
 /// Carries names rather than urls: the url of an image depends on configuration that may have changed
 /// between publishing and consuming.
 /// </summary>
-public record ImageFilesDeletedIntegrationEvent(string ImageId, string ImageName, string[] ThumbnailNames);
+public record ImageFilesDeletedIntegrationEvent(string ImageId, string BlobPath, string[] ThumbnailBlobPaths);

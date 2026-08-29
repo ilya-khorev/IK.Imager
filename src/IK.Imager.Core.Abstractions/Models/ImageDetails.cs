@@ -15,7 +15,7 @@ namespace IK.Imager.Core.Abstractions.Models
         /// <summary>
         /// Unique image name
         /// </summary>
-        public string Name { get; init; } = null!;
+        public string BlobPath { get; init; } = null!;
 
         /// <summary>
         /// Image https url

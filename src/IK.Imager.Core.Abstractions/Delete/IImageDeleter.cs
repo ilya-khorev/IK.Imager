@@ -16,7 +16,7 @@ public interface IImageDeleter
     Task<bool> DeleteMetadata(string imageId, string? imageGroup, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Removes the blob of the original image and of every thumbnail named in <paramref name="thumbnailNames"/>.
+    /// Removes the blob of the original image and of every thumbnail named in <paramref name="thumbnailBlobPaths"/>.
     /// </summary>
-    Task DeleteFiles(string imageId, string? imageName, string[] thumbnailNames, CancellationToken cancellationToken);
+    Task DeleteFiles(string imageId, string? blobPath, string[] thumbnailBlobPaths, CancellationToken cancellationToken);
 }

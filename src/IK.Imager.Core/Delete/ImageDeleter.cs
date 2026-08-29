@@ -35,28 +35,28 @@ public class ImageDeleter(
 
         logger.MetadataRemoved(imageId);
 
-        await imageEvents.ImageMetadataDeleted(imageMetadata.Id, imageMetadata.Name,
-            imageMetadata.Thumbnails != null ? imageMetadata.Thumbnails.Select(x => x.Name).ToArray() : Array.Empty<string>(),
+        await imageEvents.ImageMetadataDeleted(imageMetadata.Id, imageMetadata.BlobPath,
+            imageMetadata.Thumbnails != null ? imageMetadata.Thumbnails.Select(x => x.BlobPath).ToArray() : Array.Empty<string>(),
             cancellationToken);
 
         return true;
     }
 
-    public async Task DeleteFiles(string imageId, string? imageName, string[] thumbnailNames, CancellationToken cancellationToken)
+    public async Task DeleteFiles(string imageId, string? blobPath, string[] thumbnailBlobPaths, CancellationToken cancellationToken)
     {
         //the generator guards the call, not the argument, so the join stays behind an explicit check
         if (logger.IsEnabled(LogLevel.Debug))
-            logger.RemovingFiles(imageId, imageName, string.Join(",", thumbnailNames));
+            logger.RemovingFiles(imageId, blobPath, string.Join(",", thumbnailBlobPaths));
 
         //a null image name is rejected by the repository's own argument check, as it was before
-        bool originalImageDeleted = await blobRepository.TryDeleteImage(imageName!, ImageVariant.Original, cancellationToken);
+        bool originalImageDeleted = await blobRepository.TryDeleteImage(blobPath!, ImageVariant.Original, cancellationToken);
         int deletedThumbnails = 0;
-        foreach (var thumbnailName in thumbnailNames)
+        foreach (var thumbnailBlobPath in thumbnailBlobPaths)
         {
-            if (await blobRepository.TryDeleteImage(thumbnailName, ImageVariant.Thumbnail, cancellationToken))
+            if (await blobRepository.TryDeleteImage(thumbnailBlobPath, ImageVariant.Thumbnail, cancellationToken))
                 deletedThumbnails++;
         }
 
-        logger.FilesDeleted(imageId, originalImageDeleted, deletedThumbnails, thumbnailNames.Length);
+        logger.FilesDeleted(imageId, originalImageDeleted, deletedThumbnails, thumbnailBlobPaths.Length);
     }
 }

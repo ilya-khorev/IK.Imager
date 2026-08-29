@@ -78,15 +78,15 @@ public class ImageDeleterTests
             It.IsAny<ImageVariant>(), CancellationToken.None));
 
         var imageId = Guid.NewGuid().ToString();
-        var imageName = Guid.NewGuid().ToString();
-        var thumbnailNames = new Fixture().CreateMany<string>(3).ToArray();
+        var blobPath = Guid.NewGuid().ToString();
+        var thumbnailBlobPaths = new Fixture().CreateMany<string>(3).ToArray();
 
-        await CreateImageDeleter().DeleteFiles(imageId, imageName, thumbnailNames, CancellationToken.None);
+        await CreateImageDeleter().DeleteFiles(imageId, blobPath, thumbnailBlobPaths, CancellationToken.None);
 
-        _blobRepositoryMock.Verify(x => x.TryDeleteImage(imageName, ImageVariant.Original, CancellationToken.None), Times.Once);
-        foreach (var thumbnailName in thumbnailNames)
+        _blobRepositoryMock.Verify(x => x.TryDeleteImage(blobPath, ImageVariant.Original, CancellationToken.None), Times.Once);
+        foreach (var thumbnailBlobPath in thumbnailBlobPaths)
         {
-            _blobRepositoryMock.Verify(x => x.TryDeleteImage(thumbnailName, ImageVariant.Thumbnail, CancellationToken.None), Times.Once);
+            _blobRepositoryMock.Verify(x => x.TryDeleteImage(thumbnailBlobPath, ImageVariant.Thumbnail, CancellationToken.None), Times.Once);
         }
     }
 
@@ -97,11 +97,11 @@ public class ImageDeleterTests
             It.IsAny<ImageVariant>(), CancellationToken.None));
 
         var imageId = Guid.NewGuid().ToString();
-        var imageName = Guid.NewGuid().ToString();
+        var blobPath = Guid.NewGuid().ToString();
 
-        await CreateImageDeleter().DeleteFiles(imageId, imageName, [], CancellationToken.None);
+        await CreateImageDeleter().DeleteFiles(imageId, blobPath, [], CancellationToken.None);
 
-        _blobRepositoryMock.Verify(x => x.TryDeleteImage(imageName, ImageVariant.Original, CancellationToken.None), Times.Once);
+        _blobRepositoryMock.Verify(x => x.TryDeleteImage(blobPath, ImageVariant.Original, CancellationToken.None), Times.Once);
         _blobRepositoryMock.Verify(x => x.TryDeleteImage(It.IsAny<string>(), ImageVariant.Thumbnail, CancellationToken.None), Times.Never);
     }
 }

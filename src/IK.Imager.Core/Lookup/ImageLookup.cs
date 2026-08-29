@@ -42,7 +42,7 @@ public class ImageLookup(
             Height = imageMetadata.Height,
             Width = imageMetadata.Width,
             Tags = imageMetadata.Tags ?? new Dictionary<string, string>(),
-            Url = imageUrlBuilder.Build(imageMetadata.Name, ImageVariant.Original),
+            Url = imageUrlBuilder.Build(imageMetadata.BlobPath, ImageVariant.Original),
             DateAdded = imageMetadata.DateAddedUtc,
             MimeType = imageMetadata.MimeType,
             Thumbnails = imageMetadata.Thumbnails?.Select(ToThumbnailDetails).ToList() ?? []
@@ -58,6 +58,6 @@ public class ImageLookup(
             Width = thumbnail.Width,
             DateAdded = thumbnail.DateAddedUtc,
             MimeType = thumbnail.MimeType,
-            Url = imageUrlBuilder.Build(thumbnail.Name, ImageVariant.Thumbnail)
+            Url = imageUrlBuilder.Build(thumbnail.BlobPath, ImageVariant.Thumbnail)
         };
 }
