@@ -45,11 +45,11 @@ public sealed class CosmosDbFixture : IAsyncLifetime
             DatabaseId = Constants.CosmosDb.DatabaseId
         };
 
-        Repository = new CosmosImageMetadataRepository(
-            new ImageContainerFactory(new OptionsWrapper<CosmosDbSettings>(Settings), CreateEmulatorClientOptions()),
-            NullLogger<CosmosImageMetadataRepository>.Instance);
-
         _client = new CosmosClient(Settings.ConnectionString, CreateEmulatorClientOptions());
+
+        Repository = new CosmosImageMetadataRepository(
+            new ImageContainerFactory(_client, new OptionsWrapper<CosmosDbSettings>(Settings), provision: true),
+            NullLogger<CosmosImageMetadataRepository>.Instance);
     }
 
     public async Task DisposeAsync()

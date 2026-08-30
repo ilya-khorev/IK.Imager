@@ -7,6 +7,7 @@
 
     <ItemGroup>
       <PackageReference Include="AspNetCore.HealthChecks.Azure.Storage.Blobs" />
+      <PackageReference Include="Azure.Identity" />
       <PackageReference Include="Azure.Monitor.OpenTelemetry.AspNetCore" />
       <PackageReference Include="AspNetCore.HealthChecks.CosmosDb" />
       <PackageReference Include="AspNetCore.HealthChecks.UI.Client" />

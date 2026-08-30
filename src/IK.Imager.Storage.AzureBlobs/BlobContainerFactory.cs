@@ -1,4 +1,3 @@
-using System;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 
@@ -8,10 +7,9 @@ namespace IK.Imager.Storage.AzureBlobs
     {
         private readonly BlobServiceClient _cloudBlobClient;
 
-        public BlobContainerFactory(string connectionString)
+        public BlobContainerFactory(BlobServiceClient blobServiceClient)
         {
-            ArgumentException.ThrowIfNullOrEmpty(connectionString);
-            _cloudBlobClient = new BlobServiceClient(connectionString);
+            _cloudBlobClient = blobServiceClient;
         }
 
         public BlobContainerClient CreateContainerIfNotExists(string containerName)

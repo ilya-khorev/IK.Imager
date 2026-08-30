@@ -54,7 +54,7 @@ public sealed class AzureBlobStorageFixture : IAsyncLifetime
         BlobServiceClient = new BlobServiceClient(connectionString);
         Repository = new AzureBlobImageRepository(
             new OptionsWrapper<AzureBlobStorageSettings>(Settings),
-            new BlobContainerFactory(connectionString),
+            new BlobContainerFactory(BlobServiceClient),
             NullLogger<AzureBlobImageRepository>.Instance);
     }
 

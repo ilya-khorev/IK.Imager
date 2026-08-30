@@ -1,4 +1,6 @@
 using System.Text.Json;
+using Azure.Core;
+using Azure.Identity;
 using Azure.Monitor.OpenTelemetry.AspNetCore;
 using Azure.Storage.Blobs;
 using HealthChecks.Azure.Storage.Blobs;
@@ -13,6 +15,7 @@ using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -47,6 +50,15 @@ public static class ObservabilityExtensions
     private const string DependencyTracingPath = "Telemetry:EnableDependencyTracing";
 
     /// <summary>
+    /// Off by default, and a flag rather than an endpoint like the other services get: Application Insights
+    /// needs its connection string either way - it carries the ingestion endpoint, not only the
+    /// instrumentation key - so there is nothing whose presence could pick the authentication on its own.
+    /// Authenticating ingestion also needs the Monitoring Metrics Publisher role, on a resource the storage
+    /// and messaging role assignments say nothing about.
+    /// </summary>
+    private const string EntraIdAuthenticationPath = "Telemetry:EnableEntraIdAuthentication";
+
+    /// <summary>
     /// Replaces the default logging providers with a single json console.
     /// </summary>
     /// <remarks>
@@ -75,6 +87,12 @@ public static class ObservabilityExtensions
     /// <summary>
     /// Registers the health checks and the OpenTelemetry pipeline.
     /// </summary>
+    /// <remarks>
+    /// The health checks need no credential of their own - they probe through the clients the storage
+    /// modules registered, which already carry whatever those modules authenticate with.
+    /// </remarks>
+    /// <param name="services">The service collection to add the registrations to.</param>
+    /// <param name="configuration">The configuration root.</param>
     public static IServiceCollection AddObservability(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddImagerHealthChecks();
@@ -101,8 +119,9 @@ public static class ObservabilityExtensions
         return app;
     }
 
-    //The storage settings are read through IOptions rather than straight off IConfiguration so that the
-    //probes can never target a different database or container than the repositories do.
+    //The probes go through the very clients the storage modules registered, so they can never target a
+    //different account - or authenticate differently - than the repositories do. What is still read through
+    //IOptions is which database and container to look at.
     private static IServiceCollection AddImagerHealthChecks(this IServiceCollection services)
     {
         var hcBuilder = services.AddHealthChecks();
@@ -110,7 +129,7 @@ public static class ObservabilityExtensions
         hcBuilder.AddCheck("self", () => HealthCheckResult.Healthy());
 
         hcBuilder.AddAzureCosmosDB(
-            s => new CosmosClient(s.GetRequiredService<IOptions<CosmosDbSettings>>().Value.ConnectionString),
+            s => s.GetRequiredService<CosmosClient>(),
             s => new AzureCosmosDbHealthCheckOptions
             {
                 DatabaseId = s.GetRequiredService<IOptions<CosmosDbSettings>>().Value.DatabaseId
@@ -118,7 +137,7 @@ public static class ObservabilityExtensions
             "ik.imager-cosmossdb-check", tags: new[] { "cosmosdb" });
 
         hcBuilder.AddAzureBlobStorage(
-            s => new BlobServiceClient(s.GetRequiredService<IOptions<AzureBlobStorageSettings>>().Value.ConnectionString),
+            s => s.GetRequiredService<BlobServiceClient>(),
             s => new AzureBlobStorageHealthCheckOptions
             {
                 //lowercased to match AzureBlobImageRepository, which lowercases before creating the container
@@ -140,6 +159,18 @@ public static class ObservabilityExtensions
 
         if (string.IsNullOrWhiteSpace(connectionString))
             return services;
+
+        if (configuration.GetValue<bool>(EntraIdAuthenticationPath))
+        {
+            //one credential for every Azure client in the process - it caches the tokens it fetches.
+            //TryAdd, so a host that wants a credential of its own can register it before this runs.
+            services.TryAddSingleton<TokenCredential>(_ => new DefaultAzureCredential());
+
+            //UseAzureMonitor takes an Action<AzureMonitorOptions> with no way to reach the provider, so the
+            //credential goes on through a later Configure - which runs after the one UseAzureMonitor adds
+            services.AddOptions<AzureMonitorOptions>()
+                .Configure<TokenCredential>((options, tokenCredential) => options.Credential = tokenCredential);
+        }
 
         //off by default in the distro, and it is what carries the ImageId scope onto an exported log record
         services.Configure<OpenTelemetryLoggerOptions>(options =>

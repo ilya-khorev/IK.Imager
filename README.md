@@ -258,6 +258,47 @@ separator.
 | `AzureStorage__ConnectionString` | Connection string to the Azure Storage account |
 | `CosmosDb__ConnectionString` | Connection string to Cosmos DB |
 
+Set the matching endpoint below instead to authenticate without keys — see *Managed identity*.
+
+### Managed identity
+
+**Setting an endpoint is what switches a service onto `DefaultAzureCredential`.** There is no separate
+switch: each of the three reads its own endpoint setting, uses a token when it is present and the connection
+string when it is not. The endpoint wins when both are set, so moving a deployment onto an identity is one
+variable added rather than one added and one blanked. All of them share a single credential instance.
+
+`DefaultAzureCredential` also means the same settings work on a workstation signed in with `az login`, and
+that a **user assigned identity is selected with the standard `AZURE_CLIENT_ID` environment variable** —
+there is no setting of ours for it.
+
+| Parameter | Default | Description |
+|:---|:---|:---|
+| `AzureStorage__ServiceUri` | *empty* | Blob endpoint of the account, e.g. `https://myaccount.blob.core.windows.net` |
+| `CosmosDb__AccountEndpoint` | *empty* | Endpoint of the account, e.g. `https://myaccount.documents.azure.com:443/` |
+| `ServiceBus__FullyQualifiedNamespace` | *empty* | Namespace host, e.g. `mynamespace.servicebus.windows.net` |
+| `Telemetry__EnableEntraIdAuthentication` | false | Authenticates Application Insights ingestion. A flag rather than an endpoint, because `Telemetry__ConnectionString` is required either way — it carries the ingestion endpoint, not just the instrumentation key |
+
+A service with neither its endpoint nor its connection string set stops the service from starting, naming
+both. The Front Door purger has always authenticated with `DefaultAzureCredential` and needs nothing here.
+
+The identity needs a role assignment per service it reaches:
+
+| Service | Role |
+|:---|:---|
+| Storage account | Storage Blob Data Contributor |
+| Cosmos DB account | Cosmos DB Built-in Data Contributor, assigned with `az cosmosdb sql role assignment create` — it is a data plane role and does not appear in the portal's Access control blade |
+| Service Bus namespace | Azure Service Bus Data Owner. Data Sender/Receiver is not enough: MassTransit creates its own topics and subscriptions |
+| Front Door profile | CDN Endpoint Contributor, for `Cdn__Provider=AzureFrontDoor` |
+| Application Insights | Monitoring Metrics Publisher, for `Telemetry__EnableEntraIdAuthentication` |
+
+Only the services you actually point at an endpoint need one — the three are independent.
+
+**The Cosmos database and container have to exist already.** With a connection string the service creates
+both on first use; Cosmos DB data plane RBAC covers reading and writing documents only, so a keyless
+deployment provisions them alongside the account — with the partition key `/TenantId` then `/id`. Blob
+containers are unaffected: creating one is within Storage Blob Data Contributor, so that still happens on
+first use.
+
 ### Optional
 
 | Parameter | Default | Description |

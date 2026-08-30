@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading.Tasks;
 using IK.Imager.Api.Extensions;
-using IK.Imager.Storage.CosmosDb;
 using IK.Imager.TestsBase;
 using MassTransit;
 using Microsoft.AspNetCore.Hosting;
@@ -12,7 +11,6 @@ using Microsoft.AspNetCore.TestHost;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Microsoft.Extensions.Options;
 using Testcontainers.Azurite;
 using Testcontainers.CosmosDb;
 using Xunit;
@@ -67,7 +65,7 @@ public sealed class ImagerApiFixture : IAsyncLifetime
 
         ApplyConfiguration();
 
-        _factory = new ImagerApiApplicationFactory(CreateEmulatorClientOptions());
+        _factory = new ImagerApiApplicationFactory(CreateEmulatorClient());
         Client = _factory.CreateClient();
 
         //bus level observers reach every receive endpoint; connected after CreateClient so that the host,
@@ -133,34 +131,32 @@ public sealed class ImagerApiFixture : IAsyncLifetime
     }
 
     /// <summary>
-    /// The options the .NET SDK needs to talk to the containerized Cosmos emulator - gateway mode, pinned to
+    /// The client the .NET SDK needs to talk to the containerized Cosmos emulator - gateway mode, pinned to
     /// the endpoint it was given, and the module's URI-rewriting handler on top. Identical to what
-    /// CosmosDbFixture passes, and the reason ImageContainerFactory takes an optional CosmosClientOptions
-    /// at all. Production leaves it null and keeps the SDK defaults.
+    /// CosmosDbFixture builds. Production takes the client the Cosmos module registers, with the SDK defaults.
     /// </summary>
-    private CosmosClientOptions CreateEmulatorClientOptions() =>
-        new()
+    private CosmosClient CreateEmulatorClient() =>
+        new(_cosmos.GetConnectionString(), new CosmosClientOptions
         {
             ConnectionMode = ConnectionMode.Gateway,
             LimitToEndpoint = true,
             HttpClientFactory = () => _cosmos.HttpClient,
             RequestTimeout = TimeSpan.FromMinutes(2)
-        };
+        });
 
     /// <summary>
     /// Runs the real Program.cs and swaps in the only registration that cannot be expressed as configuration:
-    /// the Cosmos client's SDK options.
+    /// the Cosmos client, because its emulator options are SDK objects rather than settings. Everything
+    /// built on top of it - the container factory, the repository and the health check - is the production one.
     /// </summary>
-    private sealed class ImagerApiApplicationFactory(CosmosClientOptions cosmosClientOptions)
-        : WebApplicationFactory<Program>
+    private sealed class ImagerApiApplicationFactory(CosmosClient cosmosClient) : WebApplicationFactory<Program>
     {
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
             builder.ConfigureTestServices(services =>
             {
-                services.RemoveAll<IImageContainerFactory>();
-                services.AddSingleton<IImageContainerFactory>(s => new ImageContainerFactory(
-                    s.GetRequiredService<IOptions<CosmosDbSettings>>(), cosmosClientOptions));
+                services.RemoveAll<CosmosClient>();
+                services.AddSingleton(cosmosClient);
             });
         }
     }
