@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using IK.Imager.Api.Contract;
@@ -6,11 +7,15 @@ using IK.Imager.Api.Tenancy;
 using IK.Imager.Api.Validation;
 using IK.Imager.Core.Abstractions.Models;
 using IK.Imager.Core.Abstractions.Upload;
+using IK.Imager.Core.Upload;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Http.Metadata;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 #pragma warning disable 1591
 
@@ -21,6 +26,21 @@ namespace IK.Imager.Api.Features.Upload;
 /// </summary>
 public static class UploadEndpoints
 {
+    /// <summary>
+    /// What a multipart upload may carry on top of the image itself: the boundary and part headers of the
+    /// file and of the form fields around it. Sixteen parts of a couple of hundred bytes each, and a
+    /// filename can be long - 8 KB leaves room to spare, and is nothing against a 15 MB image.
+    /// </summary>
+    private const int MultipartOverheadBytes = 8 * 1024;
+
+    /// <summary>
+    /// The whole of an upload-by-url body: a url, an image id of at most 128 characters, a collection of
+    /// at most 30, two flags and up to 10 thumbnail widths. That leaves roughly 8 KB for the url alone -
+    /// more than the request line most servers accept - so nothing legitimate comes near this, and a body
+    /// that does is refused before it is buffered.
+    /// </summary>
+    private const int MaxUploadByUrlRequestBytes = 16 * 1024;
+
     public static IEndpointRouteBuilder MapUploadEndpoints(this IEndpointRouteBuilder images)
     {
         //multipart form endpoints require an antiforgery token by default, which only makes sense for a
@@ -29,11 +49,13 @@ public static class UploadEndpoints
             .WithName(nameof(UploadImageFile))
             .WithValidation<UploadImageFileRequest>()
             .DisableAntiforgery()
+            .WithMetadata(new UploadSizeLimit(MaxUploadRequestBytes(images.ServiceProvider)))
             .Produces<ImageInfo>();
 
         images.MapPost("/upload-by-url", UploadImageByUrl)
             .WithName(nameof(UploadImageByUrl))
             .WithValidation<UploadImageByUrlRequest>()
+            .WithMetadata(new UploadSizeLimit(MaxUploadByUrlRequestBytes))
             .Produces<ImageInfo>();
 
         return images;
@@ -95,6 +117,26 @@ public static class UploadEndpoints
 
         return TypedResults.Ok(uploadImageResult.ToContract());
     }
+
+    /// <summary>
+    /// Bounds the multipart body, so that an image over ImageLimitations:SizeBytes.Max is refused as it
+    /// arrives instead of after the form reader has spooled all of it to disk - ImageValidator only ever
+    /// sees a stream that is already complete. The image upload-by-url fetches is bounded by the same
+    /// setting inside ImageDownloader; what its own body needs is only MaxUploadByUrlRequestBytes.
+    ///
+    /// Read once at startup, because the limit is endpoint metadata. Raising SizeBytes.Max on a running
+    /// host therefore moves what ImageValidator accepts but not what this refuses.
+    /// </summary>
+    private static long MaxUploadRequestBytes(IServiceProvider services) =>
+        (long)services.GetRequiredService<IOptions<ImageLimitationsSettings>>().Value.SizeBytes.Max
+        + MultipartOverheadBytes;
+
+    /// <summary>
+    /// Minimal APIs have no WithRequestSizeLimit() - the limit travels as endpoint metadata, and routing
+    /// applies it to IHttpMaxRequestBodySizeFeature once the endpoint is matched. Only a real server
+    /// implements that feature, so the limit does nothing under TestServer.
+    /// </summary>
+    private sealed record UploadSizeLimit(long? MaxRequestBodySize) : IRequestSizeLimitMetadata;
 
     private static ImageUploadOptions ToOptions(this UploadImageRequestBase source) =>
         new(ImageId: source.ImageId,

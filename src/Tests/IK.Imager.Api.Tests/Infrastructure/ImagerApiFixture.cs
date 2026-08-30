@@ -54,6 +54,12 @@ public sealed class ImagerApiFixture : IAsyncLifetime
     public HttpClient Client { get; private set; } = null!;
 
     /// <summary>
+    /// The running host's container, for the few assertions that are about how the service is wired rather
+    /// than about what it answers.
+    /// </summary>
+    public IServiceProvider Services => _factory.Services;
+
+    /// <summary>
     /// Completes when a published integration event has actually been consumed, which is what makes the
     /// asynchronous half of the system assertable without sleeping. See <see cref="ConsumedEventObserver"/>.
     /// </summary>
