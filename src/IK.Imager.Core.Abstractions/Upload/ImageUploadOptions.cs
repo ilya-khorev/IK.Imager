@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace IK.Imager.Core.Abstractions.Upload;
 
 /// <summary>
@@ -18,8 +20,13 @@ namespace IK.Imager.Core.Abstractions.Upload;
 /// <param name="AddUniquePrefix">
 /// Whether a random segment is inserted before the id, so that the url cannot be guessed from the id.
 /// </param>
+/// <param name="ThumbnailTargetWidths">
+/// The widths to generate thumbnails at, replacing the configured ones for this image alone.
+/// Null means the configured widths are used.
+/// </param>
 public record ImageUploadOptions(
     string? ImageId = null,
     string? Collection = null,
     bool IncludeCollectionInPath = false,
-    bool AddUniquePrefix = false);
+    bool AddUniquePrefix = false,
+    IReadOnlyList<int>? ThumbnailTargetWidths = null);

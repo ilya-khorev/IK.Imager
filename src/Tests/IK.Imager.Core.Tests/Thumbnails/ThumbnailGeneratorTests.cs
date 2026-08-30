@@ -67,6 +67,8 @@ namespace IK.Imager.Core.Tests.Thumbnails
             ImageMetadata imageMetadata = new Fixture().Create<ImageMetadata>();
             imageMetadata.Width = 500;
             imageMetadata.Height = 500;
+            //AutoFixture fills this too, and widths carried by the image beat the configured ones
+            imageMetadata.ThumbnailTargetWidths = null;
 
             //set the min target width to 600, so that it would not need to create any thumbnails
             _imageThumbnailSettingsMock.Setup(x => x.Value)
@@ -98,6 +100,7 @@ namespace IK.Imager.Core.Tests.Thumbnails
         {
             ImageMetadata imageMetadata = new Fixture().Create<ImageMetadata>();
             imageMetadata.Width = 500;
+            imageMetadata.ThumbnailTargetWidths = null;
 
             _imageThumbnailSettingsMock.Setup(x => x.Value)
                 .Returns(new ImageThumbnailsSettings
@@ -118,11 +121,97 @@ namespace IK.Imager.Core.Tests.Thumbnails
         }
 
         [Fact]
+        public async Task Generate_ImageCarriesItsOwnTargetWidths_ResizesToThoseInsteadOfTheConfiguredOnes()
+        {
+            ImageMetadata imageMetadata = new Fixture().Create<ImageMetadata>();
+            imageMetadata.Width = 2000;
+            imageMetadata.ImageType = ImageType.PNG;
+            imageMetadata.ThumbnailTargetWidths = [300, 600];
+
+            _imageThumbnailSettingsMock.Setup(x => x.Value)
+                .Returns(new ImageThumbnailsSettings { TargetWidth = new[] { 200, 400, 1000 } });
+
+            await MockForPositiveFlow(imageMetadata);
+
+            //widest first, so that each thumbnail is resized from the previous one
+            _imageResizerMock.Verify(x => x.Resize(It.IsAny<Stream>(), ImageType.PNG, 600), Times.Once);
+            _imageResizerMock.Verify(x => x.Resize(It.IsAny<Stream>(), ImageType.PNG, 300), Times.Once);
+            _imageResizerMock.Verify(x => x.Resize(It.IsAny<Stream>(), ImageType.PNG, It.IsAny<int>()), Times.Exactly(2));
+        }
+
+        [Fact]
+        public async Task Generate_ImageCarriesTargetWidthsWiderThanItself_SkipsThoseWidthsOnly()
+        {
+            ImageMetadata imageMetadata = new Fixture().Create<ImageMetadata>();
+            imageMetadata.Width = 500;
+            imageMetadata.ImageType = ImageType.PNG;
+            imageMetadata.ThumbnailTargetWidths = [300, 900];
+
+            _imageThumbnailSettingsMock.Setup(x => x.Value)
+                .Returns(new ImageThumbnailsSettings { TargetWidth = new[] { 200 } });
+
+            await MockForPositiveFlow(imageMetadata);
+
+            _imageResizerMock.Verify(x => x.Resize(It.IsAny<Stream>(), ImageType.PNG, 300), Times.Once);
+            _imageResizerMock.Verify(x => x.Resize(It.IsAny<Stream>(), ImageType.PNG, It.IsAny<int>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task Generate_ImageNarrowerThanAllOfItsOwnTargetWidths_SkipsBlobDownload()
+        {
+            ImageMetadata imageMetadata = new Fixture().Create<ImageMetadata>();
+            imageMetadata.Width = 500;
+            imageMetadata.ThumbnailTargetWidths = [800, 1200];
+
+            //the configured widths would all have produced a thumbnail, so this only passes if the widths
+            //carried by the image are the ones being used
+            _imageThumbnailSettingsMock.Setup(x => x.Value)
+                .Returns(new ImageThumbnailsSettings { TargetWidth = new[] { 100, 200 } });
+
+            _metadataRepositoryMock.Setup(x => x.GetMetadata(
+                    It.IsAny<ICollection<string>>(),
+                    It.IsAny<string>(),
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<ImageMetadata> { imageMetadata });
+
+            var thumbnailGenerator = new ThumbnailGenerator(_logger, _imageResizerMock.Object,
+                _blobRepositoryMock.Object, _metadataRepositoryMock.Object,
+                _imageThumbnailSettingsMock.Object);
+
+            await thumbnailGenerator.Generate(new Fixture().Create<string>(), new Fixture().Create<string>(),
+                CancellationToken.None);
+
+            _blobRepositoryMock.Verify(x => x.DownloadImage(
+                It.IsAny<string>(),
+                ImageVariant.Original,
+                It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task Generate_ImageCarriesNoTargetWidths_FallsBackToTheConfiguredOnes()
+        {
+            ImageMetadata imageMetadata = new Fixture().Create<ImageMetadata>();
+            imageMetadata.Width = 2000;
+            imageMetadata.ImageType = ImageType.PNG;
+            imageMetadata.ThumbnailTargetWidths = null;
+
+            _imageThumbnailSettingsMock.Setup(x => x.Value)
+                .Returns(new ImageThumbnailsSettings { TargetWidth = new[] { 400, 800 } });
+
+            await MockForPositiveFlow(imageMetadata);
+
+            _imageResizerMock.Verify(x => x.Resize(It.IsAny<Stream>(), ImageType.PNG, 800), Times.Once);
+            _imageResizerMock.Verify(x => x.Resize(It.IsAny<Stream>(), ImageType.PNG, 400), Times.Once);
+            _imageResizerMock.Verify(x => x.Resize(It.IsAny<Stream>(), ImageType.PNG, It.IsAny<int>()), Times.Exactly(2));
+        }
+
+        [Fact]
         public async Task Generate_WiderThanEveryTargetWidth_GeneratesThumbnails()
         {
             ImageMetadata imageMetadata = new Fixture().Create<ImageMetadata>();
             imageMetadata.Width = 2000;
             imageMetadata.ImageType = ImageType.PNG;
+            imageMetadata.ThumbnailTargetWidths = null;
 
             _imageThumbnailSettingsMock.Setup(x => x.Value)
                 .Returns(new ImageThumbnailsSettings { TargetWidth = new[] { 2200, 1600, 900, 500 } });

@@ -36,7 +36,8 @@ public sealed class ImagerApiClient(HttpClient httpClient)
     private static readonly JsonSerializerOptions SerializerOptions = new(JsonSerializerDefaults.Web);
 
     public Task<HttpResponseMessage> PostUpload(string? fileName, string? tenantId, string? collection = null,
-        string? imageId = null, bool includeCollectionInPath = false, bool addUniquePrefix = false)
+        string? imageId = null, bool includeCollectionInPath = false, bool addUniquePrefix = false,
+        int[]? thumbnailTargetWidths = null)
     {
         var content = new MultipartFormDataContent();
 
@@ -59,6 +60,11 @@ public sealed class ImagerApiClient(HttpClient httpClient)
         if (addUniquePrefix)
             content.Add(new StringContent("true"), "AddUniquePrefix");
 
+        //a form has no arrays, so a repeated field is how a collection is sent - which is also what the
+        //[FromForm] model binder reads it back as
+        foreach (var targetWidth in thumbnailTargetWidths ?? [])
+            content.Add(new StringContent(targetWidth.ToString()), "ThumbnailTargetWidths");
+
         return Send(HttpMethod.Post, UploadRoute, tenantId, content);
     }
 
@@ -76,13 +82,18 @@ public sealed class ImagerApiClient(HttpClient httpClient)
         Send(HttpMethod.Delete, $"{DeleteRoute}/{Uri.EscapeDataString(imageId)}", tenantId, content: null);
 
     public async Task<ImageInfo> Upload(string fileName, string tenantId, string? collection = null,
-        string? imageId = null, bool includeCollectionInPath = false, bool addUniquePrefix = false) =>
+        string? imageId = null, bool includeCollectionInPath = false, bool addUniquePrefix = false,
+        int[]? thumbnailTargetWidths = null) =>
         await ReadContract<ImageInfo>(
-            await PostUpload(fileName, tenantId, collection, imageId, includeCollectionInPath, addUniquePrefix));
+            await PostUpload(fileName, tenantId, collection, imageId, includeCollectionInPath, addUniquePrefix,
+                thumbnailTargetWidths));
 
-    public async Task<ImageInfo> UploadByUrl(string imageUrl, string tenantId, string? collection = null) =>
+    public async Task<ImageInfo> UploadByUrl(string imageUrl, string tenantId, string? collection = null,
+        int[]? thumbnailTargetWidths = null) =>
         await ReadContract<ImageInfo>(
-            await PostUploadByUrl(new { ImageUrl = imageUrl, Collection = collection }, tenantId));
+            await PostUploadByUrl(
+                new { ImageUrl = imageUrl, Collection = collection, ThumbnailTargetWidths = thumbnailTargetWidths },
+                tenantId));
 
     public async Task<LookupImagesResult> Lookup(string[] imageIds, string tenantId) =>
         await ReadContract<LookupImagesResult>(await PostLookup(new { ImageIds = imageIds }, tenantId));

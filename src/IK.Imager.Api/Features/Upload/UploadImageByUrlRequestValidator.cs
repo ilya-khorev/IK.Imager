@@ -12,6 +12,10 @@ public class UploadImageByUrlRequestValidator : AbstractValidator<UploadImageByU
     private const string InvalidImageId = UploadImageFileRequestValidator.InvalidImageId;
     private const string InvalidCollection = UploadImageFileRequestValidator.InvalidCollection;
     private const string CollectionRequiredForPath = UploadImageFileRequestValidator.CollectionRequiredForPath;
+    private const int MaxThumbnailTargetWidths = UploadImageFileRequestValidator.MaxThumbnailTargetWidths;
+    private static readonly string InvalidThumbnailTargetWidthCount = UploadImageFileRequestValidator.InvalidThumbnailTargetWidthCount;
+    private const string InvalidThumbnailTargetWidth = UploadImageFileRequestValidator.InvalidThumbnailTargetWidth;
+    private const string DuplicateThumbnailTargetWidths = UploadImageFileRequestValidator.DuplicateThumbnailTargetWidths;
 
     public UploadImageByUrlRequestValidator()
     {
@@ -37,5 +41,14 @@ public class UploadImageByUrlRequestValidator : AbstractValidator<UploadImageByU
             .NotEmpty()
             .Must(x => Uri.IsWellFormedUriString(x, UriKind.Absolute))
             .WithMessage(IncorrectUrlFormat);
+
+        RuleFor(x => x.ThumbnailTargetWidths)
+            .Must(widths => widths!.Length is > 0 and <= MaxThumbnailTargetWidths)
+            .WithMessage(InvalidThumbnailTargetWidthCount)
+            .Must(widths => Array.TrueForAll(widths!, width => width > 0))
+            .WithMessage(InvalidThumbnailTargetWidth)
+            .Must(widths => UploadImageFileRequestValidator.HasDistinctWidths(widths!))
+            .WithMessage(DuplicateThumbnailTargetWidths)
+            .When(x => x.ThumbnailTargetWidths != null);
     }
 }

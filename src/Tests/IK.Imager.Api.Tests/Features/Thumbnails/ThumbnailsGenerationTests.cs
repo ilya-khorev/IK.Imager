@@ -170,4 +170,80 @@ public class ThumbnailsGenerationTests(ImagerApiFixture fixture) : ImagerApiTest
 
         Assert.Equal(3, found.Thumbnails.Count);
     }
+
+    /// <summary>
+    /// An upload may name the widths it wants instead of taking the configured [200, 400, 1000]. The
+    /// widths travel on the image metadata rather than on the integration event, so this is also what
+    /// proves they survive the hop from the upload to the consumer that thumbnails it.
+    /// </summary>
+    [Fact]
+    public async Task Generate_UploadNamedItsOwnWidths_UsesThemInsteadOfTheConfiguredOnes()
+    {
+        var tenantId = NewTenantId();
+        var uploaded = await Api.Upload(TestImages.Jpeg1200X900, tenantId, thumbnailTargetWidths: [300, 600]);
+
+        await Fixture.ConsumedEvents.ThumbnailsGenerated(uploaded.Id);
+        var found = await Api.LookupSingle(uploaded.Id, tenantId);
+
+        //none of the configured widths appear - 1200x900 scales to 300x225 and 600x450
+        Assert.Equal([(300, 225), (600, 450)],
+            found.Thumbnails.Select(thumbnail => (thumbnail.Width, thumbnail.Height)));
+    }
+
+    [Fact]
+    public async Task Generate_UploadNamedOneWidth_ProducesThatThumbnailAlone()
+    {
+        var tenantId = NewTenantId();
+        var uploaded = await Api.Upload(TestImages.Jpeg800X600, tenantId, imageId: "sku-w",
+            thumbnailTargetWidths: [500]);
+
+        await Fixture.ConsumedEvents.ThumbnailsGenerated(uploaded.Id);
+        var found = await Api.LookupSingle(uploaded.Id, tenantId);
+
+        var thumbnail = Assert.Single(found.Thumbnails);
+        Assert.Equal((500, 375), (thumbnail.Width, thumbnail.Height));
+        Assert.EndsWith($"/{tenantId}/sku-w_500.jpg", thumbnail.Url);
+    }
+
+    [Fact]
+    public async Task Generate_UploadNamedAWidthWiderThanTheImage_SkipsThatWidthOnly()
+    {
+        var tenantId = NewTenantId();
+        var uploaded = await Api.Upload(TestImages.Jpeg800X600, tenantId, thumbnailTargetWidths: [400, 1500]);
+
+        await Fixture.ConsumedEvents.ThumbnailsGenerated(uploaded.Id);
+        var found = await Api.LookupSingle(uploaded.Id, tenantId);
+
+        //a width the image does not reach produces no thumbnail rather than failing the upload
+        Assert.Equal([(400, 300)],
+            found.Thumbnails.Select(thumbnail => (thumbnail.Width, thumbnail.Height)));
+    }
+
+    [Fact]
+    public async Task Generate_UploadNamedWidthsAllWiderThanTheImage_ProducesNoThumbnails()
+    {
+        var tenantId = NewTenantId();
+        var uploaded = await Api.Upload(TestImages.Jpeg800X600, tenantId, thumbnailTargetWidths: [1200]);
+
+        await Fixture.ConsumedEvents.ThumbnailsGenerated(uploaded.Id);
+        var found = await Api.LookupSingle(uploaded.Id, tenantId);
+
+        //the configured 200 and 400 would both have produced one, so this only holds if the named widths won
+        Assert.Empty(found.Thumbnails);
+    }
+
+    [Fact]
+    public async Task Generate_UploadByUrlNamedItsOwnWidths_UsesThemForTheCopy()
+    {
+        var tenantId = NewTenantId();
+        var source = await Api.Upload(TestImages.Jpeg1200X900, tenantId);
+
+        var copy = await Api.UploadByUrl(source.Url, tenantId, thumbnailTargetWidths: [600]);
+
+        await Fixture.ConsumedEvents.ThumbnailsGenerated(copy.Id);
+        var found = await Api.LookupSingle(copy.Id, tenantId);
+
+        Assert.Equal([(600, 450)],
+            found.Thumbnails.Select(thumbnail => (thumbnail.Width, thumbnail.Height)));
+    }
 }

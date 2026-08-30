@@ -39,4 +39,17 @@ public abstract record UploadImageRequestBase
     /// anyone can open. It does not affect uniqueness: an id already in use is still rejected.
     /// </summary>
     public bool AddUniquePrefix { get; init; }
+
+    /// <summary>
+    /// The widths, in pixels, to generate thumbnails at for this image.
+    ///
+    /// Optional - the widths configured for the service are used when it is omitted. Up to 10 distinct
+    /// widths, each greater than zero. They are stored with the image, so regenerating its thumbnails
+    /// later produces the same set.
+    ///
+    /// A width is only used when it is strictly narrower than the image itself, so asking for a width the
+    /// image does not reach produces no thumbnail at that width rather than failing the upload. Thumbnails
+    /// are generated after the upload responds, so they appear in a lookup after a short delay.
+    /// </summary>
+    public int[]? ThumbnailTargetWidths { get; init; }
 }

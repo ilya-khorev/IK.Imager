@@ -110,4 +110,58 @@ public class UploadEndpointTests(ImagerApiFixture fixture) : ImagerApiTests(fixt
 
         Assert.Contains("TenantId", problem.Errors.Keys);
     }
+
+    /// <summary>
+    /// A form carries no arrays, so the widths arrive as a repeated field. This is what pins that the
+    /// [FromForm] model binder reads them back into the int[] the validator and the uploader expect.
+    /// </summary>
+    [Fact]
+    public async Task Upload_ThumbnailTargetWidths_AreBoundFromTheRepeatedFormField()
+    {
+        var tenantId = NewTenantId();
+
+        var image = await Api.Upload(TestImages.Jpeg1200X900, tenantId, thumbnailTargetWidths: [300, 600]);
+
+        //the widths do not change the upload response - they are only visible once the thumbnails exist -
+        //so an accepted upload is what says the binding worked. Their effect is asserted in
+        //ThumbnailsGenerationTests.
+        Assert.NotEmpty(image.Id);
+    }
+
+    [Fact]
+    public async Task Upload_MoreThumbnailTargetWidthsThanTheMaximum_ReturnsValidationProblem()
+    {
+        var problem = await ReadValidationProblem(
+            await Api.PostUpload(TestImages.Jpeg800X600, NewTenantId(),
+                thumbnailTargetWidths: [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110]));
+
+        Assert.Contains("ThumbnailTargetWidths", problem.Errors.Keys);
+    }
+
+    [Fact]
+    public async Task Upload_ThumbnailTargetWidthOfZero_ReturnsValidationProblem()
+    {
+        var problem = await ReadValidationProblem(
+            await Api.PostUpload(TestImages.Jpeg800X600, NewTenantId(), thumbnailTargetWidths: [0, 400]));
+
+        Assert.Contains("ThumbnailTargetWidths", problem.Errors.Keys);
+    }
+
+    [Fact]
+    public async Task Upload_NegativeThumbnailTargetWidth_ReturnsValidationProblem()
+    {
+        var problem = await ReadValidationProblem(
+            await Api.PostUpload(TestImages.Jpeg800X600, NewTenantId(), thumbnailTargetWidths: [-200]));
+
+        Assert.Contains("ThumbnailTargetWidths", problem.Errors.Keys);
+    }
+
+    [Fact]
+    public async Task Upload_RepeatedThumbnailTargetWidth_ReturnsValidationProblem()
+    {
+        var problem = await ReadValidationProblem(
+            await Api.PostUpload(TestImages.Jpeg800X600, NewTenantId(), thumbnailTargetWidths: [400, 400]));
+
+        Assert.Contains("ThumbnailTargetWidths", problem.Errors.Keys);
+    }
 }

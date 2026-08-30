@@ -97,7 +97,11 @@ public static class UploadEndpoints
     }
 
     private static ImageUploadOptions ToOptions(this UploadImageRequestBase source) =>
-        new(source.ImageId, source.Collection, source.IncludeCollectionInPath, source.AddUniquePrefix);
+        new(ImageId: source.ImageId,
+            Collection: source.Collection,
+            IncludeCollectionInPath: source.IncludeCollectionInPath,
+            AddUniquePrefix: source.AddUniquePrefix,
+            ThumbnailTargetWidths: source.ThumbnailTargetWidths);
 
     private static ImageInfo ToContract(this ImageDetails source) =>
         new()

@@ -60,6 +60,17 @@ namespace IK.Imager.Storage.Abstractions.Models
         public IDictionary<string, string>? Tags { get; set; }
 
         /// <summary>
+        /// The widths this image's thumbnails are generated at, when the upload asked for its own set.
+        /// Null means the widths configured for the service are used.
+        ///
+        /// Stored rather than carried on the integration event so that the widths survive the upload:
+        /// a thumbnail job replayed later - a redelivery, or a republished event covering an upload whose
+        /// event was lost - rebuilds the same thumbnails instead of silently falling back to the
+        /// configured widths.
+        /// </summary>
+        public List<int>? ThumbnailTargetWidths { get; set; }
+
+        /// <summary>
         /// Thumbnails of an image.
         /// Sorted by dimensions descending, so that the biggest thumbnail is the last element in the array.
         /// Optional property: sometimes an image either doesn't have any thumbnails at all or they are not prepared yet.
@@ -121,9 +132,27 @@ namespace IK.Imager.Storage.Abstractions.Models
             else
                 thumbnailsEqual = false;
 
+            bool targetWidthsEqual;
+            if (ThumbnailTargetWidths != null && other.ThumbnailTargetWidths != null
+                                              && ThumbnailTargetWidths.Count == other.ThumbnailTargetWidths.Count)
+            {
+                targetWidthsEqual = true;
+                for (var i = 0; i < ThumbnailTargetWidths.Count; i++)
+                {
+                    if (ThumbnailTargetWidths[i] != other.ThumbnailTargetWidths[i])
+                    {
+                        targetWidthsEqual = false;
+                        break;
+                    }
+                }
+            }
+            else
+                targetWidthsEqual = ThumbnailTargetWidths == null && other.ThumbnailTargetWidths == null;
+
             return primitivePropertiesEqual
                    && tagsEqual
-                   && thumbnailsEqual;
+                   && thumbnailsEqual
+                   && targetWidthsEqual;
         }
 
         public override bool Equals(object? obj)
@@ -157,6 +186,8 @@ namespace IK.Imager.Storage.Abstractions.Models
                 hashCode = (hashCode * 397) ^ (Tags != null ? Tags.GetHashCode() : 0);
                 hashCode = (hashCode * 397) ^ (Thumbnails != null ? Thumbnails.GetHashCode() : 0);
                 hashCode = (hashCode * 397) ^ (int)ImageType;
+                //the count rather than the list, so that the hash matches the sequence comparison above
+                hashCode = (hashCode * 397) ^ (ThumbnailTargetWidths != null ? ThumbnailTargetWidths.Count : 0);
 
                 return hashCode;
             }

@@ -113,12 +113,31 @@ curl -X POST http://localhost:5000/images/upload \
 # -> url .../images/acme/8f2c...d91a/sku-1234.jpg
 ```
 
+Ask for your own thumbnail widths instead of the configured ones:
+
+```bash
+curl -X POST http://localhost:5000/images/upload \
+  -H "X-Tenant-Id: acme" \
+  -F "File=@photo.jpg" \
+  -F "ThumbnailTargetWidths=300" \
+  -F "ThumbnailTargetWidths=600"
+# a form has no arrays, so repeat the field once per width
+```
+
 Upload by URL — the service fetches it:
 
 ```bash
 curl -X POST http://localhost:5000/images/upload-by-url \
   -H "X-Tenant-Id: acme" -H "Content-Type: application/json" \
   -d '{"imageUrl":"https://example.com/photo.jpg","imageId":"sku-1234"}'
+```
+
+The JSON body takes the widths as an array:
+
+```bash
+curl -X POST http://localhost:5000/images/upload-by-url \
+  -H "X-Tenant-Id: acme" -H "Content-Type: application/json" \
+  -d '{"imageUrl":"https://example.com/photo.jpg","thumbnailTargetWidths":[300,600]}'
 ```
 
 Look images up by id, thumbnails included:
@@ -141,6 +160,12 @@ Uploading an image publishes an event; a consumer resizes the original to each w
 `Thumbnails:TargetWidth` and attaches the results to the metadata. Only widths narrower than the original
 produce a thumbnail, and the aspect ratio is kept. **This takes a second or two**, so a lookup straight after
 an upload returns the image with an empty `thumbnails` list.
+
+**An upload can name its own widths** with `thumbnailTargetWidths`, which replaces the configured set for
+that image alone — up to 10 distinct widths, each greater than zero. Omit it to use the configured widths;
+an empty list is rejected rather than read as "no thumbnails". The widths are stored with the image, so they
+still apply if its thumbnails are generated again later. A width the image does not reach simply produces no
+thumbnail, exactly as a configured width would.
 
 A thumbnail's path is its original's with the width appended, so it inherits the tenant, the collection and
 the unique prefix:

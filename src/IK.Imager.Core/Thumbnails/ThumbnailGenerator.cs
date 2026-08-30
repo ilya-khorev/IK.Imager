@@ -19,7 +19,7 @@ public class ThumbnailGenerator(
     IImageMetadataRepository metadataRepository,
     IOptions<ImageThumbnailsSettings> imageThumbnailsSettings) : IThumbnailGenerator
 {
-    private readonly List<int> _thumbnailTargetWidths =
+    private readonly List<int> _configuredTargetWidths =
         imageThumbnailsSettings.Value.TargetWidth.OrderByDescending(x => x).ToList();
 
     private const string PngMimeType = "image/png";
@@ -36,9 +36,10 @@ public class ThumbnailGenerator(
         }
 
         var imageMetadata = imageMetadataList[0];
+        var targetWidths = TargetWidthsFor(imageMetadata);
         imageMetadata.Thumbnails = new List<ImageThumbnail>();
         logger.ImageMetadataRead(imageMetadata.Id, imageMetadata.Width, imageMetadata.Height);
-        if (imageMetadata.Width <= _thumbnailTargetWidths.Last())
+        if (imageMetadata.Width <= targetWidths[^1])
         {
             logger.ImageSmallerThanTargetWidth(imageMetadata.Id, imageMetadata.Width);
             return;
@@ -60,7 +61,7 @@ public class ThumbnailGenerator(
         //a blob is expected to exist for metadata that exists; a missing one now comes back as null from the
         //repository and still fails loudly on the first resize rather than generating empty thumbnails
         var imageStream = originalImageStream!;
-        foreach (var targetWidth in _thumbnailTargetWidths)
+        foreach (var targetWidth in targetWidths)
         {
             //the current image width is smaller than the target thumbnail width, so just ignoring it
             //and moving to the next target thumbnail
@@ -98,5 +99,19 @@ public class ThumbnailGenerator(
         imageMetadata.Thumbnails.Reverse(); //smaller thumbnails come first
         await metadataRepository.UpdateMetadata(imageMetadata, cancellationToken);
         logger.ThumbnailsGenerated(imageMetadata.Thumbnails.Count, imageId);
+    }
+
+    /// <summary>
+    /// The widths the upload asked for, or the configured ones. Widest first, which is what lets each
+    /// thumbnail be resized from the previous one instead of from the original.
+    /// </summary>
+    private List<int> TargetWidthsFor(ImageMetadata imageMetadata)
+    {
+        if (imageMetadata.ThumbnailTargetWidths is not { Count: > 0 } requestedWidths)
+            return _configuredTargetWidths;
+
+        logger.RequestedTargetWidths(imageMetadata.Id, requestedWidths);
+
+        return requestedWidths.OrderByDescending(x => x).ToList();
     }
 }

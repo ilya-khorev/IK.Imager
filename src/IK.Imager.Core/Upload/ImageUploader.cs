@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using IK.Imager.Core.Abstractions;
@@ -120,7 +121,10 @@ public class ImageUploader(
                 SizeBytes = imageSize.Bytes,
                 MimeType = imageFormat.MimeType,
                 ImageType = imageFormat.ImageType,
-                FileExtension = imageFormat.FileExtension
+                FileExtension = imageFormat.FileExtension,
+                //kept with the image so the thumbnail job reads them off the metadata it already fetches,
+                //which is also what makes a replayed job produce the same thumbnails
+                ThumbnailTargetWidths = options.ThumbnailTargetWidths?.ToList()
             }, cancellationToken);
         }
         catch (ImageAlreadyExistsException)

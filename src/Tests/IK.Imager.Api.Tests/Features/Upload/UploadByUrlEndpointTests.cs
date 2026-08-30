@@ -1,3 +1,4 @@
+using System;
 using System.Net;
 using System.Threading.Tasks;
 using IK.Imager.Api.Tests.Infrastructure;
@@ -119,5 +120,54 @@ public class UploadByUrlEndpointTests(ImagerApiFixture fixture) : ImagerApiTests
         var response = await Api.PostUploadByUrl(new { ImageUrl = missingBlobUrl }, tenantId);
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    /// <summary>
+    /// An empty list is rejected rather than read as "no thumbnails at all". A caller who wants the
+    /// configured widths omits the property, and guessing between the two would be a silent surprise.
+    /// Only the json endpoint can express it - a form field is either sent or absent.
+    /// </summary>
+    [Fact]
+    public async Task UploadByUrl_EmptyThumbnailTargetWidths_ReturnsValidationProblem()
+    {
+        var problem = await ReadValidationProblem(await Api.PostUploadByUrl(
+            new { ImageUrl = "https://example.com/photo.jpg", ThumbnailTargetWidths = Array.Empty<int>() },
+            NewTenantId()));
+
+        Assert.Contains("ThumbnailTargetWidths", problem.Errors.Keys);
+    }
+
+    [Fact]
+    public async Task UploadByUrl_MoreThumbnailTargetWidthsThanTheMaximum_ReturnsValidationProblem()
+    {
+        var problem = await ReadValidationProblem(await Api.PostUploadByUrl(
+            new
+            {
+                ImageUrl = "https://example.com/photo.jpg",
+                ThumbnailTargetWidths = new[] { 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110 }
+            },
+            NewTenantId()));
+
+        Assert.Contains("ThumbnailTargetWidths", problem.Errors.Keys);
+    }
+
+    [Fact]
+    public async Task UploadByUrl_ThumbnailTargetWidthOfZero_ReturnsValidationProblem()
+    {
+        var problem = await ReadValidationProblem(await Api.PostUploadByUrl(
+            new { ImageUrl = "https://example.com/photo.jpg", ThumbnailTargetWidths = new[] { 0, 400 } },
+            NewTenantId()));
+
+        Assert.Contains("ThumbnailTargetWidths", problem.Errors.Keys);
+    }
+
+    [Fact]
+    public async Task UploadByUrl_RepeatedThumbnailTargetWidth_ReturnsValidationProblem()
+    {
+        var problem = await ReadValidationProblem(await Api.PostUploadByUrl(
+            new { ImageUrl = "https://example.com/photo.jpg", ThumbnailTargetWidths = new[] { 400, 400 } },
+            NewTenantId()));
+
+        Assert.Contains("ThumbnailTargetWidths", problem.Errors.Keys);
     }
 }

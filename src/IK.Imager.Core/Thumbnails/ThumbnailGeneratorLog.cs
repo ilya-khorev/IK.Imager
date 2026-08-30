@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 
 namespace IK.Imager.Core.Thumbnails;
@@ -23,6 +24,10 @@ internal static partial class ThumbnailGeneratorLog
     [LoggerMessage(EventId = 1104, Level = LogLevel.Debug,
         Message = "Resized image {ImageId} to {TargetWidth} wide: {Width}x{Height}, {SizeBytes} bytes.")]
     public static partial void ImageResized(this ILogger logger, string imageId, int targetWidth, int width, int height, long sizeBytes);
+
+    [LoggerMessage(EventId = 1106, Level = LogLevel.Debug,
+        Message = "Image {ImageId} carries its own thumbnail widths {TargetWidths}. Not using the configured ones.")]
+    public static partial void RequestedTargetWidths(this ILogger logger, string imageId, IReadOnlyList<int> targetWidths);
 
     [LoggerMessage(EventId = 1105, Level = LogLevel.Information,
         Message = "Generated {ThumbnailCount} thumbnail(s) for image {ImageId}.")]
