@@ -10,25 +10,40 @@ namespace IK.Imager.Storage.CosmosDb
     {
         private readonly IOptions<CosmosDbSettings> _settings;
         private readonly CosmosClient _client;
+        private readonly bool _provision;
         private Container? _imageContainer;
 
-        /// <param name="settings">Cosmos DB connection settings.</param>
-        /// <param name="clientOptions">
-        /// Optional SDK options. Production leaves this null and gets the SDK defaults.
-        /// The integration tests pass emulator specific options - the containerized emulator only
-        /// speaks gateway mode and advertises its container-internal endpoint, so the client has to
-        /// be told to stay on the endpoint it was given.
+        /// <param name="client">
+        /// The account client. It is registered by the module rather than built here so that the health
+        /// check probes the same account, with the same credential, as this factory - and so the
+        /// integration tests can substitute a client carrying emulator specific SDK options.
         /// </param>
-        public ImageContainerFactory(IOptions<CosmosDbSettings> settings, CosmosClientOptions? clientOptions = null)
+        /// <param name="settings">Cosmos DB database and container settings.</param>
+        /// <param name="provision">
+        /// Whether the database and the container are created when they are missing. False for a client
+        /// authenticated with a token: Cosmos DB data plane RBAC covers reading and writing documents only,
+        /// and creating a database or a container is a control plane operation it cannot perform. Such a
+        /// deployment provisions both alongside the account, and this factory then just takes a handle on
+        /// what is already there.
+        /// </param>
+        public ImageContainerFactory(CosmosClient client, IOptions<CosmosDbSettings> settings, bool provision)
         {
+            _client = client;
             _settings = settings;
-            _client = new CosmosClient(_settings.Value.ConnectionString, clientOptions);
+            _provision = provision;
         }
 
         public async Task<Container> CreateImagesContainerIfNotExists()
         {
             if (_imageContainer != null)
                 return _imageContainer;
+
+            if (!_provision)
+            {
+                //a client side handle - a container that is not there surfaces on the first read
+                _imageContainer = _client.GetContainer(_settings.Value.DatabaseId, _settings.Value.ContainerId);
+                return _imageContainer;
+            }
 
             var databaseResponse = await _client.CreateDatabaseIfNotExistsAsync(_settings.Value.DatabaseId);
 

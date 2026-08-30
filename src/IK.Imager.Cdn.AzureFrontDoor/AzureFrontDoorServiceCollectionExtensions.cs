@@ -1,4 +1,5 @@
 using System;
+using Azure.Core;
 using Azure.Identity;
 using Azure.ResourceManager;
 using IK.Imager.Core.Abstractions.Cdn;
@@ -31,8 +32,10 @@ public static class AzureFrontDoorServiceCollectionExtensions
 
         services.Configure<AzureFrontDoorCdnSettings>(section);
 
-        //TryAdd so that a host with its own credential setup can register the client itself
-        services.TryAddSingleton(_ => new ArmClient(new DefaultAzureCredential()));
+        //one credential for every Azure client in the process - it caches the tokens it fetches.
+        //TryAdd, so a host that wants a credential of its own can register it before this runs.
+        services.TryAddSingleton<TokenCredential>(_ => new DefaultAzureCredential());
+        services.TryAddSingleton(s => new ArmClient(s.GetRequiredService<TokenCredential>()));
 
         //Core registers NoOpCdnPurger with TryAdd and runs first, so TryAdd here would lose silently
         services.RemoveAll<ICdnPurger>();

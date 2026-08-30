@@ -30,7 +30,12 @@
         <PackageVersion Include="Microsoft.Azure.Cosmos" Version="3.62.0" />
     </ItemGroup>
 
-    <ItemGroup Label="Cdn">
+    <ItemGroup Label="Azure">
+        <!-- Azure.Core carries TokenCredential, which every module that builds an Azure client now takes.
+             1.55.0 is what Azure.Storage.Blobs 12.29.1 asks for, and it is above the 1.53.0 Azure.Identity
+             needs - pinned so the three do not resolve to different versions. -->
+        <PackageVersion Include="Azure.Core" Version="1.55.0" />
+        <!-- Only the host constructs a credential; the modules take one. -->
         <PackageVersion Include="Azure.Identity" Version="1.21.0" />
         <PackageVersion Include="Azure.ResourceManager.Cdn" Version="1.5.1" />
     </ItemGroup>
