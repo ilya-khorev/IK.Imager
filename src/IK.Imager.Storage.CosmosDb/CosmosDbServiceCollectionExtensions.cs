@@ -40,13 +40,15 @@ public static class CosmosDbServiceCollectionExtensions
             services.TryAddSingleton<TokenCredential>(_ => new DefaultAzureCredential());
 
         //the client is registered rather than built inside ImageContainerFactory so that the health check
-        //probes the same account, with the same credential, as the repository. The SDK options are left at
-        //their defaults - the integration tests replace this registration to reach the emulator.
+        //probes the same account, with the same credential, as the repository. The only SDK option set is
+        //the serializer - the integration tests replace this registration to reach the emulator.
         services.AddSingleton(s => accountEndpoint == null
+            ? new CosmosClient(s.GetRequiredService<IOptions<CosmosDbSettings>>().Value.ConnectionString,
+                ImageMetadataSerialization.CreateClientOptions())
             //data plane access only - creating the database and the container needs the control plane,
             //so an account reached with an identity has to be provisioned up front
-            ? new CosmosClient(s.GetRequiredService<IOptions<CosmosDbSettings>>().Value.ConnectionString)
-            : new CosmosClient(accountEndpoint, s.GetRequiredService<TokenCredential>()));
+            : new CosmosClient(accountEndpoint, s.GetRequiredService<TokenCredential>(),
+                ImageMetadataSerialization.CreateClientOptions()));
 
         services.AddSingleton<IImageContainerFactory>(s => new ImageContainerFactory(
             s.GetRequiredService<CosmosClient>(),

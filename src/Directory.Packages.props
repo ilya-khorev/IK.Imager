@@ -21,6 +21,8 @@
         <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.10" />
         <PackageVersion Include="Microsoft.Extensions.Options" Version="10.0.10" />
         <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.10" />
+        <!-- Required by Microsoft.Azure.Cosmos rather than by our own code: the SDK assembly references
+             Newtonsoft.Json but declares no nuget dependency on it, leaving the version to the consumer. -->
         <PackageVersion Include="Newtonsoft.Json" Version="13.0.4" />
         <PackageVersion Include="System.ComponentModel.Annotations" Version="5.0.0" />
     </ItemGroup>
