@@ -66,15 +66,17 @@ public sealed class CosmosDbFixture : IAsyncLifetime
     /// LimitToEndpoint keeps the client on the endpoint it was given, and the http message handler
     /// provided by the Testcontainers module rewrites anything that still slips through to the mapped port.
     ///
-    /// The serializer is deliberately left alone - ImageMetadata.Id is mapped through Newtonsoft's
-    /// [JsonProperty("id")], so the SDK default (Newtonsoft based) serializer is load bearing.
+    /// The options come from ImageMetadataSerialization so that the emulator is reached with the same
+    /// serializer as production - ImageMetadata.Id is mapped onto the document's "id" by System.Text.Json,
+    /// and a client on the SDK default would not write an "id" at all.
     /// </summary>
-    private CosmosClientOptions CreateEmulatorClientOptions() =>
-        new()
-        {
-            ConnectionMode = ConnectionMode.Gateway,
-            LimitToEndpoint = true,
-            HttpClientFactory = () => _emulator.HttpClient,
-            RequestTimeout = TimeSpan.FromMinutes(2)
-        };
+    private CosmosClientOptions CreateEmulatorClientOptions()
+    {
+        var options = ImageMetadataSerialization.CreateClientOptions();
+        options.ConnectionMode = ConnectionMode.Gateway;
+        options.LimitToEndpoint = true;
+        options.HttpClientFactory = () => _emulator.HttpClient;
+        options.RequestTimeout = TimeSpan.FromMinutes(2);
+        return options;
+    }
 }

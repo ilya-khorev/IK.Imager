@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 // ReSharper disable NonReadonlyMemberInGetHashCode
 // ReSharper disable RedundantAssignment
 
@@ -17,7 +17,7 @@ namespace IK.Imager.Storage.Abstractions.Models
         /// <summary>
         /// Image id, unique within the tenant. Second level of the partition key.
         /// </summary>
-        [JsonProperty("id")]
+        [JsonPropertyName("id")]
         public string Id { get; set; } = null!;
 
         /// <summary>
