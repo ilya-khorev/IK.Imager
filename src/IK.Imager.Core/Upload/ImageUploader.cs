@@ -51,7 +51,7 @@ public class ImageUploader(
     {
         var (imageFormat, imageSize) = imageInspector.Inspect(imageStream);
 
-        string imageId = options.ImageId ?? imageNameGenerator.NewImageId();
+        var imageId = options.ImageId ?? imageNameGenerator.NewImageId();
 
         //the id may not have existed before this point, so this is the earliest the rest of the upload - and
         //the thumbnail consumer that picks the event up later - can be tied to one image on the console
@@ -63,7 +63,7 @@ public class ImageUploader(
 
         //the extension comes from the image itself rather than from the caller, so the url cannot be
         //assembled from the id alone - it is returned instead
-        string blobPath = imageNameGenerator.BuildBlobPath(
+        var blobPath = imageNameGenerator.BuildBlobPath(
             tenantId,
             options.IncludeCollectionInPath ? options.Collection : null,
             options.AddUniquePrefix ? imageNameGenerator.NewUniquePrefix() : null,
@@ -98,7 +98,7 @@ public class ImageUploader(
         logger.UploadedToBlobStorage(imageId, blobPath);
 
         //Image stream is no longer needed at this stage
-        imageStream.Dispose();
+        await imageStream.DisposeAsync();
 
         /*
          Next, saving the metadata object of this image

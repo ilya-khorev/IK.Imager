@@ -99,7 +99,6 @@ public static class UploadEndpoints
     private static ImageUploadOptions ToOptions(this UploadImageRequestBase source) =>
         new(source.ImageId, source.Collection, source.IncludeCollectionInPath, source.AddUniquePrefix);
 
-    //hand-written, there is no AutoMapper - and it stays inside the feature that returns the model
     private static ImageInfo ToContract(this ImageDetails source) =>
         new()
         {
