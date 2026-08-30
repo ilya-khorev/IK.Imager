@@ -22,21 +22,21 @@ namespace IK.Imager.Core.Tests.Upload;
 public class ImageUploaderTests
 {
     private const string ImageId = "image-id";
-    private const string BlobPath = "image-id.jpg";
+    private const string BlobPath = $"{TenantId}/{ImageId}.jpg";
     private const string TenantId = "test-tenant";
     private const string Collection = "test-collection";
     private const string Hash = "hash";
 
     private static readonly Uri BlobUrl = new("https://blobs.test/images/image-id.jpg");
     private static readonly Uri PublicUrl = new("https://cdn.test/images/image-id.jpg");
-    private static readonly ImageFormat Jpeg = new("image/jpeg", ".jpg", ImageType.JPEG);
+    private static readonly ImageFormat Jpeg = new("image/jpeg", "jpg", ImageType.JPEG);
     private static readonly ImageSize Size = new(800, 600, 12345);
     private static readonly ImageUploadOptions Options = new(Collection: Collection);
 
     private readonly Mock<IImageMetadataRepository> _metadataRepositoryMock;
     private readonly Mock<IImageBlobRepository> _blobRepositoryMock;
     private readonly Mock<IImageInspector> _imageInspectorMock;
-    private readonly Mock<IImageNameGenerator> _imageNameGeneratorMock;
+    private readonly Mock<IImageIdGenerator> _imageIdGeneratorMock;
     private readonly Mock<IImageUrlBuilder> _imageUrlBuilderMock;
     private readonly Mock<IImageEvents> _imageEventsMock;
     private readonly ImageDownloader _imageDownloader;
@@ -48,7 +48,7 @@ public class ImageUploaderTests
         _metadataRepositoryMock = new Mock<IImageMetadataRepository>();
         _blobRepositoryMock = new Mock<IImageBlobRepository>();
         _imageInspectorMock = new Mock<IImageInspector>();
-        _imageNameGeneratorMock = new Mock<IImageNameGenerator>();
+        _imageIdGeneratorMock = new Mock<IImageIdGenerator>();
         _imageUrlBuilderMock = new Mock<IImageUrlBuilder>();
         _imageEventsMock = new Mock<IImageEvents>();
         _imageDownloader = new ImageDownloader(new HttpClient(), ImageLimitations.WithMaxSizeBytes(int.MaxValue),
@@ -62,10 +62,7 @@ public class ImageUploaderTests
             .ReturnsAsync([]);
 
         _imageInspectorMock.Setup(x => x.Inspect(It.IsAny<Stream>())).Returns((Jpeg, Size));
-        _imageNameGeneratorMock.Setup(x => x.NewImageId()).Returns(ImageId);
-        _imageNameGeneratorMock
-            .Setup(x => x.BuildBlobPath(TenantId, It.IsAny<string?>(), It.IsAny<string?>(), ImageId, Jpeg.FileExtension))
-            .Returns(BlobPath);
+        _imageIdGeneratorMock.Setup(x => x.NewImageId()).Returns(ImageId);
         _blobRepositoryMock
             .Setup(x => x.UploadImage(BlobPath, It.IsAny<Stream>(), ImageVariant.Original, Jpeg.MimeType,
                 false, It.IsAny<CancellationToken>()))
@@ -79,7 +76,7 @@ public class ImageUploaderTests
 
     private ImageUploader CreateUploader() =>
         new(_logger, _imageInspectorMock.Object, _blobRepositoryMock.Object, _metadataRepositoryMock.Object,
-            _imageNameGeneratorMock.Object, _imageDownloader, _imageUrlBuilderMock.Object, _imageEventsMock.Object);
+            _imageIdGeneratorMock.Object, _imageDownloader, _imageUrlBuilderMock.Object, _imageEventsMock.Object);
 
     [Fact]
     public async Task Upload_ValidImage_ReturnsDetailsOfTheStoredImage()
@@ -240,7 +237,7 @@ public class ImageUploaderTests
             .ReturnsAsync((MemoryStream?)null);
 
         var uploader = new ImageUploader(_logger, _imageInspectorMock.Object, _blobRepositoryMock.Object,
-            _metadataRepositoryMock.Object, _imageNameGeneratorMock.Object, downloaderMock.Object,
+            _metadataRepositoryMock.Object, _imageIdGeneratorMock.Object, downloaderMock.Object,
             _imageUrlBuilderMock.Object, _imageEventsMock.Object);
 
         await Assert.ThrowsAsync<System.ComponentModel.DataAnnotations.ValidationException>(() =>

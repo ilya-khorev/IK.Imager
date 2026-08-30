@@ -41,7 +41,7 @@ public static class CoreServiceCollectionExtensions
         services.Configure<ImageLimitationsSettings>(configuration.GetSection(ImageLimitationsSectionName));
         services.Configure<ImageDownloadSettings>(configuration.GetSection(ImageDownloadSectionName));
 
-        services.AddSingleton<IImageNameGenerator, ImageNameGenerator>();
+        services.AddSingleton<IImageIdGenerator, ImageIdGenerator>();
         services.AddSingleton<IImageResizer, ImageResizer>();
 
         //TryAdd so that a provider module can register its own purger without Core knowing it exists

@@ -24,7 +24,6 @@ namespace IK.Imager.Core.Tests.Thumbnails
         private readonly Mock<IImageResizer> _imageResizerMock;
         private readonly Mock<IOptions<ImageThumbnailsSettings>> _imageThumbnailSettingsMock;
         private readonly ILogger<ThumbnailGenerator> _logger;
-        private readonly IImageNameGenerator _imageNameGenerator;
 
         public ThumbnailGeneratorTests(ITestOutputHelper output)
         {
@@ -33,7 +32,6 @@ namespace IK.Imager.Core.Tests.Thumbnails
             _metadataRepositoryMock = new Mock<IImageMetadataRepository>();
             _imageThumbnailSettingsMock = new Mock<IOptions<ImageThumbnailsSettings>>();
             _logger = output.BuildLoggerFor<ThumbnailGenerator>();
-            _imageNameGenerator = new ImageNameGenerator();
         }
 
         [Fact]
@@ -51,7 +49,7 @@ namespace IK.Imager.Core.Tests.Thumbnails
 
             var thumbnailGenerator = new ThumbnailGenerator(_logger, _imageResizerMock.Object,
                 _blobRepositoryMock.Object, _metadataRepositoryMock.Object,
-                _imageNameGenerator, _imageThumbnailSettingsMock.Object);
+                _imageThumbnailSettingsMock.Object);
 
             await thumbnailGenerator.Generate(new Fixture().Create<string>(), new Fixture().Create<string>(),
                 CancellationToken.None);
@@ -83,7 +81,7 @@ namespace IK.Imager.Core.Tests.Thumbnails
 
             var thumbnailGenerator = new ThumbnailGenerator(_logger, _imageResizerMock.Object,
                 _blobRepositoryMock.Object, _metadataRepositoryMock.Object,
-                _imageNameGenerator, _imageThumbnailSettingsMock.Object);
+                _imageThumbnailSettingsMock.Object);
 
             await thumbnailGenerator.Generate(new Fixture().Create<string>(), new Fixture().Create<string>(),
                 CancellationToken.None);
@@ -168,7 +166,7 @@ namespace IK.Imager.Core.Tests.Thumbnails
 
             var thumbnailGenerator = new ThumbnailGenerator(_logger, _imageResizerMock.Object,
                 _blobRepositoryMock.Object, _metadataRepositoryMock.Object,
-                _imageNameGenerator, _imageThumbnailSettingsMock.Object);
+                _imageThumbnailSettingsMock.Object);
 
             await thumbnailGenerator.Generate(new Fixture().Create<string>(), new Fixture().Create<string>(),
                 CancellationToken.None);

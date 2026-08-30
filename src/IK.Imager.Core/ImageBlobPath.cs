@@ -1,34 +1,22 @@
 using System;
-using System.Security.Cryptography;
 using System.Text;
-using IK.Imager.Core.Abstractions;
 
 namespace IK.Imager.Core;
 
-public class ImageNameGenerator : IImageNameGenerator
+/// <summary>
+/// Builds the blob path of an image and of its thumbnails.
+///
+/// The path is the delivery url, so everything about it is deliberate:
+/// <c>{tenant}/[{collection}/][{prefix}/]{imageId}.{extension}</c>. The tenant has to be there because
+/// ids are only unique within one, and the two middle segments are what the caller asked for.
+/// </summary>
+public static class ImageBlobPath
 {
     /// <summary>
-    /// 128 bits, matching the strength of a generated image id.
+    /// Assembles the blob path of an original image. A null or empty collection or prefix contributes
+    /// no segment.
     /// </summary>
-    private const int UniquePrefixLength = 32;
-
-    /// <inheritdoc />
-    public string NewImageId()
-    {
-        //since all images are publicly available by url, image path must be random and big enough
-        //so, for simplicity just concatenating guid and part of another guid
-        return (Guid.NewGuid()
-                + Guid.NewGuid().ToString().Substring(0, 6))
-            .Replace("-", "");
-    }
-
-    /// <inheritdoc />
-    //RandomNumberGenerator rather than Guid, because this segment's only job is to be unguessable and that
-    //should be visible in the code rather than inferred from how Guid.NewGuid happens to be implemented
-    public string NewUniquePrefix() => RandomNumberGenerator.GetHexString(UniquePrefixLength, lowercase: true);
-
-    /// <inheritdoc />
-    public string BuildBlobPath(string tenantId, string? collection, string? uniquePrefix, string imageId, string extension)
+    public static string Build(string tenantId, string? collection, string? uniquePrefix, string imageId, string extension)
     {
         ArgumentException.ThrowIfNullOrEmpty(tenantId);
         ArgumentException.ThrowIfNullOrEmpty(imageId);
@@ -48,8 +36,15 @@ public class ImageNameGenerator : IImageNameGenerator
         return Append(path, extension);
     }
 
-    /// <inheritdoc />
-    public string BuildThumbnailBlobPath(string originalBlobPath, int width, string extension)
+    /// <summary>
+    /// Assembles the blob path of a thumbnail from the path of its original, as
+    /// <c>{original without extension}_{width}.{extension}</c>.
+    ///
+    /// Derived rather than rebuilt so a thumbnail inherits the tenant, collection and prefix of its
+    /// original without having to be told any of them - and so regenerating thumbnails overwrites the
+    /// previous set in place instead of orphaning it.
+    /// </summary>
+    public static string BuildThumbnail(string originalBlobPath, int width, string extension)
     {
         ArgumentException.ThrowIfNullOrEmpty(originalBlobPath);
 

@@ -20,7 +20,7 @@ public class ImageUploader(
     IImageInspector imageInspector,
     IImageBlobRepository blobRepository,
     IImageMetadataRepository metadataRepository,
-    IImageNameGenerator imageNameGenerator,
+    IImageIdGenerator imageIdGenerator,
     IImageDownloader imageDownloader,
     IImageUrlBuilder imageUrlBuilder,
     IImageEvents imageEvents) : IImageUploader
@@ -51,7 +51,7 @@ public class ImageUploader(
     {
         var (imageFormat, imageSize) = imageInspector.Inspect(imageStream);
 
-        var imageId = options.ImageId ?? imageNameGenerator.NewImageId();
+        var imageId = options.ImageId ?? imageIdGenerator.NewImageId();
 
         //the id may not have existed before this point, so this is the earliest the rest of the upload - and
         //the thumbnail consumer that picks the event up later - can be tied to one image on the console
@@ -70,10 +70,10 @@ public class ImageUploader(
 
         //the extension comes from the image itself rather than from the caller, so the url cannot be
         //assembled from the id alone - it is returned instead
-        var blobPath = imageNameGenerator.BuildBlobPath(
+        var blobPath = ImageBlobPath.Build(
             tenantId,
             options.IncludeCollectionInPath ? options.Collection : null,
-            options.AddUniquePrefix ? imageNameGenerator.NewUniquePrefix() : null,
+            options.AddUniquePrefix ? imageIdGenerator.NewUniquePrefix() : null,
             imageId,
             imageFormat.FileExtension);
 

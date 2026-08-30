@@ -31,7 +31,7 @@ public class ImageIdentityTests(ImagerApiFixture fixture) : ImagerApiTests(fixtu
 
         var uploaded = await Api.Upload(TestImages.Jpeg800X600, tenantId);
 
-        Assert.Matches("^[a-z0-9]{38}$", uploaded.Id);
+        Assert.Matches("^[a-f0-9]{32}$", uploaded.Id);
         Assert.EndsWith($"/{tenantId}/{uploaded.Id}.jpg", uploaded.Url);
     }
 

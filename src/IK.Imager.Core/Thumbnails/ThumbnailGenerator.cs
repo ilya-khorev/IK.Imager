@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using IK.Imager.Core.Abstractions;
 using IK.Imager.Core.Abstractions.Thumbnails;
 using IK.Imager.Storage.Abstractions.Models;
 using IK.Imager.Storage.Abstractions.Repositories;
@@ -18,7 +17,6 @@ public class ThumbnailGenerator(
     IImageResizer imageResizer,
     IImageBlobRepository blobRepository,
     IImageMetadataRepository metadataRepository,
-    IImageNameGenerator imageNameGenerator,
     IOptions<ImageThumbnailsSettings> imageThumbnailsSettings) : IThumbnailGenerator
 {
     private readonly List<int> _thumbnailTargetWidths =
@@ -74,7 +72,7 @@ public class ThumbnailGenerator(
 
             //derived from the original's path, so a thumbnail inherits its tenant, collection and unique
             //prefix - and so regenerating overwrites the previous set instead of orphaning it
-            var thumbnailBlobPath = imageNameGenerator.BuildThumbnailBlobPath(imageMetadata.BlobPath,
+            var thumbnailBlobPath = ImageBlobPath.BuildThumbnail(imageMetadata.BlobPath,
                 resizingResult.Size.Width, fileExtension);
 
             var uploadedBlob = await blobRepository.UploadImage(thumbnailBlobPath, resizingResult.Image,

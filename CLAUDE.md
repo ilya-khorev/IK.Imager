@@ -162,7 +162,7 @@ It reaches the service in the `X-Tenant-Id` header, and `IK.Imager.Api/Tenancy` 
 
 An earlier version routed everything through `ICommandHandler<TCommand, TResult>` / `IQueryHandler<TQuery, TResult>` plus a command record per operation. The record existed only to be unpacked one line into the handler, and the generic interface made every registration and call site harder to read than the method it stood for — it bought pipeline behaviours nothing ever added. Pass arguments; add a method to the service that owns the feature.
 
-`IK.Imager.Core` and `IK.Imager.Core.Abstractions` are both split into the same feature folders — `Upload/`, `Lookup/`, `Delete/`, `Thumbnails/`, plus `Cdn/`. Each holds the service and everything only that feature uses: `Upload/` also owns `ImageInspector`, `ImageFileReader`, `ImageDownloader`, `ImageValidator`, `ImageLimitationsSettings` and `ValueRange<T>`; `Thumbnails/` owns `ImageResizer` and `ImageThumbnailsSettings`. There is no `Settings/` or `Validation/` folder any more — a settings class lives next to the single class that reads it. Only `ImageNameGenerator` (upload **and** thumbnails) and `IImageEvents` stay at the project root.
+`IK.Imager.Core` and `IK.Imager.Core.Abstractions` are both split into the same feature folders — `Upload/`, `Lookup/`, `Delete/`, `Thumbnails/`, plus `Cdn/`. Each holds the service and everything only that feature uses: `Upload/` also owns `ImageInspector`, `ImageFileReader`, `ImageDownloader`, `ImageValidator`, `ImageLimitationsSettings` and `ValueRange<T>`; `Thumbnails/` owns `ImageResizer` and `ImageThumbnailsSettings`. There is no `Settings/` or `Validation/` folder any more — a settings class lives next to the single class that reads it. Only `ImageBlobPath` and `ImageIdGenerator` (both used by upload **and** thumbnails) and `IImageEvents` stay at the project root.
 
 **One vocabulary for a feature, everywhere: `Upload` / `Lookup` / `Delete`.** The same three folder names appear in `IK.Imager.Core`, `IK.Imager.Core.Abstractions`, `IK.Imager.Api/Features`, `IK.Imager.Api.Contract` and `IK.Imager.Api.Tests/Features`, with namespaces to match. Earlier passes left three spellings of the same three features (`Uploading/`, `ImageUpload/`, `ImageDeleting/`) — verb nouns matching the routes and the service methods replaced all of them.
 
@@ -273,14 +273,14 @@ The `[FromForm]` model of `POST /images/upload` needs nothing special. A minimal
 
 ### Storage model
 
-- **Blobs**: two Azure containers, originals (`AzureStorage:ImagesContainerName`) and thumbnails (`AzureStorage:ThumbnailsContainerName`), selected by `ImageVariant`. The blob path is built by `ImageNameGenerator` and stored whole in `ImageMetadata.BlobPath` — see *Identity and the url* below.
+- **Blobs**: two Azure containers, originals (`AzureStorage:ImagesContainerName`) and thumbnails (`AzureStorage:ThumbnailsContainerName`), selected by `ImageVariant`. The blob path is built by `ImageBlobPath` and stored whole in `ImageMetadata.BlobPath` — see *Identity and the url* below.
 - **Metadata**: one Cosmos container with a **hierarchical partition key, `/TenantId` then `/id`**. A logical partition therefore holds exactly one document, which is what makes an image id unique within its tenant and keeps any one tenant clear of the 20 GB logical partition limit. Every read, write and delete is a point operation; a lookup of many ids is `ReadManyItemsAsync`, which batches by physical partition. Thumbnails are stored as a nested list on the parent `ImageMetadata` document, so thumbnail generation is an update of the whole document.
 
 **`CreateContainerIfNotExistsAsync` matches on the container id alone.** Pointing it at a container that already exists with a different partition key silently returns that one, and nothing fails until a read crosses tenants — so change `CosmosDb:ContainerId` rather than expecting a container to be migrated in place. It was bumped to `imagemetadatacontainer-v2` when the key changed.
 
 ### Identity and the url
 
-`ImageNameGenerator` builds the one path that is both the blob key and the delivery url:
+`ImageBlobPath` builds the one path that is both the blob key and the delivery url:
 
 ```
 {tenant}/[{collection}/][{prefix}/]{imageId}.{extension}
@@ -293,9 +293,13 @@ The `[FromForm]` model of `POST /images/upload` needs nothing special. A minimal
 - **A collection does not scope identity either.** The Cosmos key is `(TenantId, id)` and the id is flat, so the same id in two collections is also a 409. It is the price of ids with no `/` in them, and it belongs in the API docs.
 - **The extension is appended by the service**, never part of the id, and comes from `ImageFileReader` - which already returns `FileExtensions.First()`, i.e. one canonical dotless extension per format. A caller therefore cannot predict the url from the id alone and must read `Url` off the response.
 
+**Naming an image is two things, and only one of them is a service.** `ImageBlobPath` is `static` because assembling the path is a pure function of what the caller asked for - the same shape as `ImageFileReader` and `UrlRedactor`, and nothing benefits from a seam over it. `IImageIdGenerator` (`ImageIdGenerator`, a singleton) is the other half: the random id and the random prefix, which is the only part that is not deterministic, the only part worth mocking, and the only part a host would ever replace. They were one `IImageNameGenerator` until the interface was carrying two unrelated jobs - and mocking it in `ImageUploaderTests` was hiding the path shape those tests exist to pin.
+
 **Identifiers are rejected, never sanitised** (`IK.Imager.Api/Validation/IdentifierConstraints.cs`, one charset for tenant, collection and image id alike). The entire value of a caller-chosen id is that the url is predictable, which silent normalisation would destroy. Lowercase is enforced rather than folded, because blob paths, urls and Cosmos ids are all case-sensitive and `SKU-1` vs `sku-1` would quietly be two images.
 
-**A generated id is still 38 random characters**, so the default is as unguessable as it ever was. What changed is that a caller who supplies a readable id has *chosen* a guessable url - the url is the only access control on image content, since blobs are anonymously readable. `AddUniquePrefix` is the way to keep both, and it is `RandomNumberGenerator.GetHexString(32)` rather than a `Guid` because being unguessable is the segment's whole job and that should be visible in the code.
+**A generated id is 32 random hex characters**, so the default is as unguessable as it ever was. What changed is that a caller who supplies a readable id has *chosen* a guessable url - the url is the only access control on image content, since blobs are anonymously readable. `AddUniquePrefix` is the way to keep both.
+
+**Both random values are `RandomNumberGenerator.GetHexString(32, lowercase: true)`** - 128 bits, one constant, one strength. Being unguessable is their whole job, so that should be visible in the code rather than inferred from how `Guid.NewGuid` happens to be implemented; the id used to be two concatenated `Guid`s with the hyphens stripped. The ids are **not** ordered, and deliberately so: nothing lists or ranges over them - every metadata read is a point read, and the id is the hashed second level of the partition key - while a time-sortable id would publish the upload time in a public url and spend entropy to do it. If images ever need ordering, that is a field on the metadata.
 
 **There is no overwrite.** A duplicate id is always a 409; replacing an image is delete-then-upload, which already removes the blobs and purges the CDN. Three things follow.
 
