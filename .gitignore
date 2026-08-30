@@ -8,3 +8,7 @@ obj/
 
 # Visual Studio cache/options directory
 **/.vs/
+
+# Claude Code machine-local state. Shared project config in .claude/ stays tracked.
+.claude/worktrees/
+.claude/settings.local.json
