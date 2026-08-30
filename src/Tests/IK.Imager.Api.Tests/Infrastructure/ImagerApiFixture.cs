@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading.Tasks;
 using IK.Imager.Api.Extensions;
+using IK.Imager.Storage.CosmosDb;
 using IK.Imager.TestsBase;
 using MassTransit;
 using Microsoft.AspNetCore.Hosting;
@@ -139,16 +140,18 @@ public sealed class ImagerApiFixture : IAsyncLifetime
     /// <summary>
     /// The client the .NET SDK needs to talk to the containerized Cosmos emulator - gateway mode, pinned to
     /// the endpoint it was given, and the module's URI-rewriting handler on top. Identical to what
-    /// CosmosDbFixture builds. Production takes the client the Cosmos module registers, with the SDK defaults.
+    /// CosmosDbFixture builds. The serializer comes from ImageMetadataSerialization, the same place the
+    /// Cosmos module takes it from - it maps ImageMetadata.Id onto the document's "id" and is not optional.
     /// </summary>
-    private CosmosClient CreateEmulatorClient() =>
-        new(_cosmos.GetConnectionString(), new CosmosClientOptions
-        {
-            ConnectionMode = ConnectionMode.Gateway,
-            LimitToEndpoint = true,
-            HttpClientFactory = () => _cosmos.HttpClient,
-            RequestTimeout = TimeSpan.FromMinutes(2)
-        });
+    private CosmosClient CreateEmulatorClient()
+    {
+        var options = ImageMetadataSerialization.CreateClientOptions();
+        options.ConnectionMode = ConnectionMode.Gateway;
+        options.LimitToEndpoint = true;
+        options.HttpClientFactory = () => _cosmos.HttpClient;
+        options.RequestTimeout = TimeSpan.FromMinutes(2);
+        return new CosmosClient(_cosmos.GetConnectionString(), options);
+    }
 
     /// <summary>
     /// Runs the real Program.cs and swaps in the only registration that cannot be expressed as configuration:

@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using IK.Imager.Storage.Abstractions.Models;
 using IK.Imager.Storage.Abstractions.Repositories;
+using Microsoft.Azure.Cosmos;
 using Xunit;
 
 namespace IK.Imager.Storage.CosmosDb.Tests;
@@ -24,9 +26,11 @@ public class CosmosImageMetadataRepositoryTests
     //Seeded so that a failing test can be reproduced. Ids stay random to keep the tests isolated from each other.
     private readonly Random _random = new(42);
     private readonly CosmosImageMetadataRepository _imageMetadataCosmosDbRepository;
+    private readonly CosmosDbFixture _fixture;
 
     public CosmosImageMetadataRepositoryTests(CosmosDbFixture fixture)
     {
+        _fixture = fixture;
         _imageMetadataCosmosDbRepository = fixture.Repository;
     }
 
@@ -46,6 +50,39 @@ public class CosmosImageMetadataRepositoryTests
     /// The partition key is (TenantId, id) and a logical partition holds exactly one document, so an id is
     /// unique within its tenant and the database is what enforces it.
     /// </summary>
+    /// <summary>
+    /// The stored document keeps the property names earlier versions wrote - members unchanged, the id as
+    /// "id", the image type as a number. System.Text.Json replaced the SDK default serializer here, and the
+    /// two only agree while ImageMetadataSerialization applies no naming policy. Adding one would orphan
+    /// every document already stored, and would move "/TenantId" out from under the partition key, so this
+    /// reads the raw document rather than going through the repository that wrote it.
+    /// </summary>
+    [Fact]
+    public async Task CreateMetadata_ValidMetadata_StoresDocumentWithUnchangedPropertyNames()
+    {
+        ImageMetadata imageMetadata = GenerateItem();
+        imageMetadata.ImageType = ImageType.JPEG;
+        await _imageMetadataCosmosDbRepository.CreateMetadata(imageMetadata, CancellationToken.None);
+
+        var container = _fixture.CosmosClient.GetContainer(_fixture.Settings.DatabaseId, _fixture.Settings.ContainerId);
+        using var response = await container.ReadItemStreamAsync(imageMetadata.Id,
+            new PartitionKeyBuilder().Add(imageMetadata.TenantId).Add(imageMetadata.Id).Build());
+
+        Assert.True(response.IsSuccessStatusCode);
+
+        using var document = await JsonDocument.ParseAsync(response.Content);
+        var root = document.RootElement;
+
+        Assert.Equal(imageMetadata.Id, root.GetProperty("id").GetString());
+        Assert.Equal(imageMetadata.TenantId, root.GetProperty("TenantId").GetString());
+        Assert.Equal(imageMetadata.Collection, root.GetProperty("Collection").GetString());
+        Assert.Equal(imageMetadata.BlobPath, root.GetProperty("BlobPath").GetString());
+        Assert.Equal(imageMetadata.SizeBytes, root.GetProperty("SizeBytes").GetInt64());
+        Assert.Equal((int)ImageType.JPEG, root.GetProperty("ImageType").GetInt32());
+        Assert.Equal(imageMetadata.Thumbnails![0].BlobPath,
+            root.GetProperty("Thumbnails")[0].GetProperty("BlobPath").GetString());
+    }
+
     [Fact]
     public async Task CreateMetadata_ExistingIdInSameTenant_ThrowsImageAlreadyExists()
     {

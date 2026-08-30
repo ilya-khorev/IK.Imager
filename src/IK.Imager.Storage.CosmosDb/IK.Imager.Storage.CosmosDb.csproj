@@ -9,6 +9,13 @@
       <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
       <PackageReference Include="Microsoft.Extensions.Options" />
       <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
+      <!--
+        Not ours - nothing in this project uses Newtonsoft. Microsoft.Azure.Cosmos.Client has a direct
+        assembly reference to it (10.0.0.0) for its own internal types, but declares no nuget dependency,
+        so the consumer picks the version. Its build target fails the build when no reference is found.
+        Our documents go through System.Text.Json - see ImageMetadataSerialization.
+      -->
+      <PackageReference Include="Newtonsoft.Json" />
     </ItemGroup>
 
     <ItemGroup>
