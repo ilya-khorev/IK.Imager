@@ -36,6 +36,10 @@ public static class OpenApiServiceCollectionExtensions
             //the way into the document, so it picks up its constraints and its XML summaries here like any
             //body-bound model. Under MVC it arrived flattened into fields and had to be repaired by hand.
             options.AddSchemaTransformer(new FluentValidationSchemaTransformer());
+
+            //the tenant travels in a header rather than in a request model, so nothing else in the document
+            //would mention it
+            options.AddOperationTransformer<TenantHeaderOperationTransformer>();
         });
 
         return services;

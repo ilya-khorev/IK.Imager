@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using IK.Imager.Storage.Abstractions.Models;
+using IK.Imager.Storage.Abstractions.Repositories;
 using Xunit;
 
 namespace IK.Imager.Storage.CosmosDb.Tests;
@@ -30,77 +31,102 @@ public class CosmosImageMetadataRepositoryTests
     }
 
     [Fact]
-    public async Task SetMetadata_ValidMetadata_StoresDocument()
+    public async Task CreateMetadata_ValidMetadata_StoresDocument()
     {
         ImageMetadata imageMetadata = GenerateItem();
-        await _imageMetadataCosmosDbRepository.SetMetadata(imageMetadata, CancellationToken.None);
-    }
-
-    [Fact]
-    public async Task SetMetadata_ExistingId_UpdatesExistingDocument()
-    {
-        ImageMetadata imageMetadata = GenerateItem();
-        await _imageMetadataCosmosDbRepository.SetMetadata(imageMetadata, CancellationToken.None);
-
-        imageMetadata.Name = "an updated name";
-        await _imageMetadataCosmosDbRepository.SetMetadata(imageMetadata, CancellationToken.None);
+        await _imageMetadataCosmosDbRepository.CreateMetadata(imageMetadata, CancellationToken.None);
 
         var receivedItems = await _imageMetadataCosmosDbRepository.GetMetadata(new[] { imageMetadata.Id },
-            imageMetadata.ImageGroup, CancellationToken.None);
-        var receivedItem = Assert.Single(receivedItems);
-        Assert.Equal("an updated name", receivedItem.Name);
+            imageMetadata.TenantId, CancellationToken.None);
+
+        AssertSameItems([imageMetadata], receivedItems);
+    }
+
+    /// <summary>
+    /// The partition key is (TenantId, id) and a logical partition holds exactly one document, so an id is
+    /// unique within its tenant and the database is what enforces it.
+    /// </summary>
+    [Fact]
+    public async Task CreateMetadata_ExistingIdInSameTenant_ThrowsImageAlreadyExists()
+    {
+        ImageMetadata imageMetadata = GenerateItem();
+        await _imageMetadataCosmosDbRepository.CreateMetadata(imageMetadata, CancellationToken.None);
+
+        var duplicate = GenerateItem(imageMetadata.TenantId);
+        duplicate.Id = imageMetadata.Id;
+
+        var exception = await Assert.ThrowsAsync<ImageAlreadyExistsException>(() =>
+            _imageMetadataCosmosDbRepository.CreateMetadata(duplicate, CancellationToken.None));
+
+        Assert.Equal(imageMetadata.Id, exception.ImageId);
+        Assert.Equal(imageMetadata.TenantId, exception.TenantId);
+    }
+
+    /// <summary>
+    /// Uniqueness is scoped to the tenant, so two tenants can each hold the same id.
+    /// </summary>
+    [Fact]
+    public async Task CreateMetadata_SameIdInAnotherTenant_StoresBothDocuments()
+    {
+        ImageMetadata first = GenerateItem("tenant-a-" + Guid.NewGuid().ToString("N"));
+        await _imageMetadataCosmosDbRepository.CreateMetadata(first, CancellationToken.None);
+
+        ImageMetadata second = GenerateItem("tenant-b-" + Guid.NewGuid().ToString("N"));
+        second.Id = first.Id;
+        await _imageMetadataCosmosDbRepository.CreateMetadata(second, CancellationToken.None);
+
+        AssertSameItems([first],
+            await _imageMetadataCosmosDbRepository.GetMetadata([first.Id], first.TenantId, CancellationToken.None));
+        AssertSameItems([second],
+            await _imageMetadataCosmosDbRepository.GetMetadata([second.Id], second.TenantId, CancellationToken.None));
     }
 
     [Fact]
-    public async Task GetMetadata_LookupWithoutImageGroup_ReturnsRequestedImages()
+    public async Task UpdateMetadata_ExistingId_OverwritesExistingDocument()
     {
-        List<ImageMetadata> imagesMetadata = new List<ImageMetadata>();
-        List<string> ids = new List<string>();
+        ImageMetadata imageMetadata = GenerateItem();
+        await _imageMetadataCosmosDbRepository.CreateMetadata(imageMetadata, CancellationToken.None);
+
+        imageMetadata.BlobPath = "an/updated/path.jpg";
+        await _imageMetadataCosmosDbRepository.UpdateMetadata(imageMetadata, CancellationToken.None);
+
+        var receivedItems = await _imageMetadataCosmosDbRepository.GetMetadata(new[] { imageMetadata.Id },
+            imageMetadata.TenantId, CancellationToken.None);
+        var receivedItem = Assert.Single(receivedItems);
+        Assert.Equal("an/updated/path.jpg", receivedItem.BlobPath);
+    }
+
+    [Fact]
+    public async Task GetMetadata_ManyIds_ReturnsRequestedImages()
+    {
+        const string tenantId = "lookup-tenant";
+        List<ImageMetadata> imagesMetadata = [];
+        List<string> ids = [];
         for (int i = 0; i < 8; i++)
         {
-            ImageMetadata imageMetadata = GenerateItem("group_" + i);
-            await _imageMetadataCosmosDbRepository.SetMetadata(imageMetadata, CancellationToken.None);
+            ImageMetadata imageMetadata = GenerateItem(tenantId);
+            await _imageMetadataCosmosDbRepository.CreateMetadata(imageMetadata, CancellationToken.None);
             ids.Add(imageMetadata.Id);
             imagesMetadata.Add(imageMetadata);
         }
 
-        var receivedItems = await _imageMetadataCosmosDbRepository.GetMetadata(ids, CancellationToken.None);
+        var receivedItems = await _imageMetadataCosmosDbRepository.GetMetadata(ids, tenantId, CancellationToken.None);
 
         AssertSameItems(imagesMetadata, receivedItems);
     }
 
+    /// <summary>
+    /// Tenant isolation, asserted on the read path: an id belonging to another tenant resolves to nothing,
+    /// because the tenant is the first level of the point read's partition key.
+    /// </summary>
     [Fact]
-    public async Task GetMetadata_LookupWithImageGroup_ReturnsOnlyRequestedGroup()
+    public async Task GetMetadata_AnotherTenant_ReturnsEmpty()
     {
-        List<ImageMetadata> imagesMetadata = new List<ImageMetadata>();
-        List<string> ids = new List<string>();
-        List<string> partitions = new List<string>(3) { "group_1", "group_2", "group_3" };
-        for (int i = 0; i < 12; i++)
-        {
-            ImageMetadata imageMetadata = GenerateItem(partitions[i % partitions.Count]);
-            await _imageMetadataCosmosDbRepository.SetMetadata(imageMetadata, CancellationToken.None);
-            ids.Add(imageMetadata.Id);
-            imagesMetadata.Add(imageMetadata);
-        }
-
-        foreach (var partition in partitions)
-        {
-            var expectedItems = imagesMetadata.Where(x => x.ImageGroup == partition).ToList();
-            var receivedItems = await _imageMetadataCosmosDbRepository.GetMetadata(ids, partition, CancellationToken.None);
-
-            Assert.NotEmpty(expectedItems);
-            AssertSameItems(expectedItems, receivedItems);
-        }
-    }
-
-    [Fact]
-    public async Task GetMetadata_WrongImageGroup_ReturnsEmpty()
-    {
-        ImageMetadata imageMetadata = GenerateItem("group_a");
-        await _imageMetadataCosmosDbRepository.SetMetadata(imageMetadata, CancellationToken.None);
+        ImageMetadata imageMetadata = GenerateItem("tenant-a");
+        await _imageMetadataCosmosDbRepository.CreateMetadata(imageMetadata, CancellationToken.None);
 
         var receivedItems = await _imageMetadataCosmosDbRepository.GetMetadata(new[] { imageMetadata.Id },
-            "group_b", CancellationToken.None);
+            "tenant-b", CancellationToken.None);
 
         Assert.Empty(receivedItems);
     }
@@ -110,7 +136,8 @@ public class CosmosImageMetadataRepositoryTests
     {
         var notExistingIds = new[] { Guid.NewGuid().ToString(), Guid.NewGuid().ToString() };
 
-        var receivedItems = await _imageMetadataCosmosDbRepository.GetMetadata(notExistingIds, CancellationToken.None);
+        var receivedItems = await _imageMetadataCosmosDbRepository.GetMetadata(notExistingIds, "tenant-a",
+            CancellationToken.None);
 
         Assert.Empty(receivedItems);
     }
@@ -119,35 +146,47 @@ public class CosmosImageMetadataRepositoryTests
     public async Task GetMetadata_NullIdCollection_ThrowsArgumentNullException()
     {
         await Assert.ThrowsAsync<ArgumentNullException>(() =>
-            _imageMetadataCosmosDbRepository.GetMetadata(null!, CancellationToken.None));
+            _imageMetadataCosmosDbRepository.GetMetadata(null!, "tenant-a", CancellationToken.None));
     }
 
     [Fact]
     public async Task GetMetadata_EmptyIdCollection_ThrowsArgumentException()
     {
         await Assert.ThrowsAsync<ArgumentException>(() =>
-            _imageMetadataCosmosDbRepository.GetMetadata(Array.Empty<string>(), CancellationToken.None));
+            _imageMetadataCosmosDbRepository.GetMetadata(Array.Empty<string>(), "tenant-a", CancellationToken.None));
+    }
+
+    /// <summary>
+    /// The tenant is the first level of the partition key, so a read without it cannot work.
+    /// </summary>
+    [Fact]
+    public async Task GetMetadata_EmptyTenant_ThrowsArgumentException()
+    {
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            _imageMetadataCosmosDbRepository.GetMetadata([Guid.NewGuid().ToString()], string.Empty,
+                CancellationToken.None));
     }
 
     [Fact]
-    public async Task SetMetadata_NullMetadata_ThrowsArgumentNullException()
+    public async Task CreateMetadata_NullMetadata_ThrowsArgumentNullException()
     {
         await Assert.ThrowsAsync<ArgumentNullException>(() =>
-            _imageMetadataCosmosDbRepository.SetMetadata(null!, CancellationToken.None));
+            _imageMetadataCosmosDbRepository.CreateMetadata(null!, CancellationToken.None));
     }
 
     [Theory]
     [InlineData(nameof(ImageMetadata.Id))]
-    [InlineData(nameof(ImageMetadata.ImageGroup))]
+    [InlineData(nameof(ImageMetadata.TenantId))]
+    [InlineData(nameof(ImageMetadata.BlobPath))]
     [InlineData(nameof(ImageMetadata.MimeType))]
     [InlineData(nameof(ImageMetadata.MD5Hash))]
-    public async Task SetMetadata_EmptyRequiredProperty_ThrowsArgumentException(string propertyName)
+    public async Task CreateMetadata_EmptyRequiredProperty_ThrowsArgumentException(string propertyName)
     {
         ImageMetadata imageMetadata = GenerateItem();
         typeof(ImageMetadata).GetProperty(propertyName)!.SetValue(imageMetadata, string.Empty);
 
         await Assert.ThrowsAsync<ArgumentException>(() =>
-            _imageMetadataCosmosDbRepository.SetMetadata(imageMetadata, CancellationToken.None));
+            _imageMetadataCosmosDbRepository.CreateMetadata(imageMetadata, CancellationToken.None));
     }
 
     [Theory]
@@ -157,23 +196,24 @@ public class CosmosImageMetadataRepositoryTests
     [InlineData(nameof(ImageMetadata.Width), -1)]
     [InlineData(nameof(ImageMetadata.Height), 0)]
     [InlineData(nameof(ImageMetadata.Height), -1)]
-    public async Task SetMetadata_NonPositiveDimension_ThrowsArgumentOutOfRangeException(string propertyName, int value)
+    public async Task CreateMetadata_NonPositiveDimension_ThrowsArgumentOutOfRangeException(string propertyName, int value)
     {
         ImageMetadata imageMetadata = GenerateItem();
         var property = typeof(ImageMetadata).GetProperty(propertyName)!;
         property.SetValue(imageMetadata, Convert.ChangeType(value, property.PropertyType));
 
         await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() =>
-            _imageMetadataCosmosDbRepository.SetMetadata(imageMetadata, CancellationToken.None));
+            _imageMetadataCosmosDbRepository.CreateMetadata(imageMetadata, CancellationToken.None));
     }
 
     [Fact]
     public async Task RemoveMetadata_ExistingObject_ReturnsTrue()
     {
         ImageMetadata imageMetadata = GenerateItem();
-        await _imageMetadataCosmosDbRepository.SetMetadata(imageMetadata, CancellationToken.None);
+        await _imageMetadataCosmosDbRepository.CreateMetadata(imageMetadata, CancellationToken.None);
 
-        var removed = await _imageMetadataCosmosDbRepository.RemoveMetadata(imageMetadata.Id, imageMetadata.ImageGroup, CancellationToken.None);
+        var removed = await _imageMetadataCosmosDbRepository.RemoveMetadata(imageMetadata.Id, imageMetadata.TenantId,
+            CancellationToken.None);
         Assert.True(removed);
     }
 
@@ -181,29 +221,45 @@ public class CosmosImageMetadataRepositoryTests
     public async Task RemoveMetadata_DeletedObject_ReturnsFalse()
     {
         ImageMetadata imageMetadata = GenerateItem();
-        await _imageMetadataCosmosDbRepository.SetMetadata(imageMetadata, CancellationToken.None);
-        await _imageMetadataCosmosDbRepository.RemoveMetadata(imageMetadata.Id, imageMetadata.ImageGroup, CancellationToken.None);
+        await _imageMetadataCosmosDbRepository.CreateMetadata(imageMetadata, CancellationToken.None);
+        await _imageMetadataCosmosDbRepository.RemoveMetadata(imageMetadata.Id, imageMetadata.TenantId,
+            CancellationToken.None);
 
-        var removed = await _imageMetadataCosmosDbRepository.RemoveMetadata(imageMetadata.Id, imageMetadata.ImageGroup, CancellationToken.None);
+        var removed = await _imageMetadataCosmosDbRepository.RemoveMetadata(imageMetadata.Id, imageMetadata.TenantId,
+            CancellationToken.None);
+        Assert.False(removed);
+    }
+
+    [Fact]
+    public async Task RemoveMetadata_AnotherTenant_ReturnsFalse()
+    {
+        ImageMetadata imageMetadata = GenerateItem("tenant-a");
+        await _imageMetadataCosmosDbRepository.CreateMetadata(imageMetadata, CancellationToken.None);
+
+        var removed = await _imageMetadataCosmosDbRepository.RemoveMetadata(imageMetadata.Id, "tenant-b",
+            CancellationToken.None);
+
         Assert.False(removed);
     }
 
     [Fact]
     public async Task RemoveMetadata_NotExistingId_ReturnsFalse()
     {
-        var removed = await _imageMetadataCosmosDbRepository.RemoveMetadata(Guid.NewGuid().ToString(), "group_1", CancellationToken.None);
+        var removed = await _imageMetadataCosmosDbRepository.RemoveMetadata(Guid.NewGuid().ToString(), "tenant-a",
+            CancellationToken.None);
 
         Assert.False(removed);
     }
 
     /// <summary>
-    /// The image group is the partition key, so deleting without it cannot work.
+    /// The tenant is the first level of the partition key, so deleting without it cannot work.
     /// </summary>
     [Fact]
-    public async Task RemoveMetadata_EmptyImageGroup_ThrowsArgumentException()
+    public async Task RemoveMetadata_EmptyTenant_ThrowsArgumentException()
     {
         await Assert.ThrowsAsync<ArgumentException>(() =>
-            _imageMetadataCosmosDbRepository.RemoveMetadata(Guid.NewGuid().ToString(), string.Empty, CancellationToken.None));
+            _imageMetadataCosmosDbRepository.RemoveMetadata(Guid.NewGuid().ToString(), string.Empty,
+                CancellationToken.None));
     }
 
     /// <summary>
@@ -218,12 +274,13 @@ public class CosmosImageMetadataRepositoryTests
             actual.OrderBy(x => x.Id, StringComparer.Ordinal));
     }
 
-    private ImageMetadata GenerateItem(string imageGroup = "group_1")
+    private ImageMetadata GenerateItem(string tenantId = "tenant-1")
     {
         var item = new ImageMetadata
         {
             Id = Guid.NewGuid().ToString(),
-            ImageGroup = imageGroup,
+            TenantId = tenantId,
+            Collection = "collection-1",
             MimeType = "jpg",
             Height = _random.Next(100, 1000),
             Width = _random.Next(100, 1000),
@@ -234,7 +291,7 @@ public class CosmosImageMetadataRepositoryTests
             },
             MD5Hash = Guid.NewGuid().ToString(),
             DateAddedUtc = DateTime.UtcNow,
-            Name = Guid.NewGuid().ToString(),
+            BlobPath = Guid.NewGuid().ToString(),
             Thumbnails = new List<ImageThumbnail>()
         };
 
@@ -243,6 +300,7 @@ public class CosmosImageMetadataRepositoryTests
             item.Thumbnails.Add(new ImageThumbnail
             {
                 Id = Guid.NewGuid().ToString(),
+                BlobPath = Guid.NewGuid().ToString(),
                 DateAddedUtc = DateTime.UtcNow,
                 Height = _random.Next(100, 1000),
                 Width = _random.Next(100, 1000),

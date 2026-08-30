@@ -25,14 +25,14 @@ public class RemoveImageFilesConsumer(
             ["ImageId"] = context.Message.ImageId
         });
 
-        logger.RemoveFilesJobReceived(context.Message.ImageId, context.Message.ThumbnailNames.Length);
+        logger.RemoveFilesJobReceived(context.Message.ImageId, context.Message.ThumbnailBlobPaths.Length);
 
-        await imageDeleter.DeleteFiles(context.Message.ImageId, context.Message.ImageName,
-            context.Message.ThumbnailNames, context.CancellationToken);
+        await imageDeleter.DeleteFiles(context.Message.ImageId, context.Message.BlobPath,
+            context.Message.ThumbnailBlobPaths, context.CancellationToken);
 
         //published only after the blobs are gone - a CDN purge that runs while they still exist just makes
         //the edge fetch them again
         await context.Publish(new ImageFilesDeletedIntegrationEvent(context.Message.ImageId,
-            context.Message.ImageName, context.Message.ThumbnailNames));
+            context.Message.BlobPath, context.Message.ThumbnailBlobPaths));
     }
 }

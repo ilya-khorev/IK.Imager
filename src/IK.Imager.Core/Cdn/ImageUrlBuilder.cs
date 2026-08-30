@@ -11,9 +11,9 @@ namespace IK.Imager.Core.Cdn;
 public class ImageUrlBuilder(IImageBlobRepository blobRepository, IOptions<CdnSettings> cdnSettings) : IImageUrlBuilder
 {
     /// <inheritdoc />
-    public Uri Build(string imageName, ImageVariant variant)
+    public Uri Build(string blobPath, ImageVariant variant)
     {
-        var blobUri = blobRepository.GetImageUri(imageName, variant);
+        var blobUri = blobRepository.GetImageUri(blobPath, variant);
 
         var cdnUri = cdnSettings.Value.Uri;
         if (cdnUri == null)

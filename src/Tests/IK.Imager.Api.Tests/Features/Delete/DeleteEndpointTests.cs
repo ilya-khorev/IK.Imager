@@ -18,10 +18,10 @@ public class DeleteEndpointTests(ImagerApiFixture fixture) : ImagerApiTests(fixt
     [Fact]
     public async Task DeleteImage_UploadedImage_ReturnsNoContent()
     {
-        var imageGroup = NewImageGroup();
-        var uploaded = await Api.Upload(TestImages.Jpeg800X600, imageGroup);
+        var tenantId = NewTenantId();
+        var uploaded = await Api.Upload(TestImages.Jpeg800X600, tenantId);
 
-        var response = await Api.SendDelete(uploaded.Id, imageGroup);
+        var response = await Api.SendDelete(uploaded.Id, tenantId);
 
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
     }
@@ -29,34 +29,36 @@ public class DeleteEndpointTests(ImagerApiFixture fixture) : ImagerApiTests(fixt
     [Fact]
     public async Task DeleteImage_UploadedImage_RemovesItFromLookupImmediately()
     {
-        var imageGroup = NewImageGroup();
-        var uploaded = await Api.Upload(TestImages.Jpeg800X600, imageGroup);
+        var tenantId = NewTenantId();
+        var uploaded = await Api.Upload(TestImages.Jpeg800X600, tenantId);
 
-        await Api.Delete(uploaded.Id, imageGroup);
-        var result = await Api.Lookup([uploaded.Id], imageGroup);
+        await Api.Delete(uploaded.Id, tenantId);
+        var result = await Api.Lookup([uploaded.Id], tenantId);
 
         Assert.Empty(result.Images);
     }
 
     [Fact]
-    public async Task DeleteImage_WithoutAnImageGroup_StillDeletesTheImage()
+    public async Task DeleteImage_OfAnotherTenant_ReturnsNotFound()
     {
-        var imageGroup = NewImageGroup();
-        var uploaded = await Api.Upload(TestImages.Jpeg800X600, imageGroup);
+        var tenantId = NewTenantId();
+        var uploaded = await Api.Upload(TestImages.Jpeg800X600, tenantId);
 
-        await Api.Delete(uploaded.Id, imageGroup: null);
+        var response = await Api.SendDelete(uploaded.Id, NewTenantId());
 
-        Assert.Empty((await Api.Lookup([uploaded.Id], imageGroup)).Images);
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        //and the image is untouched in the tenant that owns it
+        Assert.Single((await Api.Lookup([uploaded.Id], tenantId)).Images);
     }
 
     [Fact]
     public async Task DeleteImage_ImageWithThumbnails_RemovesTheFilesWithoutFaulting()
     {
-        var imageGroup = NewImageGroup();
-        var uploaded = await Api.Upload(TestImages.Jpeg1200X900, imageGroup);
+        var tenantId = NewTenantId();
+        var uploaded = await Api.Upload(TestImages.Jpeg1200X900, tenantId);
         await Fixture.ConsumedEvents.ThumbnailsGenerated(uploaded.Id);
 
-        await Api.Delete(uploaded.Id, imageGroup);
+        await Api.Delete(uploaded.Id, tenantId);
 
         //the handler deletes the original and every thumbnail blob; a throw inside it surfaces here rather
         //than disappearing into the bus
@@ -70,11 +72,11 @@ public class DeleteEndpointTests(ImagerApiFixture fixture) : ImagerApiTests(fixt
     [Fact]
     public async Task DeleteImage_ImageWithThumbnails_PurgesTheCdnAfterTheFilesAreRemoved()
     {
-        var imageGroup = NewImageGroup();
-        var uploaded = await Api.Upload(TestImages.Jpeg1200X900, imageGroup);
+        var tenantId = NewTenantId();
+        var uploaded = await Api.Upload(TestImages.Jpeg1200X900, tenantId);
         await Fixture.ConsumedEvents.ThumbnailsGenerated(uploaded.Id);
 
-        await Api.Delete(uploaded.Id, imageGroup);
+        await Api.Delete(uploaded.Id, tenantId);
 
         await Fixture.ConsumedEvents.FilesRemoved(uploaded.Id);
         await Fixture.ConsumedEvents.CdnPurged(uploaded.Id);
@@ -83,11 +85,11 @@ public class DeleteEndpointTests(ImagerApiFixture fixture) : ImagerApiTests(fixt
     [Fact]
     public async Task DeleteImage_ImageThatWasAlreadyDeleted_ReturnsNotFound()
     {
-        var imageGroup = NewImageGroup();
-        var uploaded = await Api.Upload(TestImages.Jpeg800X600, imageGroup);
-        await Api.Delete(uploaded.Id, imageGroup);
+        var tenantId = NewTenantId();
+        var uploaded = await Api.Upload(TestImages.Jpeg800X600, tenantId);
+        await Api.Delete(uploaded.Id, tenantId);
 
-        var response = await Api.SendDelete(uploaded.Id, imageGroup);
+        var response = await Api.SendDelete(uploaded.Id, tenantId);
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
@@ -97,7 +99,7 @@ public class DeleteEndpointTests(ImagerApiFixture fixture) : ImagerApiTests(fixt
     {
         var unknownId = Guid.NewGuid().ToString("N");
 
-        var response = await Api.SendDelete(unknownId, NewImageGroup());
+        var response = await Api.SendDelete(unknownId, NewTenantId());
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
         Assert.Contains(unknownId, await response.Content.ReadAsStringAsync());
@@ -110,7 +112,7 @@ public class DeleteEndpointTests(ImagerApiFixture fixture) : ImagerApiTests(fixt
     [Fact]
     public async Task DeleteImage_BlankImageId_ReturnsValidationProblem()
     {
-        var problem = await ReadValidationProblem(await Api.SendDelete(" ", NewImageGroup()));
+        var problem = await ReadValidationProblem(await Api.SendDelete(" ", NewTenantId()));
 
         Assert.Contains("ImageId", problem.Errors.Keys);
     }
@@ -118,17 +120,17 @@ public class DeleteEndpointTests(ImagerApiFixture fixture) : ImagerApiTests(fixt
     [Fact]
     public async Task DeleteImage_WithoutAnImageId_ReturnsNotFound()
     {
-        var response = await Api.SendDelete(string.Empty, NewImageGroup());
+        var response = await Api.SendDelete(string.Empty, NewTenantId());
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
     [Fact]
-    public async Task DeleteImage_ImageGroupShorterThanTheMinimum_ReturnsValidationProblem()
+    public async Task DeleteImage_NoTenantHeader_ReturnsValidationProblem()
     {
         var problem = await ReadValidationProblem(
-            await Api.SendDelete(Guid.NewGuid().ToString("N"), "ab"));
+            await Api.SendDelete(Guid.NewGuid().ToString("N"), tenantId: null));
 
-        Assert.Contains("ImageGroup", problem.Errors.Keys);
+        Assert.Contains("TenantId", problem.Errors.Keys);
     }
 }

@@ -8,8 +8,8 @@ namespace IK.Imager.Storage.CosmosDb;
 internal static partial class CosmosImageMetadataRepositoryLog
 {
     [LoggerMessage(EventId = 3100, Level = LogLevel.Debug,
-        Message = "Upserted the metadata of image {ImageId}, {RequestCharge} RU.")]
-    public static partial void MetadataUpserted(this ILogger logger, string imageId, double requestCharge);
+        Message = "Created the metadata of image {ImageId}, {RequestCharge} RU.")]
+    public static partial void MetadataCreated(this ILogger logger, string imageId, double requestCharge);
 
     [LoggerMessage(EventId = 3101, Level = LogLevel.Debug,
         Message = "Read {FoundCount} metadata document(s) for {RequestedCount} id(s), {RequestCharge} RU.")]
@@ -18,4 +18,8 @@ internal static partial class CosmosImageMetadataRepositoryLog
     [LoggerMessage(EventId = 3102, Level = LogLevel.Debug,
         Message = "Removed the metadata of image {ImageId}, {RequestCharge} RU.")]
     public static partial void MetadataRemoved(this ILogger logger, string imageId, double requestCharge);
+
+    [LoggerMessage(EventId = 3103, Level = LogLevel.Debug,
+        Message = "Updated the metadata of image {ImageId}, {RequestCharge} RU.")]
+    public static partial void MetadataUpdated(this ILogger logger, string imageId, double requestCharge);
 }

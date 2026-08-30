@@ -18,9 +18,9 @@ public class ImageLookup(
     IImageMetadataRepository metadataRepository,
     IImageUrlBuilder imageUrlBuilder) : IImageLookup
 {
-    public async Task<ImageLookupResult> LookupByIds(string[] imageIds, string? imageGroup, CancellationToken cancellationToken)
+    public async Task<ImageLookupResult> LookupByIds(string[] imageIds, string tenantId, CancellationToken cancellationToken)
     {
-        var imagesMetadata = await metadataRepository.GetMetadata(imageIds, imageGroup, cancellationToken);
+        var imagesMetadata = await metadataRepository.GetMetadata(imageIds, tenantId, cancellationToken);
 
         var images = imagesMetadata.Select(ToImageDetails).ToList();
 
@@ -37,12 +37,13 @@ public class ImageLookup(
         new()
         {
             Id = imageMetadata.Id,
+            Collection = imageMetadata.Collection,
             Bytes = imageMetadata.SizeBytes,
             Hash = imageMetadata.MD5Hash,
             Height = imageMetadata.Height,
             Width = imageMetadata.Width,
             Tags = imageMetadata.Tags ?? new Dictionary<string, string>(),
-            Url = imageUrlBuilder.Build(imageMetadata.Name, ImageVariant.Original),
+            Url = imageUrlBuilder.Build(imageMetadata.BlobPath, ImageVariant.Original),
             DateAdded = imageMetadata.DateAddedUtc,
             MimeType = imageMetadata.MimeType,
             Thumbnails = imageMetadata.Thumbnails?.Select(ToThumbnailDetails).ToList() ?? []
@@ -58,6 +59,6 @@ public class ImageLookup(
             Width = thumbnail.Width,
             DateAdded = thumbnail.DateAddedUtc,
             MimeType = thumbnail.MimeType,
-            Url = imageUrlBuilder.Build(thumbnail.Name, ImageVariant.Thumbnail)
+            Url = imageUrlBuilder.Build(thumbnail.BlobPath, ImageVariant.Thumbnail)
         };
 }

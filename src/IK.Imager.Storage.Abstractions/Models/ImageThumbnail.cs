@@ -6,7 +6,7 @@ namespace IK.Imager.Storage.Abstractions.Models
     public class ImageThumbnail : IStoredImage, IEquatable<ImageThumbnail>
     {
         public string Id { get; set; } = null!;
-        public string Name { get; set; } = null!;
+        public string BlobPath { get; set; } = null!;
         public long SizeBytes { get; set; }
         public string MD5Hash { get; set; } = null!;
         public int Width { get; set; }
@@ -26,7 +26,7 @@ namespace IK.Imager.Storage.Abstractions.Models
                    && MD5Hash == other.MD5Hash
                    && Width == other.Width
                    && Height == other.Height
-                   && Name == other.Name
+                   && BlobPath == other.BlobPath
                    && MimeType == other.MimeType
                    && DateAddedUtc.Equals(other.DateAddedUtc);
         }
@@ -47,7 +47,7 @@ namespace IK.Imager.Storage.Abstractions.Models
             unchecked
             {
                 var hashCode = Id != null ? Id.GetHashCode() : 0;
-                hashCode = (hashCode * 397) ^ (Name != null ? Name.GetHashCode() : 0);
+                hashCode = (hashCode * 397) ^ (BlobPath != null ? BlobPath.GetHashCode() : 0);
                 hashCode = (int)((hashCode * 397) ^ SizeBytes);
                 hashCode = (hashCode * 397) ^ (MD5Hash != null ? MD5Hash.GetHashCode() : 0);
                 hashCode = (hashCode * 397) ^ (MimeType != null ? MimeType.GetHashCode() : 0);

@@ -1,13 +1,11 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using IK.Imager.Storage.Abstractions.Models;
 using IK.Imager.Storage.Abstractions.Repositories;
 using Microsoft.Azure.Cosmos;
-using Microsoft.Azure.Cosmos.Linq;
 using Microsoft.Extensions.Logging;
 
 namespace IK.Imager.Storage.CosmosDb
@@ -25,87 +23,84 @@ namespace IK.Imager.Storage.CosmosDb
         }
 
         /// <inheritdoc />
-        public async Task SetMetadata(ImageMetadata metadata, CancellationToken cancellationToken)
+        public async Task CreateMetadata(ImageMetadata metadata, CancellationToken cancellationToken)
         {
-            ArgumentNullException.ThrowIfNull(metadata);
-            ArgumentException.ThrowIfNullOrEmpty(metadata.Id);
-            ArgumentException.ThrowIfNullOrEmpty(metadata.ImageGroup);
-            ArgumentException.ThrowIfNullOrEmpty(metadata.MimeType);
-            ArgumentException.ThrowIfNullOrEmpty(metadata.MD5Hash);
-            if (metadata.SizeBytes <= 0)
-                throw new ArgumentOutOfRangeException(nameof(metadata.SizeBytes));
-            if (metadata.Width <= 0)
-                throw new ArgumentOutOfRangeException(nameof(metadata.Width));
-            if (metadata.Height <= 0)
-                throw new ArgumentOutOfRangeException(nameof(metadata.Height));
+            Validate(metadata);
 
             var container = await _cosmosDbClient.CreateImagesContainerIfNotExists();
 
-            var response = await container.UpsertItemAsync(metadata, new PartitionKey(metadata.ImageGroup), cancellationToken: cancellationToken)
-                .ConfigureAwait(false);
+            try
+            {
+                var response = await container.CreateItemAsync(metadata, PartitionKeyOf(metadata.TenantId, metadata.Id),
+                    cancellationToken: cancellationToken).ConfigureAwait(false);
 
-            _logger.MetadataUpserted(metadata.Id, response.RequestCharge);
+                _logger.MetadataCreated(metadata.Id, response.RequestCharge);
+            }
+            catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.Conflict)
+            {
+                //an id is unique within its logical partition, and the partition is (tenant, id) -
+                //so this is exactly "that id is taken in that tenant"
+                throw new ImageAlreadyExistsException(metadata.TenantId, metadata.Id, ex);
+            }
+        }
+
+        /// <inheritdoc />
+        public async Task UpdateMetadata(ImageMetadata metadata, CancellationToken cancellationToken)
+        {
+            Validate(metadata);
+
+            var container = await _cosmosDbClient.CreateImagesContainerIfNotExists();
+
+            var response = await container.UpsertItemAsync(metadata, PartitionKeyOf(metadata.TenantId, metadata.Id),
+                cancellationToken: cancellationToken).ConfigureAwait(false);
+
+            _logger.MetadataUpdated(metadata.Id, response.RequestCharge);
         }
 
         /*
-         * Using of partitions make lookup requests more efficient
-         * https://docs.microsoft.com/en-us/azure/cosmos-db/partitioning-overview
+         * The partition key is hierarchical - /TenantId then /id - so every read, write and delete here
+         * is a point operation on a single logical partition. ReadManyItemsAsync batches the lookup by
+         * physical partition, which is cheaper than a query fanning out across all of them.
+         * https://learn.microsoft.com/azure/cosmos-db/hierarchical-partition-keys
          */
 
         /// <inheritdoc />
-        public async Task<List<ImageMetadata>> GetMetadata(ICollection<string> imageIds, string? imageGroup,
+        public async Task<List<ImageMetadata>> GetMetadata(ICollection<string> imageIds, string tenantId,
             CancellationToken cancellationToken)
         {
             ArgumentNullException.ThrowIfNull(imageIds);
+            ArgumentException.ThrowIfNullOrEmpty(tenantId);
             if (imageIds.Count < 1)
                 throw new ArgumentException("Please provide at least one image id");
 
             var container = await _cosmosDbClient.CreateImagesContainerIfNotExists();
 
-            QueryRequestOptions? queryRequestOptions = null;
-            if (!string.IsNullOrEmpty(imageGroup))
-                queryRequestOptions = new QueryRequestOptions
-                {
-                    PartitionKey = new PartitionKey(imageGroup)
-                };
+            var items = new List<(string, PartitionKey)>(imageIds.Count);
+            foreach (var imageId in imageIds)
+                items.Add((imageId, PartitionKeyOf(tenantId, imageId)));
 
-            var queryIterator = container
-                .GetItemLinqQueryable<ImageMetadata>(requestOptions: queryRequestOptions)
-                .Where(x => imageIds.Contains(x.Id))
-                .ToFeedIterator();
+            var response = await container.ReadManyItemsAsync<ImageMetadata>(items, cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
 
-            List<ImageMetadata> result = new List<ImageMetadata>();
-            double requestCharge = 0;
-            while (queryIterator.HasMoreResults)
-            {
-                FeedResponse<ImageMetadata> response = await queryIterator.ReadNextAsync(cancellationToken);
-                requestCharge += response.RequestCharge;
-                result.AddRange(response);
-            }
+            var result = new List<ImageMetadata>(response);
 
-            _logger.MetadataRead(result.Count, imageIds.Count, requestCharge);
+            _logger.MetadataRead(result.Count, imageIds.Count, response.RequestCharge);
 
             return result;
         }
 
         /// <inheritdoc />
-        public Task<List<ImageMetadata>> GetMetadata(ICollection<string> imageIds, CancellationToken cancellationToken)
-        {
-            return GetMetadata(imageIds, null, cancellationToken);
-        }
-
-        /// <inheritdoc />
-        public async Task<bool> RemoveMetadata(string imageId, string imageGroup, CancellationToken cancellationToken)
+        public async Task<bool> RemoveMetadata(string imageId, string tenantId, CancellationToken cancellationToken)
         {
             ArgumentException.ThrowIfNullOrEmpty(imageId);
-            ArgumentException.ThrowIfNullOrEmpty(imageGroup);
+            ArgumentException.ThrowIfNullOrEmpty(tenantId);
 
             var container = await _cosmosDbClient.CreateImagesContainerIfNotExists();
             ItemResponse<ImageMetadata> response;
             try
             {
-                response = await container.DeleteItemAsync<ImageMetadata>(imageId, new PartitionKey(imageGroup), cancellationToken: cancellationToken)
-                    .ConfigureAwait(false);
+                response = await container.DeleteItemAsync<ImageMetadata>(imageId, PartitionKeyOf(tenantId, imageId),
+                    cancellationToken: cancellationToken).ConfigureAwait(false);
             }
             catch (CosmosException ex)
             {
@@ -118,6 +113,25 @@ namespace IK.Imager.Storage.CosmosDb
             _logger.MetadataRemoved(imageId, response.RequestCharge);
 
             return response.StatusCode == HttpStatusCode.NoContent;
+        }
+
+        private static PartitionKey PartitionKeyOf(string tenantId, string imageId) =>
+            new PartitionKeyBuilder().Add(tenantId).Add(imageId).Build();
+
+        private static void Validate(ImageMetadata metadata)
+        {
+            ArgumentNullException.ThrowIfNull(metadata);
+            ArgumentException.ThrowIfNullOrEmpty(metadata.Id);
+            ArgumentException.ThrowIfNullOrEmpty(metadata.TenantId);
+            ArgumentException.ThrowIfNullOrEmpty(metadata.BlobPath);
+            ArgumentException.ThrowIfNullOrEmpty(metadata.MimeType);
+            ArgumentException.ThrowIfNullOrEmpty(metadata.MD5Hash);
+            if (metadata.SizeBytes <= 0)
+                throw new ArgumentOutOfRangeException(nameof(metadata.SizeBytes));
+            if (metadata.Width <= 0)
+                throw new ArgumentOutOfRangeException(nameof(metadata.Width));
+            if (metadata.Height <= 0)
+                throw new ArgumentOutOfRangeException(nameof(metadata.Height));
         }
     }
 }

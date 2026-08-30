@@ -116,7 +116,7 @@ namespace IK.Imager.Core.Tests.Thumbnails
             _imageResizerMock.Verify(x => x.Resize(It.IsAny<Stream>(),
                 ImageType.PNG, It.IsAny<int>()), Times.AtLeastOnce);
 
-            _metadataRepositoryMock.Verify(x => x.SetMetadata(It.IsAny<ImageMetadata>(), It.IsAny<CancellationToken>()), Times.Once);
+            _metadataRepositoryMock.Verify(x => x.UpdateMetadata(It.IsAny<ImageMetadata>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -134,7 +134,7 @@ namespace IK.Imager.Core.Tests.Thumbnails
             _imageResizerMock.Verify(x => x.Resize(It.IsAny<Stream>(),
                 ImageType.PNG, It.IsAny<int>()), Times.Exactly(3));
 
-            _metadataRepositoryMock.Verify(x => x.SetMetadata(It.Is<ImageMetadata>(i =>
+            _metadataRepositoryMock.Verify(x => x.UpdateMetadata(It.Is<ImageMetadata>(i =>
                     i.Thumbnails!.Count == 3), It.IsAny<CancellationToken>()), Times.Once);
         }
 
@@ -157,7 +157,7 @@ namespace IK.Imager.Core.Tests.Thumbnails
                     It.IsAny<Stream>(),
                     It.IsAny<ImageVariant>(),
                     It.IsAny<string>(),
-                    It.IsAny<CancellationToken>()))
+                    It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new Fixture().Create<BlobUploadResult>());
 
             _imageResizerMock.Setup(x => x.Resize(

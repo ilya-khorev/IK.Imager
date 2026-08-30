@@ -25,15 +25,15 @@ public class ThumbnailGenerator(
         imageThumbnailsSettings.Value.TargetWidth.OrderByDescending(x => x).ToList();
 
     private const string PngMimeType = "image/png";
-    private const string PngFileExtension = ".png";
+    private const string PngFileExtension = "png";
 
-    public async Task Generate(string imageId, string imageGroup, CancellationToken cancellationToken)
+    public async Task Generate(string imageId, string tenantId, CancellationToken cancellationToken)
     {
         //firstly, receiving image metadata of the given image
-        var imageMetadataList = await metadataRepository.GetMetadata(new List<string> { imageId }, imageGroup, cancellationToken);
+        var imageMetadataList = await metadataRepository.GetMetadata(new List<string> { imageId }, tenantId, cancellationToken);
         if (imageMetadataList == null || !imageMetadataList.Any())
         {
-            logger.ImageNotFound(imageId, imageGroup);
+            logger.ImageNotFound(imageId);
             return;
         }
 
@@ -46,7 +46,7 @@ public class ThumbnailGenerator(
             return;
         }
 
-        await using var originalImageStream = await blobRepository.DownloadImage(imageMetadata.Name, ImageVariant.Original, cancellationToken);
+        await using var originalImageStream = await blobRepository.DownloadImage(imageMetadata.BlobPath, ImageVariant.Original, cancellationToken);
         logger.OriginalImageDownloaded(imageMetadata.Id);
 
         ImageType imageType = imageMetadata.ImageType;
@@ -72,15 +72,17 @@ public class ThumbnailGenerator(
             var resizingResult = imageResizer.Resize(imageStream, imageType, targetWidth);
             logger.ImageResized(imageMetadata.Id, targetWidth, resizingResult.Size.Width, resizingResult.Size.Height, resizingResult.Size.Bytes);
 
-            var thumbnailImageId = imageNameGenerator.NewImageId();
-            var thumbnailImageName = imageNameGenerator.ToFileName(thumbnailImageId, fileExtension);
+            //derived from the original's path, so a thumbnail inherits its tenant, collection and unique
+            //prefix - and so regenerating overwrites the previous set instead of orphaning it
+            var thumbnailBlobPath = imageNameGenerator.BuildThumbnailBlobPath(imageMetadata.BlobPath,
+                resizingResult.Size.Width, fileExtension);
 
-            var uploadedBlob = await blobRepository.UploadImage(thumbnailImageName, resizingResult.Image,
-                ImageVariant.Thumbnail, mimeType, cancellationToken);
+            var uploadedBlob = await blobRepository.UploadImage(thumbnailBlobPath, resizingResult.Image,
+                ImageVariant.Thumbnail, mimeType, allowOverwrite: true, cancellationToken);
             imageMetadata.Thumbnails.Add(new ImageThumbnail
             {
-                Id = thumbnailImageId,
-                Name = thumbnailImageName,
+                Id = $"{imageMetadata.Id}_{resizingResult.Size.Width}",
+                BlobPath = thumbnailBlobPath,
                 MD5Hash = uploadedBlob.Hash,
                 DateAddedUtc = uploadedBlob.DateAdded.DateTime,
                 MimeType = mimeType,
@@ -96,7 +98,7 @@ public class ThumbnailGenerator(
         await imageStream.DisposeAsync();
 
         imageMetadata.Thumbnails.Reverse(); //smaller thumbnails come first
-        await metadataRepository.SetMetadata(imageMetadata, cancellationToken);
+        await metadataRepository.UpdateMetadata(imageMetadata, cancellationToken);
         logger.ThumbnailsGenerated(imageMetadata.Thumbnails.Count, imageId);
     }
 }

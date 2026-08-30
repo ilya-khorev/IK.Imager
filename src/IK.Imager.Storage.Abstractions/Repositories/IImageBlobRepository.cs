@@ -20,48 +20,56 @@ namespace IK.Imager.Storage.Abstractions.Repositories
         /// <summary>
         /// Uploads and saves a new image in the storage
         /// </summary>
-        /// <param name="imageName">Unique image name (with or without extension)</param>
+        /// <param name="blobPath">Path of the blob within its container, extension included</param>
         /// <param name="imageStream">Image stream</param>
         /// <param name="variant">Original or thumbnail</param>
         /// <param name="contentType">Image content type (e.g. jpeg, png)</param>
+        /// <param name="allowOverwrite">
+        /// Whether an existing blob at that path may be replaced. False for an original, whose path is the
+        /// caller's to choose and must not silently overwrite someone else's image. True for a thumbnail,
+        /// whose path is derived from its original and is therefore regenerated in place - a redelivered
+        /// thumbnail job would otherwise fail forever.
+        /// </param>
         /// <param name="cancellationToken">Cancellation token to stop operation</param>
-        /// <returns></returns>
-        Task<BlobUploadResult> UploadImage(string imageName, Stream imageStream, ImageVariant variant, string contentType, CancellationToken cancellationToken);
+        /// <exception cref="BlobAlreadyExistsException">
+        /// A blob already exists at that path and <paramref name="allowOverwrite"/> is false.
+        /// </exception>
+        Task<BlobUploadResult> UploadImage(string blobPath, Stream imageStream, ImageVariant variant, string contentType, bool allowOverwrite, CancellationToken cancellationToken);
 
         /// <summary>
-        /// Downloads an image stream for a given image name
+        /// Downloads an image stream for a given blob path
         /// </summary>
-        /// <param name="imageName">Unique image name (with or without extension)</param>
+        /// <param name="blobPath">Path of the blob within its container, extension included</param>
         /// <param name="variant">Original or thumbnail</param>
         /// <param name="cancellationToken">Cancellation token to stop operation</param>
         /// <returns>Image stream, or null if such image was not found</returns>
-        Task<MemoryStream?> DownloadImage(string imageName, ImageVariant variant, CancellationToken cancellationToken);
+        Task<MemoryStream?> DownloadImage(string blobPath, ImageVariant variant, CancellationToken cancellationToken);
 
         /// <summary>
-        /// Attempts to delete an image by a given image name
+        /// Attempts to delete an image by a given blob path
         /// </summary>
-        /// <param name="imageName">Unique image name (with or without extension)</param>
+        /// <param name="blobPath">Path of the blob within its container, extension included</param>
         /// <param name="variant">Original or thumbnail</param>
         /// <param name="cancellationToken">Cancellation token to stop operation</param>
         /// <returns>Returns true if an image was found and removed.
         /// Returns false if an image was not found.</returns>
-        Task<bool> TryDeleteImage(string imageName, ImageVariant variant, CancellationToken cancellationToken);
+        Task<bool> TryDeleteImage(string blobPath, ImageVariant variant, CancellationToken cancellationToken);
 
         /// <summary>
-        /// Returns an image URI by a given image name
+        /// Returns an image URI by a given blob path
         /// </summary>
-        /// <param name="imageName">Unique image name (with or without extension)</param>
+        /// <param name="blobPath">Path of the blob within its container, extension included</param>
         /// <param name="variant">Original or thumbnail</param>
         /// <returns></returns>
-        Uri GetImageUri(string imageName, ImageVariant variant);
+        Uri GetImageUri(string blobPath, ImageVariant variant);
 
         /// <summary>
         /// Checks if a given image exists
         /// </summary>
-        /// <param name="imageName">Unique image name (with or without extension)</param>
+        /// <param name="blobPath">Path of the blob within its container, extension included</param>
         /// <param name="variant">Original or thumbnail</param>
         /// <param name="cancellationToken">Cancellation token to stop operation</param>
         /// <returns>Returns true if an image was found. Otherwise, returns false.</returns>
-        Task<bool> ImageExists(string imageName, ImageVariant variant, CancellationToken cancellationToken);
+        Task<bool> ImageExists(string blobPath, ImageVariant variant, CancellationToken cancellationToken);
     }
 }

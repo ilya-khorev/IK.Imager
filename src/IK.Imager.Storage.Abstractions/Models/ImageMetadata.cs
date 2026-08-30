@@ -9,15 +9,22 @@ namespace IK.Imager.Storage.Abstractions.Models
     public class ImageMetadata : IStoredImage, IEquatable<ImageMetadata>
     {
         /// <summary>
-        /// Image group which also used to partition data
+        /// Tenant that owns this image. First level of the partition key, and the scope
+        /// within which <see cref="Id"/> is unique.
         /// </summary>
-        public string ImageGroup { get; set; } = null!;
+        public string TenantId { get; set; } = null!;
 
         /// <summary>
-        /// Image id
+        /// Image id, unique within the tenant. Second level of the partition key.
         /// </summary>
         [JsonProperty("id")]
         public string Id { get; set; } = null!;
+
+        /// <summary>
+        /// Optional label grouping images within a tenant. Not part of the image identity -
+        /// two images in different collections still cannot share an id.
+        /// </summary>
+        public string? Collection { get; set; }
         public long SizeBytes { get; set; }
         public string MD5Hash { get; set; } = null!;
         public int Width { get; set; }
@@ -25,9 +32,10 @@ namespace IK.Imager.Storage.Abstractions.Models
         public DateTime DateAddedUtc { get; set; }
 
         /// <summary>
-        /// Image name
+        /// Path of the image blob within its storage container, extension included.
+        /// This is the storage key, not a display name.
         /// </summary>
-        public string Name { get; set; } = null!;
+        public string BlobPath { get; set; } = null!;
 
         /// <summary>
         /// Standard that indicates the nature and format of a file.
@@ -65,14 +73,15 @@ namespace IK.Imager.Storage.Abstractions.Models
             if (ReferenceEquals(this, other))
                 return true;
 
-            bool primitivePropertiesEqual = ImageGroup == other.ImageGroup
+            bool primitivePropertiesEqual = TenantId == other.TenantId
+                                            && Collection == other.Collection
                                             && Id == other.Id
                                             && SizeBytes == other.SizeBytes
                                             && MD5Hash == other.MD5Hash
                                             && Width == other.Width
                                             && Height == other.Height
                                             && DateAddedUtc.Equals(other.DateAddedUtc)
-                                            && Name == other.Name
+                                            && BlobPath == other.BlobPath
                                             && MimeType == other.MimeType
                                             && ImageType == other.ImageType
                                             && FileExtension == other.FileExtension;
@@ -134,14 +143,15 @@ namespace IK.Imager.Storage.Abstractions.Models
         {
             unchecked
             {
-                var hashCode = ImageGroup != null ? ImageGroup.GetHashCode() : 0;
+                var hashCode = TenantId != null ? TenantId.GetHashCode() : 0;
+                hashCode = (hashCode * 397) ^ (Collection != null ? Collection.GetHashCode() : 0);
                 hashCode = (hashCode * 397) ^ (Id != null ? Id.GetHashCode() : 0);
                 hashCode = (int)((hashCode * 397) ^ SizeBytes);
                 hashCode = (hashCode * 397) ^ (MD5Hash != null ? MD5Hash.GetHashCode() : 0);
                 hashCode = (hashCode * 397) ^ Width;
                 hashCode = (hashCode * 397) ^ Height;
                 hashCode = (hashCode * 397) ^ DateAddedUtc.GetHashCode();
-                hashCode = (hashCode * 397) ^ (Name != null ? Name.GetHashCode() : 0);
+                hashCode = (hashCode * 397) ^ (BlobPath != null ? BlobPath.GetHashCode() : 0);
                 hashCode = (hashCode * 397) ^ (MimeType != null ? MimeType.GetHashCode() : 0);
                 hashCode = (hashCode * 397) ^ (FileExtension != null ? FileExtension.GetHashCode() : 0);
                 hashCode = (hashCode * 397) ^ (Tags != null ? Tags.GetHashCode() : 0);

@@ -2,6 +2,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using IK.Imager.Api.Contract;
 using IK.Imager.Api.Contract.Upload;
+using IK.Imager.Api.Tenancy;
 using IK.Imager.Api.Validation;
 using IK.Imager.Core.Abstractions.Models;
 using IK.Imager.Core.Abstractions.Upload;
@@ -45,18 +46,22 @@ public static class UploadEndpoints
     /// </summary>
     /// <param name="imageFileRequest"></param>
     /// <param name="imageUploader"></param>
+    /// <param name="tenantContext"></param>
     /// <param name="cancellationToken"></param>
     /// <returns>A model with information about just uploaded image</returns>
     /// <response code="200">Returns the newly added image info</response>
     /// <response code="400">If the image size is greater or smaller then the system threshold values.
     /// Or if the image type is different from what the system supports.</response>
+    /// <response code="409">If the given image id is already used by another image in this tenant.</response>
     internal static async Task<Ok<ImageInfo>> UploadImageFile(
         [FromForm] UploadImageFileRequest imageFileRequest,
         IImageUploader imageUploader,
+        ITenantContext tenantContext,
         CancellationToken cancellationToken)
     {
         var uploadImageResult = await imageUploader.Upload(
-            imageFileRequest.File.OpenReadStream(), imageFileRequest.ImageGroup, cancellationToken);
+            imageFileRequest.File.OpenReadStream(), tenantContext.TenantId,
+            imageFileRequest.ToOptions(), cancellationToken);
 
         return TypedResults.Ok(uploadImageResult.ToContract());
     }
@@ -68,6 +73,7 @@ public static class UploadEndpoints
     /// </summary>
     /// <param name="uploadImageByUrlRequest">Image upload request model</param>
     /// <param name="imageUploader"></param>
+    /// <param name="tenantContext"></param>
     /// <param name="cancellationToken"></param>
     /// <returns>A model with information about just uploaded image</returns>
     /// <response code="200">Returns the newly added image info</response>
@@ -76,23 +82,29 @@ public static class UploadEndpoints
     /// Or if the image is not found by the given image url.
     /// Or if the image size is greater or smaller then the system threshold values.
     /// Or if the image type is different from what the system supports.</response>
+    /// <response code="409">If the given image id is already used by another image in this tenant.</response>
     internal static async Task<Ok<ImageInfo>> UploadImageByUrl(
         UploadImageByUrlRequest uploadImageByUrlRequest,
         IImageUploader imageUploader,
+        ITenantContext tenantContext,
         CancellationToken cancellationToken)
     {
         var uploadImageResult = await imageUploader.UploadByUrl(
-            uploadImageByUrlRequest.ImageUrl, uploadImageByUrlRequest.ImageGroup, cancellationToken);
+            uploadImageByUrlRequest.ImageUrl, tenantContext.TenantId,
+            uploadImageByUrlRequest.ToOptions(), cancellationToken);
 
         return TypedResults.Ok(uploadImageResult.ToContract());
     }
 
-    //hand-written, there is no AutoMapper - and it stays inside the feature that returns the model
+    private static ImageUploadOptions ToOptions(this UploadImageRequestBase source) =>
+        new(source.ImageId, source.Collection, source.IncludeCollectionInPath, source.AddUniquePrefix);
+
     private static ImageInfo ToContract(this ImageDetails source) =>
         new()
         {
             Id = source.Id,
             Url = source.Url.ToString(),
+            Collection = source.Collection,
             Hash = source.Hash,
             DateAdded = source.DateAdded,
             Width = source.Width,

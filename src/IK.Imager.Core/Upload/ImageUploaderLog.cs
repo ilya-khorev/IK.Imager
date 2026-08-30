@@ -22,12 +22,20 @@ namespace IK.Imager.Core.Upload;
 internal static partial class ImageUploaderLog
 {
     [LoggerMessage(EventId = 1004, Level = LogLevel.Debug,
-        Message = "Uploaded the image to blob storage, {ImageId} as {ImageName}.")]
-    public static partial void UploadedToBlobStorage(this ILogger logger, string imageId, string imageName);
+        Message = "Uploaded the image to blob storage, {ImageId} as {BlobPath}.")]
+    public static partial void UploadedToBlobStorage(this ILogger logger, string imageId, string blobPath);
 
     [LoggerMessage(EventId = 1005, Level = LogLevel.Information,
-        Message = "Saved image {ImageId} in group {ImageGroup}, {SizeBytes} bytes.")]
-    public static partial void UploadFinished(this ILogger logger, string imageId, string imageGroup, long sizeBytes);
+        Message = "Saved image {ImageId}, {SizeBytes} bytes.")]
+    public static partial void UploadFinished(this ILogger logger, string imageId, long sizeBytes);
+
+    [LoggerMessage(EventId = 1009, Level = LogLevel.Warning,
+        Message = "Image {ImageId} already exists in this tenant. Nothing was stored.")]
+    public static partial void ImageIdTaken(this ILogger logger, string imageId);
+
+    [LoggerMessage(EventId = 1010, Level = LogLevel.Debug,
+        Message = "Replacing the orphaned blob at {BlobPath}; no image owns it.")]
+    public static partial void ReplacingOrphanedBlob(this ILogger logger, string blobPath);
 
     //the url is redacted in a wrapper because a LoggerMessage method is partial - there is no body to do it in
     public static void DownloadingByUrl(this ILogger logger, string imageUrl) =>

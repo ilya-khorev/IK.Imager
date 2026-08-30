@@ -1,6 +1,7 @@
 using IK.Imager.Api.Features.Delete;
 using IK.Imager.Api.Features.Lookup;
 using IK.Imager.Api.Features.Upload;
+using IK.Imager.Api.Tenancy;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
@@ -21,7 +22,10 @@ public static class ImageEndpoints
     {
         //the group keeps the single "Images" tag the controller used to give the whole API in Swagger UI
         var images = app.MapGroup(ImagesPrefix)
-            .WithTags("Images");
+            .WithTags("Images")
+            //every image operation is scoped to a tenant; the health endpoints are deliberately outside
+            //this group and need none. RequireAuthorization() belongs here too, once there is a scheme.
+            .AddEndpointFilter<TenantEndpointFilter>();
 
         images.MapUploadEndpoints();
         images.MapLookupEndpoints();

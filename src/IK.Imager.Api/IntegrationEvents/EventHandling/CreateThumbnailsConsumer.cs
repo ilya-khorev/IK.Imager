@@ -21,11 +21,11 @@ public class CreateThumbnailsConsumer(
         using var scope = logger.BeginScope(new Dictionary<string, object>
         {
             ["ImageId"] = context.Message.ImageId,
-            ["ImageGroup"] = context.Message.ImageGroup
+            ["TenantId"] = context.Message.TenantId
         });
 
-        logger.ThumbnailJobReceived(context.Message.ImageId, context.Message.ImageGroup);
+        logger.ThumbnailJobReceived(context.Message.ImageId);
 
-        await thumbnailGenerator.Generate(context.Message.ImageId, context.Message.ImageGroup, context.CancellationToken);
+        await thumbnailGenerator.Generate(context.Message.ImageId, context.Message.TenantId, context.CancellationToken);
     }
 }

@@ -18,7 +18,7 @@ public interface IImageUrlBuilder
     /// <summary>
     /// Returns the url a client should use to fetch the given image.
     /// </summary>
-    /// <param name="imageName">Unique image name, as stored in <c>ImageMetadata.Name</c>.</param>
+    /// <param name="blobPath">Blob path, as stored in <c>ImageMetadata.BlobPath</c>.</param>
     /// <param name="variant">Original or thumbnail.</param>
-    Uri Build(string imageName, ImageVariant variant);
+    Uri Build(string blobPath, ImageVariant variant);
 }
