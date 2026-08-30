@@ -8,7 +8,6 @@ using IK.Imager.Storage.AzureBlobs;
 using IK.Imager.Storage.CosmosDb;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Polly;

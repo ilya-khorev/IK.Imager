@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -10,7 +9,7 @@ namespace IK.Imager.Core.Upload;
 public class ImageLimitationsSettings
 {
     /// <summary>
-    /// Max and min image width in pixels 
+    /// Max and min image width in pixels
     /// </summary>
     public ValueRange<int> Width { get; set; } = null!;
 

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
 using System.Threading;
@@ -54,6 +55,11 @@ public class ImageUploaderTests
             DownloadSettings.WithMaxRedirects(), output.BuildLoggerFor<ImageDownloader>());
 
         _imageUrlBuilderMock.Setup(x => x.Build(BlobPath, ImageVariant.Original)).Returns(PublicUrl);
+
+        //the id is free unless a test says otherwise
+        _metadataRepositoryMock
+            .Setup(x => x.GetMetadata(It.IsAny<ICollection<string>>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync([]);
 
         _imageInspectorMock.Setup(x => x.Inspect(It.IsAny<Stream>())).Returns((Jpeg, Size));
         _imageNameGeneratorMock.Setup(x => x.NewImageId()).Returns(ImageId);
@@ -148,6 +154,78 @@ public class ImageUploaderTests
         _imageEventsMock.Verify(
             x => x.ImageUploaded(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
+
+    /// <summary>
+    /// Metadata is what makes an image exist, so a taken id is refused before a blob is written.
+    /// </summary>
+    [Fact]
+    public async Task Upload_IdAlreadyTaken_ThrowsAndStoresNothing()
+    {
+        _metadataRepositoryMock
+            .Setup(x => x.GetMetadata(It.Is<ICollection<string>>(ids => ids.Contains(ImageId)), TenantId,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync([new ImageMetadata { Id = ImageId, TenantId = TenantId }]);
+
+        await Assert.ThrowsAsync<ImageAlreadyExistsException>(() =>
+            CreateUploader().Upload(new MemoryStream([1, 2, 3]), TenantId, Options, CancellationToken.None));
+
+        _blobRepositoryMock.Verify(x => x.UploadImage(It.IsAny<string>(), It.IsAny<Stream>(), It.IsAny<ImageVariant>(),
+            It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
+        _metadataRepositoryMock.Verify(
+            x => x.CreateMetadata(It.IsAny<ImageMetadata>(), It.IsAny<CancellationToken>()), Times.Never);
+        _imageEventsMock.Verify(
+            x => x.ImageUploaded(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    /// <summary>
+    /// Two uploads of one id can still race past that check. Without a unique prefix they share a blob path,
+    /// so the loser must leave the blob alone - it is the one the winner's metadata now points at.
+    /// </summary>
+    [Fact]
+    public async Task Upload_IdTakenWhileTheBlobWasWritten_LeavesTheBlobInPlace()
+    {
+        _metadataRepositoryMock
+            .Setup(x => x.CreateMetadata(It.IsAny<ImageMetadata>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new ImageAlreadyExistsException(TenantId, ImageId));
+
+        await Assert.ThrowsAsync<ImageAlreadyExistsException>(() =>
+            CreateUploader().Upload(new MemoryStream([1, 2, 3]), TenantId, Options, CancellationToken.None));
+
+        _blobRepositoryMock.Verify(x => x.TryDeleteImage(It.IsAny<string>(), It.IsAny<ImageVariant>(),
+            It.IsAny<CancellationToken>()), Times.Never);
+        _imageEventsMock.Verify(
+            x => x.ImageUploaded(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    /// <summary>
+    /// Deleting an image drops its metadata at once and its blobs off the bus a moment later, so an id can
+    /// be free while its blob is still there.
+    /// </summary>
+    [Fact]
+    public async Task Upload_OrphanedBlobAtThePath_OverwritesIt()
+    {
+        _blobRepositoryMock
+            .Setup(x => x.UploadImage(BlobPath, It.IsAny<Stream>(), ImageVariant.Original, Jpeg.MimeType,
+                false, It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new BlobAlreadyExistsException(BlobPath));
+        _blobRepositoryMock
+            .Setup(x => x.UploadImage(BlobPath, It.IsAny<Stream>(), ImageVariant.Original, Jpeg.MimeType,
+                true, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new BlobUploadResult
+            {
+                Hash = Hash,
+                DateAdded = DateTimeOffset.UnixEpoch,
+                Url = BlobUrl
+            });
+
+        var result = await CreateUploader().Upload(new MemoryStream([1, 2, 3]), TenantId, Options, CancellationToken.None);
+
+        Assert.Equal(ImageId, result.Id);
+        _metadataRepositoryMock.Verify(
+            x => x.CreateMetadata(It.Is<ImageMetadata>(m => m.Id == ImageId), It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
     /// <summary>
     /// Upload-by-url accepts any absolute url, so a caller can hand us a SAS whose signature is in the
     /// query string. Both url lines on this path go through the redaction.

@@ -5,7 +5,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using AutoFixture;
 using IK.Imager.Core.Abstractions;
-using IK.Imager.Core.Abstractions.Delete;
 using IK.Imager.Core.Delete;
 using IK.Imager.Storage.Abstractions.Models;
 using IK.Imager.Storage.Abstractions.Repositories;

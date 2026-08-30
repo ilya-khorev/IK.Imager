@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using IK.Imager.Core.Abstractions.Models;
 
 namespace IK.Imager.Core.Abstractions.Lookup;
 

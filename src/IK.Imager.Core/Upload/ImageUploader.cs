@@ -61,6 +61,13 @@ public class ImageUploader(
             ["TenantId"] = tenantId
         });
 
+        var existing = await metadataRepository.GetMetadata([imageId], tenantId, cancellationToken);
+        if (existing.Count > 0)
+        {
+            logger.ImageIdTaken(imageId);
+            throw new ImageAlreadyExistsException(tenantId, imageId);
+        }
+
         //the extension comes from the image itself rather than from the caller, so the url cannot be
         //assembled from the id alone - it is returned instead
         var blobPath = imageNameGenerator.BuildBlobPath(
@@ -70,26 +77,18 @@ public class ImageUploader(
             imageId,
             imageFormat.FileExtension);
 
-        //Firstly, saving the image stream to the blob storage
+        //firstly, saving the image stream to the blob storage
         BlobUploadResult uploadImageResult;
         try
         {
             uploadImageResult = await blobRepository.UploadImage(blobPath, imageStream, ImageVariant.Original,
                 imageFormat.MimeType, allowOverwrite: false, cancellationToken);
         }
-        catch (BlobAlreadyExistsException ex)
+        catch (BlobAlreadyExistsException)
         {
-            //without a unique prefix the path is a function of the id, so a taken id is caught here first.
-            //A blob on its own does not mean the id is taken though: deleting an image drops its metadata at
-            //once and its blobs off the bus a moment later, so re-uploading a just-deleted id lands here with
-            //nothing owning the blob. Metadata is what makes an image exist, so that is what decides.
-            var existing = await metadataRepository.GetMetadata([imageId], tenantId, cancellationToken);
-            if (existing.Count > 0)
-            {
-                logger.ImageIdTaken(imageId);
-                throw new ImageAlreadyExistsException(tenantId, imageId, ex);
-            }
-
+            //no image owns this id, so the blob is left over from a delete that has not finished: deleting
+            //drops the metadata at once and the blobs off the bus a moment later, so a just-deleted id can
+            //still have its blob in place
             logger.ReplacingOrphanedBlob(blobPath);
             uploadImageResult = await blobRepository.UploadImage(blobPath, imageStream, ImageVariant.Original,
                 imageFormat.MimeType, allowOverwrite: true, cancellationToken);
@@ -97,7 +96,7 @@ public class ImageUploader(
 
         logger.UploadedToBlobStorage(imageId, blobPath);
 
-        //Image stream is no longer needed at this stage
+        //image stream is no longer needed at this stage
         await imageStream.DisposeAsync();
 
         /*
@@ -126,10 +125,11 @@ public class ImageUploader(
         }
         catch (ImageAlreadyExistsException)
         {
-            //with a unique prefix the blob path is new every time, so the clash only surfaces here - and the
-            //blob just written is one nothing will ever point at
-            await blobRepository.TryDeleteImage(blobPath, ImageVariant.Original, cancellationToken);
-            logger.ImageIdTaken(imageId);
+            //the id was free at the start of this method, so another upload of it got here first. The blob
+            //is deliberately left where it is: without a unique prefix both uploads share a path, so this
+            //is very likely the blob the winner's metadata now points at, and deleting it would leave an
+            //image that resolves to nothing. A leaked blob is the cheaper of the two.
+            logger.ImageIdTakenWhileUploading(imageId, blobPath);
             throw;
         }
 

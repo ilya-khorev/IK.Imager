@@ -3,7 +3,6 @@ using IK.Imager.Cdn.Akamai;
 using IK.Imager.Cdn.AzureFrontDoor;
 using IK.Imager.Cdn.Cloudflare;
 using IK.Imager.Cdn.Fastly;
-using IK.Imager.Core.Abstractions.Cdn;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 

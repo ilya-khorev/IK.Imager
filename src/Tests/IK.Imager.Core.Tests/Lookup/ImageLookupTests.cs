@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using AutoFixture;
 using IK.Imager.Core.Abstractions.Cdn;
 using IK.Imager.Core.Abstractions.Lookup;
-using IK.Imager.Core.Abstractions.Models;
 using IK.Imager.Core.Lookup;
 using IK.Imager.Storage.Abstractions.Models;
 using IK.Imager.Storage.Abstractions.Repositories;

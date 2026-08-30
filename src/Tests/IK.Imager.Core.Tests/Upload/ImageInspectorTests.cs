@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using Divergic.Logging.Xunit;
 using IK.Imager.Core.Tests.Infrastructure;
 using IK.Imager.Core.Upload;
 using Microsoft.Extensions.Options;

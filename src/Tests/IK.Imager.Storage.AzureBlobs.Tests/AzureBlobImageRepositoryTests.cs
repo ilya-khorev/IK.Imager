@@ -9,7 +9,6 @@ using System.Threading.Tasks;
 using Azure;
 using IK.Imager.Storage.Abstractions.Models;
 using IK.Imager.Storage.Abstractions.Repositories;
-using IK.Imager.Storage.AzureBlobs;
 using IK.Imager.TestsBase;
 using Xunit;
 

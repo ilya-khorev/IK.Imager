@@ -10,7 +10,6 @@ using IK.Imager.Core.Delete;
 using IK.Imager.Core.Lookup;
 using IK.Imager.Core.Thumbnails;
 using IK.Imager.Core.Upload;
-using IK.Imager.Storage.Abstractions.Repositories;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;

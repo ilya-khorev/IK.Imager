@@ -37,15 +37,23 @@ internal static partial class ImageUploaderLog
         Message = "Replacing the orphaned blob at {BlobPath}; no image owns it.")]
     public static partial void ReplacingOrphanedBlob(this ILogger logger, string blobPath);
 
-    //the url is redacted in a wrapper because a LoggerMessage method is partial - there is no body to do it in
-    public static void DownloadingByUrl(this ILogger logger, string imageUrl) =>
-        DownloadingByUrlCore(logger, UrlRedactor.Redact(imageUrl));
+    [LoggerMessage(EventId = 1011, Level = LogLevel.Warning,
+        Message = "Image {ImageId} was taken by another upload while this one wrote {BlobPath}. " +
+                  "Nothing was stored and the blob is left in place.")]
+    public static partial void ImageIdTakenWhileUploading(this ILogger logger, string imageId, string blobPath);
 
-    public static void DownloadedByUrl(this ILogger logger, string imageUrl, long sizeBytes) =>
-        DownloadedByUrlCore(logger, UrlRedactor.Redact(imageUrl), sizeBytes);
+    extension(ILogger logger)
+    {
+        //the url is redacted in a wrapper because a LoggerMessage method is partial - there is no body to do it in
+        public void DownloadingByUrl(string imageUrl) =>
+            DownloadingByUrlCore(logger, UrlRedactor.Redact(imageUrl));
 
-    public static void NotDownloadedByUrl(this ILogger logger, string imageUrl) =>
-        NotDownloadedByUrlCore(logger, UrlRedactor.Redact(imageUrl));
+        public void DownloadedByUrl(string imageUrl, long sizeBytes) =>
+            DownloadedByUrlCore(logger, UrlRedactor.Redact(imageUrl), sizeBytes);
+
+        public void NotDownloadedByUrl(string imageUrl) =>
+            NotDownloadedByUrlCore(logger, UrlRedactor.Redact(imageUrl));
+    }
 
     [LoggerMessage(EventId = 1006, Level = LogLevel.Debug, Message = "Downloading an image from {ImageUrl}.")]
     private static partial void DownloadingByUrlCore(ILogger logger, string imageUrl);
